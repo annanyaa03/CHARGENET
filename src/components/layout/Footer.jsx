@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Zap, MapPin, BookOpen, Mail, Twitter, Github } from 'lucide-react'
+import { Zap, MapPin, BookOpen, Mail, Globe, Code2 } from 'lucide-react'
 
 export function Footer() {
   return (
@@ -19,8 +19,8 @@ export function Footer() {
               India's smart EV charging companion. Find, book, and manage charging — everywhere you go.
             </p>
             <div className="flex gap-3">
-              <a href="#" className="text-muted hover:text-primary transition-colors hover:no-underline"><Twitter size={16} /></a>
-              <a href="#" className="text-muted hover:text-primary transition-colors hover:no-underline"><Github size={16} /></a>
+              <a href="#" className="text-muted hover:text-primary transition-colors hover:no-underline"><Globe size={16} /></a>
+              <a href="#" className="text-muted hover:text-primary transition-colors hover:no-underline"><Code2 size={16} /></a>
               <a href="mailto:hello@chargenet.in" className="text-muted hover:text-primary transition-colors hover:no-underline"><Mail size={16} /></a>
             </div>
           </div>

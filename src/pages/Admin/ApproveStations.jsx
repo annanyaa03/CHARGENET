@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { CheckCircle2, XCircle, MapPin, Eye, Search, Filter, History, Info } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../../components/layout/PageWrapper'
-import Button from '../../components/common/Button'
+import { Button } from '../../components/common/Button'
 import { Badge } from '../../components/common/Badge'
-import Modal from '../../components/common/Modal'
+import { Modal } from '../../components/common/Modal'
 import { stations } from '../../mock/stations'
 import toast from 'react-hot-toast'
 

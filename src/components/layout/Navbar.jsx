@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Zap, Menu, X, User, MapPin, BookOpen, LayoutDashboard, Shield, ChevronDown, LogOut } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
-import Button from '../common/Button'
+import { Button } from '../common/Button'
 
 export function Navbar() {
   const { user, role, isAuthenticated, logout } = useAuthStore()

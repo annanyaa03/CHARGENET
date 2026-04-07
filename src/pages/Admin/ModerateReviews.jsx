@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Star, MessageSquare, Trash2, ShieldCheck, Search, Filter, AlertCircle, Eye, Info } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../../components/layout/PageWrapper'
-import Button from '../../components/common/Button'
+import { Button } from '../../components/common/Button'
 import { Badge } from '../../components/common/Badge'
 import { reviews } from '../../mock/reviews'
 import { stations } from '../../mock/stations'
