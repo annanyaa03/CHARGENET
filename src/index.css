@@ -1,0 +1,517 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #FAFAF9;
+  --color-surface: #F5F5F4;
+  --color-border: #E7E5E4;
+  --color-primary: #1C1917;
+  --color-muted: #78716C;
+  --color-accent: #0F766E;
+  --color-success: #15803D;
+  --color-warning: #B45309;
+  --color-danger: #B91C1C;
+  --color-neutral: #A8A29E;
+  --font-family-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #FAFAF9;
+    color: #1C1917;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: #1C1917;
+    line-height: 1.25;
+  }
+
+  a {
+    color: #0F766E;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  input, textarea, select {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+  }
+
+  button {
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+  }
+
+  img {
+    max-width: 100%;
+    display: block;
+  }
+}
+
+@layer components {
+  /* ── Leaflet Map ── */
+  .leaflet-container {
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background: #F5F5F4;
+  }
+
+  .leaflet-popup-content-wrapper {
+    background: #F5F5F4;
+    border: 1px solid #E7E5E4;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    padding: 0;
+  }
+
+  .leaflet-popup-content {
+    margin: 0;
+    padding: 0;
+  }
+
+  .leaflet-popup-tip {
+    background: #F5F5F4;
+  }
+
+  .leaflet-popup-close-button {
+    color: #78716C !important;
+    font-size: 18px !important;
+    padding: 8px !important;
+  }
+
+  .leaflet-popup-close-button:hover {
+    color: #1C1917 !important;
+  }
+
+  .leaflet-control-zoom {
+    border: 1px solid #E7E5E4 !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+  }
+
+  .leaflet-control-zoom-in,
+  .leaflet-control-zoom-out {
+    background: #F5F5F4 !important;
+    color: #1C1917 !important;
+    border-bottom: 1px solid #E7E5E4 !important;
+    font-size: 16px !important;
+    width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+  }
+
+  .leaflet-control-zoom-in:hover,
+  .leaflet-control-zoom-out:hover {
+    background: #E7E5E4 !important;
+  }
+
+  .leaflet-attribution-flag {
+    display: none !important;
+  }
+
+  /* ── Custom Station Pin ── */
+  .station-pin {
+    width: 32px;
+    height: 32px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid #FAFAF9;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .station-pin:hover {
+    transform: rotate(-45deg) scale(1.15);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+
+  .station-pin.active   { background-color: #15803D; }
+  .station-pin.busy     { background-color: #B45309; }
+  .station-pin.inactive { background-color: #B91C1C; }
+  .station-pin.faulty   { background-color: #A8A29E; }
+
+  /* ── Skeleton Loader ── */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #E7E5E4 25%,
+      #F5F5F4 50%,
+      #E7E5E4 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+
+  @keyframes skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── Star Rating ── */
+  .star-filled  { color: #B45309; }
+  .star-empty   { color: #E7E5E4; }
+  .star-half    { color: #B45309; }
+
+  /* ── Slot Grid ── */
+  .slot-available {
+    background: #F5F5F4;
+    border: 1px solid #E7E5E4;
+    color: #1C1917;
+    border-radius: 8px;
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .slot-available:hover {
+    border-color: #0F766E;
+    color: #0F766E;
+    background: #F0FDFA;
+  }
+
+  .slot-booked {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #B91C1C;
+    border-radius: 8px;
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .slot-selected {
+    background: #0F766E;
+    border: 1px solid #0F766E;
+    color: #FAFAF9;
+    border-radius: 8px;
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  /* ── Progress Bar ── */
+  .progress-bar {
+    height: 4px;
+    background: #E7E5E4;
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: #0F766E;
+    border-radius: 9999px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── Rating Bar ── */
+  .rating-bar-track {
+    flex: 1;
+    height: 8px;
+    background: #E7E5E4;
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  .rating-bar-fill {
+    height: 100%;
+    background: #B45309;
+    border-radius: 9999px;
+  }
+
+  /* ── Heatmap ── */
+  .heatmap-cell {
+    border-radius: 4px;
+    transition: opacity 0.15s ease;
+  }
+
+  .heatmap-cell:hover {
+    opacity: 0.8;
+  }
+
+  /* ── Tip / Warning Boxes ── */
+  .tip-box {
+    background: #F0FDFA;
+    border: 1px solid #99F6E4;
+    border-left: 4px solid #0F766E;
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+
+  .warning-box {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-left: 4px solid #B45309;
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+
+  .info-box {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-left: 4px solid #1D4ED8;
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+
+  /* ── Sidebar Slide ── */
+  .slide-up-panel {
+    animation: slideUp 0.25s ease-out;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);   opacity: 1; }
+  }
+
+  /* ── Modal Overlay ── */
+  .modal-overlay {
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-content {
+    animation: scaleIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+
+  /* ── Tab Underline ── */
+  .tab-active {
+    border-bottom: 2px solid #0F766E;
+    color: #0F766E;
+    font-weight: 500;
+  }
+
+  .tab-inactive {
+    border-bottom: 2px solid transparent;
+    color: #78716C;
+  }
+
+  .tab-inactive:hover {
+    color: #1C1917;
+    border-bottom-color: #E7E5E4;
+  }
+
+  /* ── Recharts Overrides ── */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: #E7E5E4;
+  }
+
+  .recharts-tooltip-wrapper .recharts-default-tooltip {
+    background: #F5F5F4 !important;
+    border: 1px solid #E7E5E4 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+  }
+
+  .recharts-tooltip-label {
+    color: #1C1917 !important;
+    font-weight: 500 !important;
+  }
+
+  .recharts-tooltip-item {
+    color: #78716C !important;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #F5F5F4;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #E7E5E4;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #A8A29E;
+  }
+
+  /* ── Focus Ring ── */
+  .focus-ring:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+  }
+
+  /* ── Transition Defaults ── */
+  .transition-default {
+    transition: all 0.15s ease;
+  }
+
+  /* ── Page Fade ── */
+  .page-enter {
+    animation: pageFade 0.2s ease;
+  }
+
+  @keyframes pageFade {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── QR Placeholder ── */
+  .qr-placeholder {
+    width: 160px;
+    height: 160px;
+    background: #F5F5F4;
+    border: 1px solid #E7E5E4;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+  }
+
+  /* ── Photo Upload ── */
+  .photo-upload-zone {
+    border: 2px dashed #E7E5E4;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .photo-upload-zone:hover {
+    border-color: #0F766E;
+    background: #F0FDFA;
+  }
+
+  /* ── Status Dot ── */
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .status-dot.active   { background-color: #15803D; }
+  .status-dot.busy     { background-color: #B45309; }
+  .status-dot.inactive { background-color: #B91C1C; }
+  .status-dot.faulty   { background-color: #A8A29E; }
+
+  /* ── Pulse Animation for Active Status ── */
+  .pulse-active {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+
+  /* ── Nav Link ── */
+  .nav-link {
+    color: #78716C;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+
+  .nav-link:hover {
+    color: #1C1917;
+    background: #F5F5F4;
+    text-decoration: none;
+  }
+
+  .nav-link.active {
+    color: #0F766E;
+    background: #F0FDFA;
+  }
+
+  /* ── Sidebar Nav ── */
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #78716C;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+
+  .sidebar-link:hover {
+    background: #F5F5F4;
+    color: #1C1917;
+    text-decoration: none;
+  }
+
+  .sidebar-link.active {
+    background: #F0FDFA;
+    color: #0F766E;
+  }
+
+  /* ── Filter Pill ── */
+  .filter-pill {
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #E7E5E4;
+    background: #F5F5F4;
+    color: #78716C;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .filter-pill:hover {
+    border-color: #0F766E;
+    color: #0F766E;
+  }
+
+  .filter-pill.active {
+    background: #0F766E;
+    border-color: #0F766E;
+    color: #FAFAF9;
+  }
+}
