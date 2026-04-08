@@ -1,11 +1,11 @@
 export const amenities = {
   'stn-001': {
     restaurants: [
-      { id: 'am-001', name: 'Saoji Bhojanalay', type: 'Restaurant', rating: 4.3, distance: 120, isOpen: true },
-      { id: 'am-002', name: 'Haldirams Nagpur', type: 'Cafe', rating: 4.5, distance: 250, isOpen: true },
-      { id: 'am-003', name: 'Café Coffee Day', type: 'Cafe', rating: 3.9, distance: 400, isOpen: true },
+      { id: 'am-001', name: 'Kalyani Restaurant', type: 'Restaurant', rating: 4.3, distance: 120, isOpen: true },
+      { id: 'am-002', name: 'Cafe Latte', type: 'Cafe', rating: 4.5, distance: 250, isOpen: true },
+      { id: 'am-003', name: 'Cafe Coffee Day', type: 'Cafe', rating: 3.9, distance: 400, isOpen: true },
     ],
-    parks: [{ id: 'am-004', name: 'Kasturchand Park', type: 'Park', distance: 600 }],
+    parks: [{ id: 'am-004', name: 'Osho Garden', type: 'Park', distance: 600 }],
   },
   'stn-002': {
     restaurants: [
@@ -73,10 +73,10 @@ export const amenities = {
   },
   'stn-010': {
     restaurants: [
-      { id: 'am-037', name: 'Hotel Gondwana Nagpur', type: 'Restaurant', rating: 4.1, distance: 200, isOpen: true },
+      { id: 'am-037', name: 'Hotel Rameshwar', type: 'Restaurant', rating: 4.1, distance: 200, isOpen: true },
       { id: 'am-038', name: 'Café Moshe\'s', type: 'Cafe', rating: 4.0, distance: 350, isOpen: true },
       { id: 'am-039', name: 'Pizza Hut Airport Road', type: 'Restaurant', rating: 3.7, distance: 500, isOpen: true },
     ],
-    parks: [{ id: 'am-040', name: 'Ambazari Lake Garden', type: 'Park', distance: 1200 }],
+    parks: [{ id: 'am-040', name: 'Lake Garden', type: 'Park', distance: 1200 }],
   },
 }
