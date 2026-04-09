@@ -1,544 +1,440 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import {
-  MapPin, Zap, Star, ChevronRight, ArrowRight, Search,
-  Battery, Clock, Shield, Smartphone, Navigation, Users,
-  CheckCircle, Play, ChevronDown, Sparkles, Globe, BatteryCharging,
-  Route, CalendarCheck, Eye
-} from 'lucide-react'
-import { PageWrapper } from '../components/layout/PageWrapper'
-import { Button } from '../components/common/Button'
-import { stations } from '../mock/stations'
-import { formatDistance } from '../utils/plugTypes'
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { 
+  Zap, MapPin, Search, ArrowRight, Play, Star, 
+  CalendarCheck, BatteryCharging, 
+  Navigation, Clock, CreditCard, Headphones
+} from 'lucide-react';
+import { PageWrapper } from '../components/layout/PageWrapper';
 
-/* ─── Animated Counter ─── */
-function AnimatedCounter({ end, suffix = '', duration = 2000 }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef(null)
-  const counted = useRef(false)
+/* --- Components --- */
 
+const Reveal = ({ children, delay = 0, y = 20 }) => (
+  <motion.div
+    initial={{ opacity: 0, y }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+  >
+    {children}
+  </motion.div>
+);
+
+const CountUp = ({ end, suffix = "" }) => {
+  const [count, setCount] = useState(0);
+  
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !counted.current) {
-          counted.current = true
-          const startTime = performance.now()
-          const numEnd = parseInt(end)
-          const animate = (now) => {
-            const elapsed = now - startTime
-            const progress = Math.min(elapsed / duration, 1)
-            const eased = 1 - Math.pow(1 - progress, 3)
-            setCount(Math.floor(eased * numEnd))
-            if (progress < 1) requestAnimationFrame(animate)
-          }
-          requestAnimationFrame(animate)
-        }
-      },
-      { threshold: 0.3 }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [end, duration])
-
-  return <span ref={ref}>{count}{suffix}</span>
-}
-
-/* ─── Scroll Reveal ─── */
-function Reveal({ children, className = '', delay = 0 }) {
-  const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
-      { threshold: 0.15 }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [])
-
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(32px)',
-        transition: `opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-/* ─── Floating Particles Canvas ─── */
-function ParticleField() {
-  const canvasRef = useRef(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    let frame
-    let particles = []
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    const w = () => canvas.offsetWidth
-    const h = () => canvas.offsetHeight
-
-    for (let i = 0; i < 60; i++) {
-      particles.push({
-        x: Math.random() * w(),
-        y: Math.random() * h(),
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        r: Math.random() * 2 + 0.5,
-        opacity: Math.random() * 0.4 + 0.1,
-      })
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, w(), h())
-      particles.forEach((p) => {
-        p.x += p.vx
-        p.y += p.vy
-        if (p.x < 0) p.x = w()
-        if (p.x > w()) p.x = 0
-        if (p.y < 0) p.y = h()
-        if (p.y > h()) p.y = 0
-
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(16, 185, 129, ${p.opacity})`
-        ctx.fill()
-      })
-
-      // Connection lines
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x
-          const dy = particles[i].y - particles[j].y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 120) {
-            ctx.beginPath()
-            ctx.moveTo(particles[i].x, particles[i].y)
-            ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.strokeStyle = `rgba(16, 185, 129, ${0.08 * (1 - dist / 120)})`
-            ctx.lineWidth = 0.5
-            ctx.stroke()
-          }
-        }
-      }
-      frame = requestAnimationFrame(draw)
-    }
-    draw()
-
-    return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('resize', resize)
-    }
-  }, [])
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-    />
-  )
-}
-
-/* ─── Typing Animation ─── */
-function TypingText({ words, className = '' }) {
-  const [wordIndex, setWordIndex] = useState(0)
-  const [charIndex, setCharIndex] = useState(0)
-  const [deleting, setDeleting] = useState(false)
-
-  useEffect(() => {
-    const word = words[wordIndex]
-    const timeout = setTimeout(() => {
-      if (!deleting) {
-        if (charIndex < word.length) {
-          setCharIndex(c => c + 1)
-        } else {
-          setTimeout(() => setDeleting(true), 1800)
-        }
+    let start = 0;
+    const duration = 2000;
+    const increment = end / (duration / 16);
+    
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
       } else {
-        if (charIndex > 0) {
-          setCharIndex(c => c - 1)
-        } else {
-          setDeleting(false)
-          setWordIndex(i => (i + 1) % words.length)
-        }
+        setCount(Math.floor(start));
       }
-    }, deleting ? 40 : 80)
-    return () => clearTimeout(timeout)
-  }, [charIndex, deleting, wordIndex, words])
+    }, 16);
+    
+    return () => clearInterval(timer);
+  }, [end]);
+  
+  return <>{count.toLocaleString()}{suffix}</>;
+};
 
+const TypingStation = () => {
+  const [text, setText] = useState('');
+  const fullText = 'station';
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isDeleting && text.length < fullText.length) {
+        setText(fullText.slice(0, text.length + 1));
+      } else if (isDeleting && text.length > 0) {
+        setText(fullText.slice(0, text.length - 1));
+      } else {
+        setIsDeleting(!isDeleting);
+      }
+    }, isDeleting ? 100 : 200);
+    
+    return () => clearTimeout(timeout);
+  }, [text, isDeleting]);
+  
   return (
-    <span className={className}>
-      {words[wordIndex].substring(0, charIndex)}
-      <span style={{ animation: 'blink 1s step-end infinite', borderRight: '2px solid #10B981' }}>&nbsp;</span>
+    <span className="text-[#5DCAA5] relative whitespace-nowrap">
+      {text}
+      <span className="inline-block w-[3px] h-[1em] bg-[#5DCAA5] ml-1 animate-pulse align-middle" />
     </span>
-  )
-}
+  );
+};
 
-/* ─── Star Rating ─── */
-function StarRating({ rating }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map(s => (
-        <Star key={s} size={13} className={s <= Math.round(rating) ? 'star-filled fill-current' : 'star-empty fill-current'} />
-      ))}
-    </div>
-  )
-}
-
-/* ─── Station Card (Enhanced) ─── */
-function StationCard({ station, index }) {
-  const navigate = useNavigate()
-  return (
-    <Reveal delay={index * 100}>
-      <div
-        className="home-station-card group"
-        onClick={() => navigate(`/station/${station.id}`)}
-        role="button"
-        tabIndex={0}
-      >
-        {/* Top gradient bar */}
-        <div className="home-station-card-bar" />
-        <div className="p-5">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-primary truncate group-hover:text-accent transition-colors">
-                {station.name}
-              </h3>
-              <div className="flex items-center gap-1 mt-1">
-                <MapPin size={11} className="text-muted flex-shrink-0" />
-                <p className="text-xs text-muted truncate">{station.address.split(',').slice(-2).join(',').trim()}</p>
-              </div>
-            </div>
-            <span className={`home-status-badge home-status-${station.status}`}>
-              {station.status.charAt(0).toUpperCase() + station.status.slice(1)}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs text-muted mb-4">
-            <div className="flex items-center gap-1">
-              <StarRating rating={station.rating} />
-              <span className="font-semibold text-primary">{station.rating}</span>
-            </div>
-            <span className="text-border">·</span>
-            <span>{formatDistance(station.distance)}</span>
-            <span className="text-border">·</span>
-            <span className="text-emerald-600 font-medium">{station.availableChargers}/{station.totalChargers} free</span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-            View Details <ArrowRight size={12} />
-          </div>
-        </div>
-      </div>
-    </Reveal>
-  )
-}
-
-/* ─── Main Home Page ─── */
 export default function Home() {
-  const navigate = useNavigate()
-  const [search, setSearch] = useState('')
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => { document.title = 'ChargeNet — India\'s Smart EV Charging Companion' }, [])
+  const stats = [
+    { value: 500, suffix: '+', label: 'Charging Stations' },
+    { value: 5, suffix: '', label: 'Cities Covered' },
+    { value: 10000, suffix: '+', label: 'Registered Users' },
+    { value: 99.2, suffix: '%', label: 'Uptime Reliability' },
+  ];
 
-  const featured = stations.filter(s => s.status === 'active').slice(0, 6)
-
-  const handleSearch = (e) => {
-    e.preventDefault()
-    navigate(`/map?q=${search}`)
-  }
-
-  const howItWorks = [
-    { icon: Search, title: 'Search', desc: 'Find charging stations near you or along your route', color: '#10B981' },
-    { icon: CalendarCheck, title: 'Book', desc: 'Reserve a slot in advance and skip the wait', color: '#3B82F6' },
-    { icon: BatteryCharging, title: 'Charge', desc: 'Plug in and charge with real-time monitoring', color: '#8B5CF6' },
-    { icon: Route, title: 'Go', desc: 'Hit the road with confidence, every trip', color: '#F59E0B' },
-  ]
+  const steps = [
+    { 
+      number: '01', 
+      title: 'Find', 
+      icon: MapPin, 
+      desc: 'Search by city or area to locate the nearest charger on our real-time map.' 
+    },
+    { 
+      number: '02', 
+      title: 'Book', 
+      icon: CalendarCheck, 
+      desc: 'Reserve your charging slot in advance to avoid waiting at the station.' 
+    },
+    { 
+      number: '03', 
+      title: 'Charge', 
+      icon: BatteryCharging, 
+      desc: 'Plug in and track your session details directly from the ChargeNet app.' 
+    },
+  ];
 
   const features = [
-    { icon: MapPin, title: 'Live Station Map', desc: 'Interactive map with real-time availability, color-coded pins, and instant navigation to the nearest charger.', gradient: 'linear-gradient(135deg, #059669, #10B981)' },
-    { icon: Clock, title: 'Smart Slot Booking', desc: 'Book charging slots up to 7 days ahead. Get reminders, manage bookings, and never wait in line again.', gradient: 'linear-gradient(135deg, #2563EB, #3B82F6)' },
-    { icon: Shield, title: 'Verified Reviews', desc: 'Read and write honest reviews. Our moderation ensures quality feedback to help you pick the best stations.', gradient: 'linear-gradient(135deg, #7C3AED, #8B5CF6)' },
-    { icon: Smartphone, title: 'Owner Portal', desc: 'Station owners can manage listings, track analytics, monitor charger health, and grow their network.', gradient: 'linear-gradient(135deg, #D97706, #F59E0B)' },
-    { icon: Navigation, title: 'Trip Planner', desc: 'Plan long-distance trips with charging stops mapped out. Estimate charge needed and time per stop.', gradient: 'linear-gradient(135deg, #DC2626, #EF4444)' },
-    { icon: Globe, title: 'Learn Hub', desc: 'From your first EV purchase to road-trip planning — curated guides, tips, and industry news.', gradient: 'linear-gradient(135deg, #0891B2, #06B6D4)' },
-  ]
+    { 
+      title: 'Real-time availability', 
+      icon: Clock, 
+      desc: 'See which chargers are currently free or occupied before you arrive.' 
+    },
+    { 
+      title: 'Slot booking', 
+      icon: CalendarCheck, 
+      desc: 'Pre-book your charging time to ensure a seamless experience on the go.' 
+    },
+    { 
+      title: 'Multi-vehicle support', 
+      icon: Zap, 
+      desc: 'Compatibility with all major EV models and connector types in India.' 
+    },
+    { 
+      title: 'Trip planner', 
+      icon: Navigation, 
+      desc: 'Automate your route planning with optimal charging stops along the way.' 
+    },
+    { 
+      title: '24/7 support', 
+      icon: Headphones, 
+      desc: 'Our dedicated team is always ready to assist you with any charging issues.' 
+    },
+    { 
+      title: 'Secure payments', 
+      icon: CreditCard, 
+      desc: 'Hassle-free digital payments with multiple wallet and card options.' 
+    },
+  ];
+
+  const cities = ['Mumbai', 'Pune', 'Delhi', 'Bengaluru', 'Hyderabad'];
 
   const testimonials = [
-    { name: 'Aarav Sharma', role: 'Tata Nexon EV Owner', city: 'Pune', text: 'ChargeNet made my first long drive stress-free. I booked slots in advance and every station was exactly as described!', rating: 5 },
-    { name: 'Priya Patel', role: 'MG ZS EV Owner', city: 'Mumbai', text: "The live map is a game-changer. I can see available chargers in real-time and navigate there instantly. Love the reviews too!", rating: 5 },
-    { name: 'Karthik Reddy', role: 'Station Owner', city: 'Bengaluru', text: 'The owner portal gives me real insights into my station performance. Bookings went up 40% since I listed on ChargeNet.', rating: 4 },
-  ]
+    { 
+      name: 'Aarav Sharma', 
+      city: 'Mumbai', 
+      quote: 'ChargeNet has completely changed how I plan my weekend trips. No more range anxiety!',
+      rating: 5,
+      initials: 'AS'
+    },
+    { 
+      name: 'Priya Patel', 
+      city: 'Bengaluru', 
+      quote: "The slot booking feature is a life-saver in the city. I never have to wait anymore.",
+      rating: 5,
+      initials: 'PP'
+    },
+    { 
+      name: 'Rahul Varma', 
+      city: 'Delhi', 
+      quote: 'Clean stations, fast chargers, and a very intuitive app. Highly recommended!',
+      rating: 5,
+      initials: 'RV'
+    },
+  ];
 
   return (
-    <PageWrapper>
-      {/* ═══════════ HERO ═══════════ */}
-      <section className="home-hero">
-        <ParticleField />
+    <PageWrapper noPadding={true}>
+      <div className="w-full overflow-hidden bg-white">
+        {/* ─── Hero Section ─── */}
+        <section className="relative min-h-screen flex items-center justify-center pt-20">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src="https://images.unsplash.com/photo-1570160897548-2587dec7bc31?q=80&w=2000&auto=format&fit=crop" 
+              alt="Aerial city at night"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#051428]/95 via-[#051428]/88 to-[#051428]/60" />
+          </div>
 
-        {/* Gradient orbs */}
-        <div className="home-hero-orb home-hero-orb-1" />
-        <div className="home-hero-orb home-hero-orb-2" />
-        <div className="home-hero-orb home-hero-orb-3" />
-
-        <div className="home-hero-content">
-          <Reveal>
-            <div className="home-hero-badge">
-              <Sparkles size={14} />
-              <span>Now live in 5 cities across India</span>
-            </div>
-          </Reveal>
-
-          <Reveal delay={150}>
-            <h1 className="home-hero-title">
-              Find your next
-              <br />
-              <TypingText
-                words={['charge', 'station', 'adventure', 'route']}
-                className="home-hero-accent"
-              />
-            </h1>
-          </Reveal>
-
-          <Reveal delay={300}>
-            <p className="home-hero-subtitle">
-              Discover nearby EV charging stations, check real-time availability,
-              book your slot, and charge with confidence.
-            </p>
-          </Reveal>
-
-          <Reveal delay={450}>
-            <form onSubmit={handleSearch} className="home-hero-search">
-              <div className="home-hero-search-inner">
-                <Search size={18} className="home-hero-search-icon" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search by city or area…"
-                  className="home-hero-search-input"
-                  id="hero-search"
-                />
-                <button type="submit" className="home-hero-search-btn">
-                  <Search size={16} />
-                  Search
-                </button>
-              </div>
-            </form>
-          </Reveal>
-
-          <Reveal delay={600}>
-            <div className="home-hero-cta-row">
-              <Button variant="primary" size="lg" onClick={() => navigate('/map')} className="home-hero-btn-primary">
-                <MapPin size={16} /> Explore Map
-              </Button>
-              <button onClick={() => navigate('/learn')} className="home-hero-btn-ghost">
-                <Play size={14} /> Learn More
-              </button>
-            </div>
-          </Reveal>
-
-          <Reveal delay={750}>
-            <div className="home-hero-trust">
-              <div className="home-hero-trust-avatars">
-                {['A', 'R', 'P', 'K'].map((l, i) => (
-                  <div key={i} className="home-hero-trust-avatar" style={{ zIndex: 4 - i, marginLeft: i > 0 ? '-8px' : 0 }}>
-                    {l}
-                  </div>
-                ))}
-              </div>
-              <p className="home-hero-trust-text">
-                <span className="font-semibold text-white">385+</span> reviews from EV drivers
-              </p>
-            </div>
-          </Reveal>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="home-hero-scroll">
-          <ChevronDown size={20} />
-        </div>
-      </section>
-
-      {/* ═══════════ STATS BAR ═══════════ */}
-      <section className="home-stats-bar">
-        <div className="home-stats-grid">
-          {[
-            { value: '10', suffix: '+', label: 'Charging Stations' },
-            { value: '5', suffix: '', label: 'Cities Covered' },
-            { value: '30', suffix: '+', label: 'Active Chargers' },
-            { value: '385', suffix: '+', label: 'User Reviews' },
-          ].map((stat, i) => (
-            <Reveal key={stat.label} delay={i * 100}>
-              <div className="home-stat-item">
-                <p className="home-stat-value">
-                  <AnimatedCounter end={stat.value} suffix={stat.suffix} />
-                </p>
-                <p className="home-stat-label">{stat.label}</p>
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-8">
+            <Reveal>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium">
+                <span className="w-2 h-2 bg-[#1D9E75] rounded-full animate-pulse" />
+                Now live in 5 cities across India
               </div>
             </Reveal>
-          ))}
-        </div>
-      </section>
 
-      {/* ═══════════ HOW IT WORKS ═══════════ */}
-      <section className="home-section home-section-light">
-        <div className="home-container">
-          <Reveal>
-            <div className="home-section-header">
-              <span className="home-section-badge">Simple Process</span>
-              <h2 className="home-section-title">How ChargeNet Works</h2>
-              <p className="home-section-subtitle">Four simple steps to a charged EV, every single time.</p>
-            </div>
-          </Reveal>
+            <Reveal delay={0.2} y={30}>
+              <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
+                Find your next <br />
+                <TypingStation />
+              </h1>
+            </Reveal>
 
-          <div className="home-steps-grid">
-            {howItWorks.map((step, i) => (
-              <Reveal key={step.title} delay={i * 120}>
-                <div className="home-step-card">
-                  <div className="home-step-number">{i + 1}</div>
-                  <div className="home-step-icon" style={{ background: step.color + '18', color: step.color }}>
-                    <step.icon size={24} />
-                  </div>
-                  <h3 className="home-step-title">{step.title}</h3>
-                  <p className="home-step-desc">{step.desc}</p>
-                  {i < howItWorks.length - 1 && <div className="home-step-connector" />}
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ FEATURES ═══════════ */}
-      <section className="home-section home-section-dark">
-        <div className="home-container">
-          <Reveal>
-            <div className="home-section-header">
-              <span className="home-section-badge home-section-badge-dark">Platform Features</span>
-              <h2 className="home-section-title text-white">Everything you need to<br /><span className="home-gradient-text">charge with confidence</span></h2>
-              <p className="home-section-subtitle" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                A complete ecosystem for EV drivers and station owners.
+            <Reveal delay={0.4} y={20}>
+              <p className="max-w-2xl mx-auto text-white/70 text-lg md:text-xl leading-relaxed">
+                Discover nearby EV charging stations, check real-time availability, 
+                book your slot, and charge with confidence.
               </p>
-            </div>
-          </Reveal>
+            </Reveal>
 
-          <div className="home-features-grid">
-            {features.map((f, i) => (
-              <Reveal key={f.title} delay={i * 80}>
-                <div className="home-feature-card group">
-                  <div className="home-feature-icon" style={{ background: f.gradient }}>
-                    <f.icon size={22} color="white" />
-                  </div>
-                  <h3 className="home-feature-title">{f.title}</h3>
-                  <p className="home-feature-desc">{f.desc}</p>
-                  <div className="home-feature-link">
-                    Learn more <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ FEATURED STATIONS ═══════════ */}
-      <section className="home-section home-section-light">
-        <div className="home-container">
-          <Reveal>
-            <div className="flex items-end justify-between mb-8">
-              <div>
-                <span className="home-section-badge">Nearby</span>
-                <h2 className="home-section-title" style={{ marginBottom: 0 }}>Featured Stations</h2>
-              </div>
-              <Link to="/map" className="home-view-all-link">
-                View all <ChevronRight size={16} />
-              </Link>
-            </div>
-          </Reveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {featured.map((station, i) => (
-              <StationCard key={station.id} station={station} index={i} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ TESTIMONIALS ═══════════ */}
-      <section className="home-section home-section-accent">
-        <div className="home-container">
-          <Reveal>
-            <div className="home-section-header">
-              <span className="home-section-badge home-section-badge-accent">What Drivers Say</span>
-              <h2 className="home-section-title">Trusted by India's EV Community</h2>
-              <p className="home-section-subtitle">Real experiences from real EV drivers and station owners.</p>
-            </div>
-          </Reveal>
-
-          <div className="home-testimonials-grid">
-            {testimonials.map((t, i) => (
-              <Reveal key={t.name} delay={i * 150}>
-                <div className="home-testimonial-card">
-                  <div className="home-testimonial-stars">
-                    {[1, 2, 3, 4, 5].map(s => (
-                      <Star key={s} size={14} className={s <= t.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-200'} />
-                    ))}
-                  </div>
-                  <p className="home-testimonial-text">"{t.text}"</p>
-                  <div className="home-testimonial-author">
-                    <div className="home-testimonial-avatar">{t.name[0]}</div>
-                    <div>
-                      <p className="home-testimonial-name">{t.name}</p>
-                      <p className="home-testimonial-role">{t.role} · {t.city}</p>
+            {/* Search Bar */}
+            <Reveal delay={0.6}>
+              <div className="max-w-3xl mx-auto mt-10">
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-[#1D9E75] to-[#5DCAA5] rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+                  <div className="relative flex items-center p-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl">
+                    <div className="flex-1 flex items-center px-4">
+                      <Search className="text-white/40 mr-3" size={20} />
+                      <input 
+                        type="text" 
+                        placeholder="Search by city or area..."
+                        className="w-full bg-transparent border-none text-white placeholder-white/40 focus:ring-0 text-lg py-4"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
                     </div>
+                    <button className="bg-[#1D9E75] hover:bg-[#168561] text-white px-8 py-4 rounded-xl font-semibold transition-all shadow-lg active:scale-95">
+                      Search
+                    </button>
                   </div>
                 </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+              </div>
+            </Reveal>
 
-      {/* ═══════════ CTA BANNER ═══════════ */}
-      <section className="home-cta-section">
-        <div className="home-cta-bg" />
-        <div className="home-container" style={{ position: 'relative', zIndex: 1 }}>
-          <Reveal>
-            <div className="home-cta-content">
-              <Zap size={40} className="text-emerald-400 mb-4" />
-              <h2 className="home-cta-title">Ready to charge smarter?</h2>
-              <p className="home-cta-subtitle">
-                Join India's fastest-growing EV charging network. Whether you drive or own a station — we've got you covered.
-              </p>
-              <div className="home-cta-buttons">
-                <Button variant="primary" size="lg" onClick={() => navigate('/register')} className="home-cta-btn-primary">
-                  Get Started Free <ArrowRight size={16} />
-                </Button>
-                <button onClick={() => navigate('/learn')} className="home-cta-btn-outline">
-                  Explore Learn Hub <ArrowRight size={14} />
+            {/* Secondary Buttons */}
+            <Reveal delay={0.8}>
+              <div className="flex flex-wrap items-center justify-center gap-6 mt-8">
+                <button className="px-8 py-3 rounded-xl border border-white/30 text-white font-semibold hover:bg-white/10 transition-all">
+                  Explore Map
+                </button>
+                <button className="px-8 py-3 rounded-xl text-white/70 font-semibold hover:text-white transition-all flex items-center gap-2">
+                  <Play size={18} fill="currentColor" />
+                  Learn More
                 </button>
               </div>
+            </Reveal>
+
+            {/* Review Stats */}
+            <Reveal delay={1}>
+              <div className="flex items-center justify-center gap-3 mt-12 pb-10">
+                <div className="flex -space-x-3">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="w-10 h-10 rounded-full border-2 border-[#051428] bg-gray-300 flex items-center justify-center text-[10px] font-bold text-[#051428] overflow-hidden">
+                      <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-white/60 text-sm">
+                  <span className="text-white font-bold">385+ reviews</span> from EV drivers
+                </p>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ─── Trust Stats Bar ─── */}
+        <section className="bg-[#071428] py-12 border-y border-white/5">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {stats.map((stat, i) => (
+                <div key={stat.label} className="text-center relative">
+                  {i > 0 && <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 w-px h-12 bg-white/10" />}
+                  <div className="text-3xl md:text-4xl font-bold text-white mb-1">
+                    <CountUp end={stat.value} suffix={stat.suffix} />
+                  </div>
+                  <div className="text-white/40 text-xs md:text-sm uppercase tracking-wider font-semibold">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
             </div>
-          </Reveal>
-        </div>
-      </section>
+          </div>
+        </section>
+
+        {/* ─── How It Works ─── */}
+        <section className="py-24 bg-white relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-[#051428]">Experience effortless charging</h2>
+              <p className="text-gray-500 max-w-xl mx-auto">Three simple steps to power up and get back on the road.</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-12">
+              {steps.map((step, i) => (
+                <Reveal key={step.title} delay={i * 0.2}>
+                  <div className="group relative text-center">
+                    <div className="mb-6 relative">
+                      <div className="text-[120px] font-black text-gray-50 absolute left-1/2 -translate-x-1/2 -top-10 z-0 select-none">
+                        {step.number}
+                      </div>
+                      <div className="w-20 h-20 rounded-2xl bg-[#1D9E75]/10 flex items-center justify-center text-[#1D9E75] mx-auto relative z-10 transition-transform group-hover:scale-110 duration-300 shadow-xl shadow-[#1D9E75]/5">
+                        <step.icon size={36} />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-[#051428] mb-3">{step.title}</h3>
+                    <p className="text-gray-500 leading-relaxed px-4">{step.desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Features Section ─── */}
+        <section className="bg-[#060f1e] py-24 relative overflow-hidden">
+          {/* Glow Effects */}
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#1D9E75]/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/3" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#5CAA5]/10 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/3" />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+            <div className="text-center mb-20 space-y-4">
+              <Reveal>
+                <h2 className="text-3xl md:text-5xl font-bold text-white">Smart features for <br /><span className="text-[#5DCAA5]">smarter charging</span></h2>
+              </Reveal>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {features.map((feature, i) => (
+                <Reveal key={feature.title} delay={i * 0.1}>
+                  <div className="p-8 rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-sm hover:bg-white/[0.05] transition-all group">
+                    <div className="w-12 h-12 rounded-xl bg-[#1D9E75] flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-all duration-300">
+                      <feature.icon size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                    <p className="text-gray-400 leading-relaxed text-[15px]">{feature.desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── City Coverage Section ─── */}
+        <section className="py-24 bg-gray-50 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div className="space-y-8">
+                <Reveal>
+                  <div className="space-y-4">
+                    <h2 className="text-4xl md:text-5xl font-bold text-[#051428]">Now live across India.</h2>
+                    <p className="text-gray-600 text-lg">We are rapidly expanding our network to make EV travel seamless nationwide. Expanding to 20 cities by 2026.</p>
+                  </div>
+                </Reveal>
+                
+                <div className="flex flex-wrap gap-3">
+                  {cities.map((city, i) => (
+                    <Reveal key={city} delay={i * 0.1}>
+                      <div className="px-5 py-2.5 rounded-full bg-white border border-gray-200 shadow-sm flex items-center gap-2 text-gray-700 font-medium hover:border-[#1D9E75] transition-all cursor-default">
+                        <span className="w-2 h-2 bg-[#1D9E75] rounded-full" />
+                        {city}
+                      </div>
+                    </Reveal>
+                  ))}
+                </div>
+
+                <div className="pt-6">
+                  <button className="flex items-center gap-3 text-[#1D9E75] font-bold hover:gap-5 transition-all outline-none">
+                    Check status in your city <ArrowRight size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <Reveal delay={0.3}>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-transparent to-gray-50 z-10 pointer-events-none" />
+                  <svg viewBox="0 0 100 100" className="w-full h-auto opacity-20 grayscale brightness-50">
+                     <path d="M30 10 L40 5 L55 5 L65 10 L75 15 L80 25 L85 40 L85 55 L75 70 L65 85 L50 95 L35 85 L20 70 L10 50 L15 30 L25 20 Z" fill="#1D9E75" />
+                  </svg>
+                  {/* Glowing Pins */}
+                  <div className="absolute top-[20%] left-[30%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
+                  <div className="absolute top-[40%] left-[50%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
+                  <div className="absolute top-[60%] left-[40%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
+                  <div className="absolute top-[50%] left-[70%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
+                  <div className="absolute top-[75%] left-[55%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-300 font-bold text-sm tracking-widest opacity-40 select-none">
+                    MAP OF INDIA
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Testimonials Strip ─── */}
+        <section className="py-24 bg-gray-50 border-t border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="grid md:grid-cols-3 gap-8">
+              {testimonials.map((t, i) => (
+                <Reveal key={t.name} delay={i * 0.1}>
+                  <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+                    <div className="space-y-4">
+                      <div className="flex gap-1">
+                        {[1,2,3,4,5].map(s => <Star key={s} size={16} fill="#EAB308" className="text-[#EAB308]" />)}
+                      </div>
+                      <p className="text-gray-600 text-lg italic leading-relaxed">"{t.quote}"</p>
+                    </div>
+                    <div className="flex items-center gap-4 mt-8 pt-6 border-t border-gray-50">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1D9E75] to-[#5CAA5] flex items-center justify-center text-white font-bold">
+                        {t.initials}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-[#051428]">{t.name}</h4>
+                        <p className="text-gray-400 text-sm font-medium">{t.city}</p>
+                      </div>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── CTA Section ─── */}
+        <section className="py-24 bg-white px-4">
+          <div className="max-w-6xl mx-auto">
+            <Reveal>
+              <div className="bg-[#051428] rounded-[2rem] p-8 md:p-20 text-center relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#1D9E75]/20 blur-[100px] rounded-full pointer-events-none group-hover:scale-110 transition-all duration-700" />
+                
+                <div className="relative z-10 space-y-8">
+                  <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">Ready to charge smarter?</h2>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                    <button className="w-full sm:w-auto px-10 py-5 bg-[#1D9E75] hover:bg-[#168561] text-white font-bold rounded-2xl transition-all shadow-xl shadow-[#1D9E75]/20 hover:translate-y-[-2px] active:scale-95">
+                      Get Started Free
+                    </button>
+                    <button className="text-white font-bold flex items-center gap-2 hover:gap-4 transition-all">
+                      View charging map <ArrowRight size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+      </div>
     </PageWrapper>
-  )
+  );
 }
