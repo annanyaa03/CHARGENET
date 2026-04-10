@@ -139,7 +139,7 @@ export default function OwnerDashboard() {
                       {r.reviewerName.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-[11px] text-primary leading-tight"><span className="font-semibold">{r.reviewerName}</span> left a {r.rating}★ review</p>
+                      <p className="text-[11px] text-primary leading-tight"><span className="font-semibold">{r.reviewerName}</span> left a {r.rating}<Star size={10} className="inline-block ml-0.5 fill-amber-400 text-amber-400 mb-0.5" /> review</p>
                       <p className="text-[10px] text-muted mt-0.5 mt-1 line-clamp-1 italic">"{r.text}"</p>
                     </div>
                   </div>

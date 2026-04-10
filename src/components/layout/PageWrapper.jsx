@@ -5,8 +5,8 @@ import { Footer } from './Footer'
 export function PageWrapper({ children, noFooter = false, noPadding = false }) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <main className={`flex-1 ${noPadding ? '' : 'page-enter'}`}>
+      <Navbar solid={!noPadding} />
+      <main className={`flex-1 ${noPadding ? '' : 'pt-[72px] lg:pt-[80px] page-enter'}`}>
         {children}
       </main>
       {!noFooter && <Footer />}
