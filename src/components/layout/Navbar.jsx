@@ -28,14 +28,15 @@ const navData = {
   ]
 };
 
-export function Navbar() {
+export function Navbar({ solid = false }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isScrolledState, setIsScrolledState] = useState(false);
+  const isScrolled = solid || isScrolledState;
   const navRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolledState(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -123,20 +124,20 @@ export function Navbar() {
   };
 
   return (
-    <nav 
-      ref={navRef} 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-[72px] ${
-        isScrolled 
-          ? 'bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm' 
-          : 'bg-transparent'
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full">
-        <div className="flex items-center justify-between h-full">
+    <div className="fixed top-0 left-0 right-0 z-50 transition-all duration-500">
+      <nav 
+        ref={navRef} 
+        className={`w-full transition-all duration-500 h-[72px] lg:h-[80px] ${
+          isScrolled 
+            ? 'bg-white/80 backdrop-blur-xl border-b border-gray-200 shadow-sm' 
+            : 'bg-transparent'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between w-full h-full px-4 lg:px-8">
           {/* Main Navigation */}
           <div className="flex items-center gap-10">
             <Link to="/" className="flex items-center gap-2 hover:no-underline">
-              <div className="w-9 h-9 rounded-lg bg-[#4A9EFF] flex items-center justify-center shadow-lg shadow-[#4A9EFF]/20">
+              <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center shadow-lg shadow-black/20">
                 <Zap size={20} color="white" fill="white" strokeWidth={1} />
               </div>
               <span className={`text-xl font-bold tracking-tight transition-colors ${
@@ -200,21 +201,21 @@ export function Navbar() {
                 className={`px-5 py-2.5 font-semibold rounded-xl transition-all ${
                   isScrolled 
                     ? 'text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200' 
-                    : 'text-[#7ab8f5] bg-[#1a3a5a]/10 hover:bg-[#1a3a5a]/20 backdrop-blur-sm border border-[#1a3a5a]'
+                    : 'text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/20'
                 }`}
               >
                 Sign In
               </Link>
               <Link
                 to="/register"
-                className="px-5 py-2.5 font-semibold text-[#020d1a] bg-[#4A9EFF] hover:bg-[#3d8be0] rounded-xl transition-all shadow-lg shadow-[#4A9EFF]/25"
+                className="px-5 py-2.5 font-bold text-black bg-white hover:bg-gray-100 rounded-xl transition-all shadow-lg shadow-white/10"
               >
                 Get Started
               </Link>
             </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }

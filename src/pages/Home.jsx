@@ -50,6 +50,14 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCity, setActiveCity] = useState(null);
+  const [ctaMousePos, setCtaMousePos] = useState({ x: 50, y: 50 });
+
+  const handleCtaMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setCtaMousePos({ x, y });
+  };
 
   const stats = [
     { value: 50000, suffix: '+', label: 'Charging Stations' },
@@ -172,18 +180,18 @@ export default function Home() {
             <Reveal delay={0.6}>
               <div className="max-w-md mt-10">
                 <div className="relative group">
-                  <div className="relative flex items-center p-1 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                  <div className="relative flex items-center p-1.5 bg-white/10 backdrop-blur-md rounded-2xl">
                     <div className="flex-1 flex items-center px-4 gap-3">
-                      <Search className="text-gray-400" size={18} />
+                      <Search className="text-white/50" size={18} />
                       <input 
                         type="text" 
                         placeholder="Search by city or area..."
-                        className="w-full bg-transparent border-none outline-none text-gray-600 placeholder-gray-400 py-2 text-sm"
+                        className="w-full bg-transparent border-none outline-none text-white placeholder-white/30 py-2.5 text-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
-                    <button className="bg-white hover:bg-gray-50 text-gray-500 px-5 py-2 rounded-xl font-medium transition-all border border-gray-100 shadow-sm active:scale-95 text-xs">
+                    <button className="bg-[#1D9E75] hover:bg-[#168561] text-white px-6 py-2.5 rounded-xl font-bold transition-all active:scale-95 text-xs shadow-lg shadow-[#1D9E75]/20">
                       Search
                     </button>
                   </div>
@@ -271,11 +279,11 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {features.map((feature, i) => (
                 <Reveal key={feature.title} delay={i * 0.1}>
-                  <div className="p-8 rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-sm hover:bg-white/[0.05] transition-all group">
-                    <div className="w-12 h-12 rounded-xl bg-[#1D9E75] flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-all duration-300">
-                      <feature.icon size={24} />
+                  <div className="p-8 group hover:bg-white/[0.02] transition-all rounded-3xl">
+                    <div className="w-12 h-12 rounded-2xl bg-[#1D9E75]/10 flex items-center justify-center text-[#1D9E75] mb-6 group-hover:scale-110 transition-all duration-300">
+                      <feature.icon size={26} />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                    <h3 className="text-xl font-bold text-white mb-3 tracking-tight">{feature.title}</h3>
                     <p className="text-gray-400 leading-relaxed text-[15px]">{feature.desc}</p>
                   </div>
                 </Reveal>
@@ -386,20 +394,20 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-8">
               {testimonials.map((t, i) => (
                 <Reveal key={t.name} delay={i * 0.1}>
-                  <div className="flex flex-col justify-between h-full group p-6 rounded-2xl transition-all duration-300 hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 border border-transparent hover:border-gray-100 cursor-pointer">
-                    <div className="space-y-3">
-                      <div className="flex gap-1 mb-2">
+                  <div className="flex flex-col justify-between h-full p-10 transition-all duration-300 border-l border-gray-100 first:border-0 hover:bg-white/50 group">
+                    <div className="space-y-4">
+                      <div className="flex gap-1 mb-4">
                         {[1,2,3,4,5].map(s => <Star key={s} size={14} fill="#EAB308" className="text-[#EAB308]" />)}
                       </div>
-                      <p className="text-gray-700 text-base font-medium leading-relaxed group-hover:text-[#051428] transition-colors">"{t.quote}"</p>
+                      <p className="text-gray-600 text-lg font-medium leading-[1.6] group-hover:text-gray-900 transition-colors">"{t.quote}"</p>
                     </div>
-                    <div className="flex items-center gap-3 mt-6">
-                      <div className="w-10 h-10 rounded-full bg-[#1D9E75]/10 flex items-center justify-center text-xs text-[#1D9E75] font-bold">
+                    <div className="flex items-center gap-4 mt-8">
+                      <div className="w-11 h-11 rounded-full bg-gray-900 flex items-center justify-center text-xs text-white font-bold">
                         {t.initials}
                       </div>
                       <div>
-                        <h4 className="font-bold text-[#051428] text-sm">{t.name}</h4>
-                        <p className="text-gray-500 text-xs font-medium">{t.city}</p>
+                        <h4 className="font-bold text-gray-900 text-sm tracking-tight">{t.name}</h4>
+                        <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">{t.city}</p>
                       </div>
                     </div>
                   </div>
@@ -410,23 +418,26 @@ export default function Home() {
         </section>
 
         {/* ─── CTA Section ─── */}
-        <section className="py-24 bg-white px-4">
-          <div className="max-w-6xl mx-auto">
+        <section className="py-20 bg-white border-t border-gray-100">
+          <div className="max-w-3xl mx-auto px-6 text-center flex flex-col items-center gap-5">
             <Reveal>
-              <div className="bg-[#051428] rounded-[2rem] p-8 md:p-20 text-center relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#1D9E75]/20 blur-[100px] rounded-full pointer-events-none group-hover:scale-110 transition-all duration-700" />
-                
-                <div className="relative z-10 space-y-8">
-                  <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">Ready to charge smarter?</h2>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <button className="w-full sm:w-auto px-10 py-5 bg-[#1D9E75] hover:bg-[#168561] text-white font-bold rounded-2xl transition-all shadow-xl shadow-[#1D9E75]/20 hover:translate-y-[-2px] active:scale-95">
-                      Get Started Free
-                    </button>
-                    <button className="text-white font-bold flex items-center gap-2 hover:gap-4 transition-all">
-                      View charging map <ArrowRight size={20} />
-                    </button>
-                  </div>
-                </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1D9E75] mb-1">Get started</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#051428] tracking-tight leading-snug">
+                Ready to charge smarter?
+              </h2>
+              <p className="text-gray-500 text-sm md:text-base mt-2 max-w-md mx-auto">
+                Join India's largest EV charging network. No subscription required.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.15}>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-3">
+                <button className="px-7 py-3 bg-[#1D9E75] hover:bg-[#168561] text-white font-semibold rounded-full transition-all hover:-translate-y-0.5 active:scale-95 text-sm shadow-lg shadow-[#1D9E75]/15">
+                  Download the App
+                </button>
+                <button className="px-7 py-3 text-[#051428] font-semibold rounded-full transition-all flex items-center gap-2 group/btn border border-gray-200 hover:border-[#1D9E75] text-sm hover:-translate-y-0.5">
+                  Explore Network <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform text-[#1D9E75]" />
+                </button>
               </div>
             </Reveal>
           </div>

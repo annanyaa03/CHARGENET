@@ -7,6 +7,7 @@ const Home = lazy(() => import('../pages/Home'))
 const MapViewPage = lazy(() => import('../pages/MapView'))
 const StationDetail = lazy(() => import('../pages/StationDetail'))
 const Booking = lazy(() => import('../pages/Booking'))
+const BookSlot = lazy(() => import('../pages/BookSlot'))
 const Payment = lazy(() => import('../pages/Payment'))
 const Profile = lazy(() => import('../pages/Profile'))
 const LearnHub = lazy(() => import('../pages/LearnHub'))
@@ -52,13 +53,10 @@ export function AppRouter() {
           <Route path="/learn/:guideId" element={<GuideDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/bookings" element={<BookSlot />} />
 
           {/* Protected — any authenticated */}
-          <Route path="/station/:id/book/:chargerId" element={
-            <ProtectedRoute allowedRoles={['driver', 'owner', 'admin']}>
-              <Booking />
-            </ProtectedRoute>
-          } />
+          <Route path="/station/:id/book/:chargerId" element={<Booking />} />
           <Route path="/payment/:bookingId" element={
             <ProtectedRoute allowedRoles={['driver', 'owner', 'admin']}>
               <Payment />

@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { MapPin, Star, Filter, X, ChevronRight, Zap } from 'lucide-react'
+import {
+  MapPin, Star, Filter, X, ChevronRight, Zap, Search,
+  Navigation2, Clock, Wifi, Droplets, ParkingSquare,
+  ShieldCheck, Lightbulb, Accessibility, ChevronLeft,
+  BatteryCharging, SlidersHorizontal, CheckCircle2
+} from 'lucide-react'
 import { stations } from '../mock/stations'
 import { useMapStore } from '../store/mapStore'
-import { Badge } from '../components/common/Badge'
-import { Button } from '../components/common/Button'
 import { formatDistance } from '../utils/plugTypes'
 import { Navbar } from '../components/layout/Navbar'
 
@@ -19,185 +22,462 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-const STATUS_COLORS = { active: '#15803D', busy: '#B45309', inactive: '#B91C1C', faulty: '#A8A29E' }
+const STATUS_CONFIG = {
+  active:   { color: '#10B981', bg: '#D1FAE5', label: 'Active',    ring: '#6EE7B7' },
+  busy:     { color: '#F59E0B', bg: '#FEF3C7', label: 'Busy',      ring: '#FCD34D' },
+  inactive: { color: '#EF4444', bg: '#FEE2E2', label: 'Inactive',  ring: '#FCA5A5' },
+  faulty:   { color: '#6B7280', bg: '#F3F4F6', label: 'Faulty',    ring: '#D1D5DB' },
+}
 
-function createStationIcon(status) {
-  const color = STATUS_COLORS[status] || '#A8A29E'
+function createStationIcon(status, selected = false) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.faulty
+  const size = selected ? 20 : 14
+  const pulse = selected ? `
+    <div style="
+      position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      width:${size + 16}px;height:${size + 16}px;
+      border-radius:50%;
+      background:${cfg.color}33;
+      animation:ping 1.4s cubic-bezier(0,0,.2,1) infinite;
+    "></div>` : ''
   return L.divIcon({
-    html: `<div style="width:28px;height:28px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #FAFAF9;box-shadow:0 2px 4px rgba(0,0,0,0.2)"></div>`,
+    html: `
+      <div style="position:relative;width:${size}px;height:${size}px;">
+        ${pulse}
+        <div style="
+          position:absolute;top:50%;left:50%;
+          transform:translate(-50%,-50%);
+          width:${size}px;height:${size}px;
+          background:${cfg.color};
+          border-radius:50% 50% 50% 0;
+          transform:translate(-50%,-50%) rotate(-45deg);
+          border:2.5px solid white;
+          box-shadow:0 4px 12px ${cfg.color}66;
+        "></div>
+      </div>`,
     className: '',
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
   })
 }
 
-function MapController() {
+function MapController({ center, zoom }) {
   const map = useMap()
-  const { mapCenter, mapZoom } = useMapStore()
-  useEffect(() => { map.setView(mapCenter, mapZoom) }, [mapCenter, mapZoom])
+  useEffect(() => { map.flyTo(center, zoom, { duration: 1.2 }) }, [center, zoom])
   return null
 }
 
 function StarRating({ rating }) {
   return (
-    <div className="flex items-center gap-1">
-      {[1,2,3,4,5].map(s => (
-        <Star key={s} size={11} className={s <= Math.round(rating) ? 'star-filled fill-current' : 'star-empty fill-current'} />
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(s => (
+        <Star key={s} size={11}
+          className={s <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-200'} />
       ))}
     </div>
   )
 }
 
+const facilityIcons = {
+  restrooms:       { icon: Droplets,       label: 'Restrooms' },
+  drinkingWater:   { icon: Droplets,       label: 'Water' },
+  coveredParking:  { icon: ParkingSquare,  label: 'Covered Parking' },
+  cctv:            { icon: ShieldCheck,    label: 'CCTV' },
+  nightLighting:   { icon: Lightbulb,      label: 'Night Lighting' },
+  wheelchairAccess:{ icon: Accessibility,  label: 'Accessible' },
+}
+
+const STATUS_TABS = ['all', 'active', 'busy', 'inactive', 'faulty']
+
 export default function MapView() {
   const navigate = useNavigate()
   const { selectedStation, setSelectedStation, clearSelectedStation, filters, setFilter, resetFilters } = useMapStore()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusTab, setStatusTab] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mapCenter, setMapCenter] = useState([20.5937, 78.9629])
+  const [mapZoom, setMapZoom] = useState(5)
   const [filtered, setFiltered] = useState(stations)
 
-  useEffect(() => { document.title = 'Map — ChargeNet' }, [])
+  useEffect(() => { document.title = 'Find Stations — ChargeNet' }, [])
 
   useEffect(() => {
     let result = [...stations]
-    if (filters.availability === 'available') result = result.filter(s => s.availableChargers > 0)
-    if (filters.plugType && filters.plugType !== 'all') {
-      // simplified filter by status for demo
+    if (statusTab !== 'all') result = result.filter(s => s.status === statusTab)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.city.toLowerCase().includes(q) ||
+        s.address.toLowerCase().includes(q)
+      )
     }
+    if (filters.availability === 'available') result = result.filter(s => s.availableChargers > 0)
     setFiltered(result)
-  }, [filters])
+  }, [filters, statusTab, searchQuery])
 
-  const PLUG_OPTIONS = [
-    { value: 'all', label: 'All Types' },
-    { value: 'CCS2', label: 'CCS2' },
-    { value: 'Type2', label: 'Type 2' },
-    { value: 'CHAdeMO', label: 'CHAdeMO' },
-  ]
+  const handleSelectStation = (station) => {
+    setSelectedStation(station)
+    setMapCenter([station.lat, station.lng])
+    setMapZoom(13)
+  }
+
+  const counts = {
+    all:      stations.length,
+    active:   stations.filter(s => s.status === 'active').length,
+    busy:     stations.filter(s => s.status === 'busy').length,
+    inactive: stations.filter(s => s.status === 'inactive').length,
+    faulty:   stations.filter(s => s.status === 'faulty').length,
+  }
+
   const AVAIL_OPTIONS = [
-    { value: 'all', label: 'All' },
+    { value: 'all', label: 'All Stations' },
     { value: 'available', label: 'Available Now' },
   ]
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      <Navbar />
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden" style={{ paddingTop: 72 }}>
+      <Navbar solid={true} />
+
+      {/* Ping animation */}
+      <style>{`
+        @keyframes ping {
+          75%, 100% { transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+        }
+        .station-card-active { border-left: 3px solid #10B981; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+      `}</style>
+
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Left Sidebar */}
-        <div className="w-72 flex-shrink-0 bg-background border-r border-border flex flex-col overflow-hidden z-10 hidden md:flex">
-          {/* Filter Bar */}
-          <div className="p-3 border-b border-border flex-shrink-0">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-primary">{filtered.length} stations</span>
-              <button onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-1.5 text-xs text-muted hover:text-primary transition-colors">
-                <Filter size={13} /> Filters
+        {/* ─── Sidebar ─── */}
+        <div
+          className={`flex-shrink-0 bg-white border-r border-gray-100 flex flex-col transition-all duration-300 ease-in-out h-full z-20 hidden md:flex`}
+          style={{ width: sidebarCollapsed ? 0 : 340, minWidth: sidebarCollapsed ? 0 : 340, overflow: 'hidden' }}
+        >
+          {/* Header */}
+          <div className="px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0">
+            {/* Search */}
+            <div className="relative mb-3">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search stations, cities…"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Status Tabs */}
+            <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
+              {STATUS_TABS.map(tab => {
+                const cfg = STATUS_CONFIG[tab]
+                const active = statusTab === tab
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setStatusTab(tab)}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      active
+                        ? tab === 'all'
+                          ? 'bg-gray-900 text-white'
+                          : `text-white`
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                    style={active && tab !== 'all' ? { background: cfg.color } : {}}
+                  >
+                    {tab === 'all' ? `All (${counts.all})` : `${cfg.label} (${counts[tab]})`}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Filters Row */}
+          <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+            <span className="text-xs text-gray-500 font-medium">{filtered.length} station{filtered.length !== 1 ? 's' : ''} found</span>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${
+                showFilters ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <SlidersHorizontal size={13} /> Filters
+            </button>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="px-5 py-4 bg-gray-50/50 flex-shrink-0 space-y-4 border-b border-gray-100">
+              <div>
+                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest pl-1">Availability</label>
+                <div className="flex gap-2 mt-2">
+                  {AVAIL_OPTIONS.map(o => (
+                    <button
+                      key={o.value}
+                      onClick={() => setFilter('availability', o.value)}
+                      className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                        filters.availability === o.value
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-200 shadow-sm'
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button onClick={resetFilters} className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors px-1">
+                Reset all filters
               </button>
             </div>
-            {showFilters && (
-              <div className="space-y-2 mt-2">
-                <div>
-                  <label className="text-xs text-muted font-medium">Plug Type</label>
-                  <select value={filters.plugType} onChange={e => setFilter('plugType', e.target.value)}
-                    className="w-full mt-1 bg-surface border border-border rounded-lg text-xs px-2 py-1.5 text-primary focus:outline-none">
-                    {PLUG_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-muted font-medium">Availability</label>
-                  <select value={filters.availability} onChange={e => setFilter('availability', e.target.value)}
-                    className="w-full mt-1 bg-surface border border-border rounded-lg text-xs px-2 py-1.5 text-primary focus:outline-none">
-                    {AVAIL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </div>
-                <button onClick={resetFilters} className="text-xs text-danger hover:underline">Reset filters</button>
-              </div>
-            )}
-          </div>
+          )}
+
           {/* Station List */}
-          <div className="overflow-y-auto flex-1">
-            {filtered.map(station => (
-              <button
-                key={station.id}
-                onClick={() => setSelectedStation(station)}
-                className={`w-full p-3 border-b border-border text-left hover:bg-surface transition-colors ${selectedStation?.id === station.id ? 'bg-[#F0FDFA]' : ''}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-primary truncate">{station.name}</p>
-                    <p className="text-xs text-muted mt-0.5 truncate">{station.city}</p>
-                  </div>
-                  <Badge variant={station.status} showDot label={station.status.charAt(0).toUpperCase() + station.status.slice(1)} />
-                </div>
-                <div className="flex items-center gap-2 mt-1.5 text-xs text-muted">
-                  <StarRating rating={station.rating} />
-                  <span>{station.rating}</span>
-                  <span>·</span>
-                  <span>{formatDistance(station.distance)}</span>
-                </div>
-              </button>
-            ))}
+          <div className="flex-1 overflow-y-auto sidebar-scroll">
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-center px-6">
+                <MapPin size={32} className="text-gray-300 mb-3" />
+                <p className="text-sm font-semibold text-gray-700">No stations found</p>
+                <p className="text-xs text-gray-400 mt-1">Try adjusting your filters or search query</p>
+              </div>
+            ) : (
+              filtered.map(station => {
+                const cfg = STATUS_CONFIG[station.status] || STATUS_CONFIG.faulty
+                const isSelected = selectedStation?.id === station.id
+                return (
+                  <button
+                    key={station.id}
+                    onClick={() => handleSelectStation(station)}
+                    className={`w-full text-left px-5 py-4 border-b border-gray-50 transition-all duration-150 last:border-0 group ${
+                      isSelected ? 'bg-emerald-50/60 relative' : 'hover:bg-gray-50/80'
+                    }`}
+                  >
+                    {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-sm font-semibold truncate transition-colors ${isSelected ? 'text-emerald-700' : 'text-gray-800 group-hover:text-gray-900'}`}>
+                          {station.name}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">{station.city} · {formatDistance(station.distance)}</p>
+                      </div>
+                      <span
+                        className="flex-shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                        style={{ background: cfg.bg, color: cfg.color }}
+                      >
+                        {cfg.label}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center gap-1.5">
+                        <StarRating rating={station.rating} />
+                        <span className="text-xs text-gray-500 font-medium">{station.rating}</span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-xs text-gray-400">{station.totalReviews} reviews</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <BatteryCharging size={12} className={station.availableChargers > 0 ? 'text-emerald-500' : 'text-gray-300'} />
+                        <span className={`font-semibold ${station.availableChargers > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
+                          {station.availableChargers}/{station.totalChargers}
+                        </span>
+                        <span className="text-gray-400">free</span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })
+            )}
           </div>
         </div>
 
-        {/* Map */}
+        {/* ─── Collapse Toggle ─── */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-30 hidden md:flex items-center justify-center w-6 h-10 bg-white border border-gray-200 rounded-r-lg shadow-md text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all"
+          style={{ left: sidebarCollapsed ? 0 : 340 }}
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <ChevronLeft size={14} className={`transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+        </button>
+
+        {/* ─── Map Area ─── */}
         <div className="flex-1 relative">
           <MapContainer
             center={[20.5937, 78.9629]}
             zoom={5}
             className="w-full h-full"
-            zoomControl={true}
+            zoomControl={false}
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
-            <MapController />
+            <MapController center={mapCenter} zoom={mapZoom} />
             {filtered.map(station => (
               <Marker
                 key={station.id}
                 position={[station.lat, station.lng]}
-                icon={createStationIcon(station.status)}
-                eventHandlers={{ click: () => setSelectedStation(station) }}
-              />
+                icon={createStationIcon(station.status, selectedStation?.id === station.id)}
+                eventHandlers={{ click: () => handleSelectStation(station) }}
+              >
+                <Popup className="custom-popup" closeButton={false}>
+                  <div className="px-1 py-0.5 min-w-[160px]">
+                    <p className="font-semibold text-gray-800 text-sm leading-tight">{station.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{station.city}</p>
+                    <div className="flex items-center gap-1 mt-1.5">
+                      <span
+                        className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                        style={{ background: STATUS_CONFIG[station.status]?.bg, color: STATUS_CONFIG[station.status]?.color }}
+                      >
+                        {STATUS_CONFIG[station.status]?.label}
+                      </span>
+                      <span className="text-xs text-gray-500">{station.availableChargers}/{station.totalChargers} free</span>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
             ))}
           </MapContainer>
 
-          {/* Legend */}
-          <div className="absolute top-3 right-3 bg-background border border-border rounded-xl p-3 z-[1000]"
-               style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-            <p className="text-xs font-semibold text-primary mb-2">Legend</p>
-            {Object.entries(STATUS_COLORS).map(([status, color]) => (
-              <div key={status} className="flex items-center gap-2 mb-1 last:mb-0">
-                <div className="w-3 h-3 rounded-full" style={{ background: color }} />
-                <span className="text-xs text-muted capitalize">{status}</span>
+          {/* Legend Card */}
+          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl p-3.5 z-[1000] shadow-lg">
+            <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2.5">Station Status</p>
+            {Object.entries(STATUS_CONFIG).map(([status, cfg]) => (
+              <div key={status} className="flex items-center gap-2 mb-1.5 last:mb-0">
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cfg.color }} />
+                <span className="text-xs text-gray-600 font-medium">{cfg.label}</span>
+                <span className="ml-auto text-xs text-gray-400 font-semibold">{counts[status]}</span>
               </div>
             ))}
+            <div className="h-px bg-gray-100 my-2" />
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-gray-900" />
+              <span className="text-[11px] text-gray-500">Total: {stations.length}</span>
+            </div>
           </div>
 
-          {/* Bottom Slide-Up Panel */}
-          {selectedStation && (
-            <div className="slide-up-panel absolute bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-[1000] md:max-w-xs md:left-auto md:bottom-4 md:right-4 md:rounded-xl md:border">
-              <button onClick={clearSelectedStation} className="absolute top-3 right-3 text-muted hover:text-primary">
-                <X size={16} />
-              </button>
-              <div className="flex items-start justify-between pr-6">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-primary truncate">{selectedStation.name}</p>
-                  <p className="text-xs text-muted mt-0.5">{selectedStation.city}</p>
-                </div>
-                <Badge variant={selectedStation.status} label={selectedStation.status.charAt(0).toUpperCase() + selectedStation.status.slice(1)} className="ml-2 flex-shrink-0" />
-              </div>
-              <div className="flex items-center gap-3 text-xs text-muted mt-2">
-                <span className="text-success font-medium">{selectedStation.availableChargers}/{selectedStation.totalChargers} chargers free</span>
-                <span>·</span>
-                <span>{formatDistance(selectedStation.distance)}</span>
-              </div>
-              <Button
-                variant="primary" size="sm" fullWidth className="mt-3"
-                onClick={() => navigate(`/station/${selectedStation.id}`)}
+          {/* Zoom Controls */}
+          <div className="absolute bottom-8 right-4 flex flex-col gap-1.5 z-[1000]">
+            <button
+              onClick={() => setMapZoom(z => Math.min(z + 1, 18))}
+              className="w-9 h-9 bg-white border border-gray-200 rounded-xl shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
+            >+</button>
+            <button
+              onClick={() => setMapZoom(z => Math.max(z - 1, 3))}
+              className="w-9 h-9 bg-white border border-gray-200 rounded-xl shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
+            >−</button>
+            <button
+              onClick={() => { setMapCenter([20.5937, 78.9629]); setMapZoom(5); clearSelectedStation() }}
+              className="w-9 h-9 bg-white border border-gray-200 rounded-xl shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center transition-all hover:shadow-lg"
+              title="Reset view"
+            >
+              <Navigation2 size={15} />
+            </button>
+          </div>
+
+          {/* ─── Station Detail Panel ─── */}
+          {selectedStation && (() => {
+            const cfg = STATUS_CONFIG[selectedStation.status] || STATUS_CONFIG.faulty
+            const facilities = Object.entries(selectedStation.facilities || {})
+              .filter(([, v]) => v)
+              .map(([k]) => facilityIcons[k])
+              .filter(Boolean)
+            return (
+              <div
+                className="absolute bottom-4 left-4 bg-white rounded-2xl shadow-2xl z-[1000] border border-gray-100 overflow-hidden"
+                style={{ width: 340, animation: 'slideUp 0.25s ease' }}
               >
-                View Details <ChevronRight size={14} />
-              </Button>
-            </div>
-          )}
+                <style>{`@keyframes slideUp { from { transform: translateY(20px); opacity:0 } to { transform: translateY(0); opacity:1 } }`}</style>
+
+                {/* Top color bar */}
+                <div className="h-1 w-full" style={{ background: cfg.color }} />
+
+                <div className="p-4">
+                  {/* Header row */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide mb-1.5"
+                        style={{ background: cfg.bg, color: cfg.color }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: cfg.color }} />
+                        {cfg.label}
+                      </span>
+                      <p className="text-base font-bold text-gray-900 leading-tight">{selectedStation.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">{selectedStation.address}</p>
+                    </div>
+                    <button
+                      onClick={clearSelectedStation}
+                      className="flex-shrink-0 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+                      <p className="text-base font-bold text-gray-900">{selectedStation.availableChargers}/{selectedStation.totalChargers}</p>
+                      <p className="text-[10px] text-gray-500 font-medium mt-0.5">Chargers Free</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+                      <div className="flex items-center justify-center gap-0.5">
+                        <span className="text-base font-bold text-gray-900">{selectedStation.rating}</span>
+                        <Star size={11} className="text-amber-400 fill-amber-400 mb-0.5" />
+                      </div>
+                      <p className="text-[10px] text-gray-500 font-medium mt-0.5">{selectedStation.totalReviews} Reviews</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+                      <p className="text-base font-bold text-gray-900">{formatDistance(selectedStation.distance)}</p>
+                      <p className="text-[10px] text-gray-500 font-medium mt-0.5">Away</p>
+                    </div>
+                  </div>
+
+                  {/* Hours */}
+                  <div className="flex items-center gap-2 mt-3 text-xs text-gray-600">
+                    <Clock size={13} className="text-gray-400 flex-shrink-0" />
+                    <span className="font-medium">Open:</span>
+                    <span>{selectedStation.openHours}</span>
+                  </div>
+
+                  {/* Facilities */}
+                  {facilities.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Facilities</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {facilities.map(({ icon: Icon, label }) => (
+                          <div key={label} className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-lg text-[11px] text-gray-600 font-medium">
+                            <Icon size={11} className="text-gray-400" />
+                            {label}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA button */}
+                  <button
+                    onClick={() => navigate(`/station/${selectedStation.id}`)}
+                    className="mt-3.5 w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all hover:shadow-lg"
+                  >
+                    View Full Details
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>
