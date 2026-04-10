@@ -12,6 +12,7 @@
   --color-danger: #B91C1C;
   --color-neutral: #A8A29E;
   --font-family-sans: 'Inter', sans-serif;
+  --font-family-serif: 'Fraunces', serif;
 }
 
 @layer base {

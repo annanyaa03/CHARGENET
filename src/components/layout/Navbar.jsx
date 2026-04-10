@@ -16,21 +16,15 @@ import {
 } from 'lucide-react';
 
 const navData = {
-  findCharger: [
-    { icon: MapPin, label: 'Map View', subtitle: 'Browse stations near you', color: 'text-teal-600', bg: 'bg-teal-50' },
-    { icon: Zap, label: 'DC Fast Charging', subtitle: 'High-speed stations', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { icon: Plug, label: 'AC Slow Charging', subtitle: 'Overnight & extended stays', color: 'text-amber-600', bg: 'bg-amber-50' },
-    { divider: true },
-    { icon: CalendarCheck, label: 'Book a Slot', subtitle: 'Reserve in advance', color: 'text-red-600', bg: 'bg-red-50' },
+  solutions: [
+    { icon: Route, label: 'For Individuals', subtitle: 'Home charging solutions', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { icon: BatteryMedium, label: 'For Business', subtitle: 'Workplace & retail charging', color: 'text-teal-600', bg: 'bg-teal-50' },
+    { icon: Newspaper, label: 'Fleet Solutions', subtitle: 'Scaling your EV fleet', color: 'text-amber-600', bg: 'bg-amber-50' },
   ],
-  planTrip: [
-    { icon: MapIcon, label: 'Route Planner', subtitle: 'Find stops along your route', color: 'text-teal-600', bg: 'bg-teal-50' },
-    { icon: BatteryMedium, label: 'Range Calculator', subtitle: 'Estimate charge needed', color: 'text-blue-600', bg: 'bg-blue-50' },
-  ],
-  learn: [
-    { icon: BookOpen, label: 'EV Guide', subtitle: 'New to EVs? Start here', color: 'text-teal-600', bg: 'bg-teal-50' },
-    { icon: Lightbulb, label: 'Charging Tips', subtitle: 'Best practices & tricks', color: 'text-amber-600', bg: 'bg-amber-50' },
-    { icon: Newspaper, label: 'Blog', subtitle: 'News & updates', color: 'text-blue-600', bg: 'bg-blue-50' },
+  resources: [
+    { icon: BookOpen, label: 'Charging Guide', subtitle: 'Everything you need to know', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { icon: Lightbulb, label: 'Help Center', subtitle: 'Support & documentation', color: 'text-amber-600', bg: 'bg-amber-50' },
+    { icon: Newspaper, label: 'Latest Blog', subtitle: 'Industry news & updates', color: 'text-teal-600', bg: 'bg-teal-50' },
   ]
 };
 
@@ -61,20 +55,26 @@ export function Navbar() {
     setActiveDropdown((prev) => (prev === name ? null : name));
   };
 
-  const DropdownTrigger = ({ name, label, icon: Icon }) => {
+  const menuId = (name) => `nav-menu-${name}`;
+  const triggerId = (name) => `nav-trigger-${name}`;
+
+  const DropdownTrigger = ({ name, label }) => {
     const isOpen = activeDropdown === name;
     return (
       <button
+        id={triggerId(name)}
         onClick={() => toggleDropdown(name)}
-        className={`flex items-center gap-1.5 font-medium px-2 py-1 transition-colors ${
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        aria-controls={menuId(name)}
+        className={`flex items-center gap-1.5 font-medium px-2 py-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A9EFF] rounded-lg ${
           isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white/90 hover:text-white'
         }`}
       >
-        {Icon && <Icon size={18} className={isScrolled ? 'text-gray-500' : 'text-white/70'} strokeWidth={2} />}
         {label}
         <ChevronDown
-          size={16}
-          className={`transition-transform duration-200 ${isScrolled ? 'text-gray-400' : 'text-white/50'} ${isOpen ? 'rotate-180' : ''}`}
+          size={14}
+          className={`opacity-60 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
     );
@@ -84,28 +84,36 @@ export function Navbar() {
     if (activeDropdown !== name) return null;
     return (
       <div
-        className={`absolute top-full mt-3 w-72 bg-white rounded-xl border border-gray-100 shadow-xl py-2 z-50 ${
+        id={menuId(name)}
+        role="menu"
+        aria-labelledby={triggerId(name)}
+        className={`absolute top-full mt-3 w-80 bg-white rounded-xl border border-gray-100 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 ${
           alignRight ? 'right-0' : 'left-0'
         }`}
       >
         {items.map((item, index) => {
           if (item.divider) {
-            return <div key={index} className="h-px bg-gray-100 my-2 mx-4" />;
+            return <div key={index} className="h-px bg-gray-100 my-2 mx-4" role="separator" />;
           }
           const Icon = item.icon;
           return (
             <Link
               key={index}
               to="#"
-              className="flex items-start gap-4 px-4 py-3 hover:bg-gray-50 transition-colors mx-2 rounded-lg text-left"
+              role="menuitem"
+              className="flex items-start gap-3.5 px-4 py-3 hover:bg-gray-50 transition-all mx-2 rounded-lg text-left group"
               onClick={() => setActiveDropdown(null)}
             >
-              <div className={`p-2.5 rounded-xl ${item.bg}`}>
-                <Icon size={20} className={item.color} strokeWidth={2} />
+              <div className="mt-0.5 p-1.5 rounded-lg bg-gray-50 text-gray-400 group-hover:text-[#4A9EFF] group-hover:bg-[#4A9EFF]/5 transition-colors">
+                <Icon size={18} strokeWidth={2} />
               </div>
               <div className="flex-1">
-                <div className="font-semibold text-gray-900 text-[15px]">{item.label}</div>
-                <div className="text-[13px] text-gray-500 mt-0.5">{item.subtitle}</div>
+                <div className="font-semibold text-gray-900 text-[14px] leading-tight group-hover:text-[#4A9EFF] transition-colors">
+                  {item.label}
+                </div>
+                <div className="text-[12px] text-gray-500 mt-0.5 font-medium">
+                  {item.subtitle}
+                </div>
               </div>
             </Link>
           );
@@ -125,10 +133,10 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full">
         <div className="flex items-center justify-between h-full">
-          {/* Left Zone */}
+          {/* Main Navigation */}
           <div className="flex items-center gap-10">
             <Link to="/" className="flex items-center gap-2 hover:no-underline">
-              <div className="w-9 h-9 rounded-lg bg-[#1D9E75] flex items-center justify-center shadow-lg shadow-[#1D9E75]/20">
+              <div className="w-9 h-9 rounded-lg bg-[#4A9EFF] flex items-center justify-center shadow-lg shadow-[#4A9EFF]/20">
                 <Zap size={20} color="white" fill="white" strokeWidth={1} />
               </div>
               <span className={`text-xl font-bold tracking-tight transition-colors ${
@@ -139,14 +147,26 @@ export function Navbar() {
             </Link>
 
             <div className="hidden md:flex items-center gap-8 text-sm">
-              <div className="relative flex items-center h-full">
-                <DropdownTrigger name="findCharger" label="Find Charger" icon={MapPin} />
-                <DropdownMenu name="findCharger" items={navData.findCharger} />
-              </div>
+              <Link 
+                to="/map" 
+                className={`font-medium transition-colors ${
+                  isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white hover:text-white/80'
+                }`}
+              >
+                Find Stations
+              </Link>
+              <Link 
+                to="/bookings" 
+                className={`font-medium transition-colors ${
+                  isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white hover:text-white/80'
+                }`}
+              >
+                Book a Slot
+              </Link>
               <Link 
                 to="/pricing" 
                 className={`font-medium transition-colors ${
-                  isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white/90 hover:text-white'
+                  isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white hover:text-white/80'
                 }`}
               >
                 Pricing
@@ -154,23 +174,21 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Right Zone */}
+          {/* Actions & Resources */}
           <div className="hidden md:flex items-center gap-6 text-sm">
-            <div className="flex items-center gap-6">
-              <div className="relative flex items-center h-full">
-                <DropdownTrigger name="planTrip" label="Plan Trip" icon={Route} />
-                <DropdownMenu name="planTrip" items={navData.planTrip} alignRight />
-              </div>
-              <div className="relative flex items-center h-full">
-                <DropdownTrigger name="learn" label="Learn" icon={BookOpen} />
-                <DropdownMenu name="learn" items={navData.learn} alignRight />
-              </div>
+            <div className="relative flex items-center h-full">
+              <DropdownTrigger name="solutions" label="Solutions" />
+              <DropdownMenu name="solutions" items={navData.solutions} alignRight />
+            </div>
+            <div className="relative flex items-center h-full">
+              <DropdownTrigger name="resources" label="Resources" />
+              <DropdownMenu name="resources" items={navData.resources} alignRight />
             </div>
 
             <div className={`h-6 w-px transition-colors ${isScrolled ? 'bg-gray-200' : 'bg-white/20'} mx-1`}></div>
 
             <button className={`relative p-2 rounded-full transition-colors flex items-center justify-center ${
-              isScrolled ? 'text-gray-500 hover:bg-gray-100' : 'text-white/70 hover:bg-white/10 hover:text-white'
+              isScrolled ? 'text-gray-500 hover:bg-gray-100' : 'text-white hover:bg-white/10'
             }`}>
               <Bell size={20} />
               <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-transparent"></span>
@@ -182,14 +200,14 @@ export function Navbar() {
                 className={`px-5 py-2.5 font-semibold rounded-xl transition-all ${
                   isScrolled 
                     ? 'text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200' 
-                    : 'text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30'
+                    : 'text-[#7ab8f5] bg-[#1a3a5a]/10 hover:bg-[#1a3a5a]/20 backdrop-blur-sm border border-[#1a3a5a]'
                 }`}
               >
                 Sign In
               </Link>
               <Link
                 to="/register"
-                className="px-5 py-2.5 font-semibold text-white bg-[#1D9E75] hover:bg-[#168561] rounded-xl transition-all shadow-lg shadow-[#1D9E75]/25"
+                className="px-5 py-2.5 font-semibold text-[#020d1a] bg-[#4A9EFF] hover:bg-[#3d8be0] rounded-xl transition-all shadow-lg shadow-[#4A9EFF]/25"
               >
                 Get Started
               </Link>
