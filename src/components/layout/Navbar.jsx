@@ -68,7 +68,7 @@ export function Navbar({ solid = false }) {
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-controls={menuId(name)}
-        className={`flex items-center gap-1.5 font-medium px-2 py-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A9EFF] rounded-lg ${
+        className={`flex items-center gap-1.5 font-medium px-2 py-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A9EFF] rounded-none ${
           isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white/90 hover:text-white'
         }`}
       >
@@ -88,7 +88,7 @@ export function Navbar({ solid = false }) {
         id={menuId(name)}
         role="menu"
         aria-labelledby={triggerId(name)}
-        className={`absolute top-full mt-3 w-80 bg-white rounded-xl border border-gray-100 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 ${
+        className={`absolute top-full mt-3 w-80 bg-white rounded-none border border-gray-100 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 ${
           alignRight ? 'right-0' : 'left-0'
         }`}
       >
@@ -102,10 +102,10 @@ export function Navbar({ solid = false }) {
               key={index}
               to="#"
               role="menuitem"
-              className="flex items-start gap-3.5 px-4 py-3 hover:bg-gray-50 transition-all mx-2 rounded-lg text-left group"
+              className="flex items-start gap-3.5 px-4 py-3 hover:bg-gray-50 transition-all mx-2 rounded-none text-left group"
               onClick={() => setActiveDropdown(null)}
             >
-              <div className="mt-0.5 p-1.5 rounded-lg bg-gray-50 text-gray-400 group-hover:text-[#4A9EFF] group-hover:bg-[#4A9EFF]/5 transition-colors">
+              <div className="mt-0.5 p-1.5 rounded-none bg-gray-50 text-gray-400 group-hover:text-[#4A9EFF] group-hover:bg-[#4A9EFF]/5 transition-colors">
                 <Icon size={18} strokeWidth={2} />
               </div>
               <div className="flex-1">
@@ -137,7 +137,7 @@ export function Navbar({ solid = false }) {
           {/* Main Navigation */}
           <div className="flex items-center gap-10">
             <Link to="/" className="flex items-center gap-2 hover:no-underline">
-              <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center shadow-lg shadow-black/20">
+              <div className="w-9 h-9 rounded-none bg-black flex items-center justify-center shadow-lg shadow-black/20">
                 <Zap size={20} color="white" fill="white" strokeWidth={1} />
               </div>
               <span className={`text-xl font-bold tracking-tight transition-colors ${
@@ -188,7 +188,7 @@ export function Navbar({ solid = false }) {
 
             <div className={`h-6 w-px transition-colors ${isScrolled ? 'bg-gray-200' : 'bg-white/20'} mx-1`}></div>
 
-            <button className={`relative p-2 rounded-full transition-colors flex items-center justify-center ${
+            <button className={`relative p-2 rounded-none transition-colors flex items-center justify-center ${
               isScrolled ? 'text-gray-500 hover:bg-gray-100' : 'text-white hover:bg-white/10'
             }`}>
               <Bell size={20} />
@@ -198,7 +198,7 @@ export function Navbar({ solid = false }) {
             <div className="flex items-center gap-3">
               <Link
                 to="/login"
-                className={`px-5 py-2.5 font-semibold rounded-xl transition-all ${
+                className={`px-5 py-2.5 font-semibold rounded-none transition-all ${
                   isScrolled 
                     ? 'text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200' 
                     : 'text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/20'
@@ -208,7 +208,7 @@ export function Navbar({ solid = false }) {
               </Link>
               <Link
                 to="/register"
-                className="px-5 py-2.5 font-bold text-black bg-white hover:bg-gray-100 rounded-xl transition-all shadow-lg shadow-white/10"
+                className="px-5 py-2.5 font-bold text-black bg-white hover:bg-gray-100 rounded-none transition-all shadow-lg shadow-white/10"
               >
                 Get Started
               </Link>

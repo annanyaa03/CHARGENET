@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, MapPin, Search, ArrowRight, Play, Star, 
   CalendarCheck, BatteryCharging, 
-  Navigation, Clock, CreditCard, Headphones
+  Navigation, Clock, CreditCard, Headphones, ChevronRight
 } from 'lucide-react';
 import { PageWrapper } from '../components/layout/PageWrapper';
 
@@ -51,6 +51,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCity, setActiveCity] = useState(null);
   const [ctaMousePos, setCtaMousePos] = useState({ x: 50, y: 50 });
+  const [activeFeature, setActiveFeature] = useState(0);
 
   const handleCtaMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -89,34 +90,52 @@ export default function Home() {
 
   const features = [
     { 
-      title: 'Real-time availability', 
+      title: 'Real-time Availability',
+      tag: 'Live Data',
       icon: Clock, 
-      desc: 'See which chargers are currently free or occupied before you arrive.' 
+      desc: 'See which chargers are currently free or occupied before you arrive. Our live map refreshes every 30 seconds so you always have the most accurate station data.',
+      stat: '30s', statLabel: 'Refresh rate',
+      color: '#1D9E75',
     },
     { 
-      title: 'Slot booking', 
+      title: 'Advance Slot Booking',
+      tag: 'Smart Reserve',
       icon: CalendarCheck, 
-      desc: 'Pre-book your charging time to ensure a seamless experience on the go.' 
+      desc: 'Pre-book your charging time up to 7 days in advance and skip the queue entirely. Get SMS and in-app reminders before your session begins.',
+      stat: '7 days', statLabel: 'Booking window',
+      color: '#3B82F6',
     },
     { 
-      title: 'Multi-vehicle support', 
+      title: 'Multi-vehicle Support',
+      tag: 'Universal',
       icon: Zap, 
-      desc: 'Compatibility with all major EV models and connector types in India.' 
+      desc: 'Full compatibility with all major EV models — Tata, Ola, Ather, BYD, Hyundai and more. Supports AC slow, DC fast, and CCS2 connector standards.',
+      stat: '50+ models', statLabel: 'Supported',
+      color: '#F59E0B',
     },
     { 
-      title: 'Trip planner', 
+      title: 'Smart Trip Planner',
+      tag: 'AI-Powered',
       icon: Navigation, 
-      desc: 'Automate your route planning with optimal charging stops along the way.' 
+      desc: 'Enter your destination and our AI auto-selects optimal charging stops along your route — accounting for your battery level, station speed, and travel time.',
+      stat: 'AI', statLabel: 'Route planning',
+      color: '#8B5CF6',
     },
     { 
-      title: '24/7 support', 
+      title: '24/7 Live Support',
+      tag: 'Always On',
       icon: Headphones, 
-      desc: 'Our dedicated team is always ready to assist you with any charging issues.' 
+      desc: 'Round-the-clock assistance via chat, phone, or in-app ticket. Our average first-response time is under 3 minutes — even at 3 AM.',
+      stat: '<3 min', statLabel: 'Response time',
+      color: '#EC4899',
     },
     { 
-      title: 'Secure payments', 
+      title: 'Secure Payments',
+      tag: 'PCI-DSS',
       icon: CreditCard, 
-      desc: 'Hassle-free digital payments with multiple wallet and card options.' 
+      desc: 'Pay seamlessly via UPI, credit/debit cards, or ChargeNet wallet. Every transaction is encrypted end-to-end with PCI-DSS Level 1 compliance.',
+      stat: '256-bit', statLabel: 'Encryption',
+      color: '#10B981',
     },
   ];
 
@@ -180,7 +199,7 @@ export default function Home() {
             <Reveal delay={0.6}>
               <div className="max-w-md mt-10">
                 <div className="relative group">
-                  <div className="relative flex items-center p-1.5 bg-white/10 backdrop-blur-md rounded-2xl">
+                  <div className="relative flex items-center p-1.5 bg-white/10 backdrop-blur-md rounded-none">
                     <div className="flex-1 flex items-center px-4 gap-3">
                       <Search className="text-white/50" size={18} />
                       <input 
@@ -191,7 +210,7 @@ export default function Home() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
-                    <button className="bg-[#1D9E75] hover:bg-[#168561] text-white px-6 py-2.5 rounded-xl font-bold transition-all active:scale-95 text-xs shadow-lg shadow-[#1D9E75]/20">
+                    <button className="bg-[#1D9E75] hover:bg-[#168561] text-white px-6 py-2.5 rounded-none font-bold transition-all active:scale-95 text-xs shadow-lg shadow-[#1D9E75]/20">
                       Search
                     </button>
                   </div>
@@ -202,10 +221,10 @@ export default function Home() {
             {/* Secondary Buttons */}
             <Reveal delay={0.8}>
               <div className="flex flex-wrap items-center justify-start gap-6 mt-8">
-                <button className="px-8 py-3 rounded-xl border border-white/30 text-white font-semibold hover:bg-white/10 transition-all">
+                <button className="px-8 py-3 rounded-none border border-white/30 text-white font-semibold hover:bg-white/10 transition-all">
                   Explore Map
                 </button>
-                <button className="px-8 py-3 rounded-xl text-white/70 font-semibold hover:text-white transition-all flex items-center gap-2">
+                <button className="px-8 py-3 rounded-none text-white/70 font-semibold hover:text-white transition-all flex items-center gap-2">
                   <Play size={18} fill="currentColor" />
                   Learn More
                 </button>
@@ -216,16 +235,16 @@ export default function Home() {
         </section>
 
         {/* ─── Trust Stats Bar ─── */}
-        <section className="bg-[#071428] py-12 border-y border-white/5">
+        <section className="bg-gray-50 py-12 border-y border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((stat, i) => (
                 <div key={stat.label} className="text-center relative">
-                  {i > 0 && <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 w-px h-12 bg-white/10" />}
-                  <div className="text-3xl md:text-4xl font-bold text-white mb-1">
+                  {i > 0 && <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 w-px h-12 bg-gray-200" />}
+                  <div className="text-3xl md:text-4xl font-bold text-[#051428] mb-1">
                     <CountUp end={stat.value} suffix={stat.suffix} />
                   </div>
-                  <div className="text-white/40 text-xs md:text-sm uppercase tracking-wider font-semibold">
+                  <div className="text-gray-500 text-xs md:text-sm uppercase tracking-wider font-semibold">
                     {stat.label}
                   </div>
                 </div>
@@ -247,10 +266,10 @@ export default function Home() {
                 <Reveal key={step.title} delay={i * 0.2}>
                   <div className="group relative text-center">
                     <div className="mb-6 relative">
-                      <div className="text-[120px] font-black text-gray-50 absolute left-1/2 -translate-x-1/2 -top-10 z-0 select-none">
+                      <div className="text-[120px] font-black text-gray-100 absolute left-1/2 -translate-x-1/2 -top-10 z-0 select-none">
                         {step.number}
                       </div>
-                      <div className="w-20 h-20 rounded-2xl bg-[#1D9E75]/10 flex items-center justify-center text-[#1D9E75] mx-auto relative z-10 transition-transform group-hover:scale-110 duration-300 shadow-xl shadow-[#1D9E75]/5">
+                      <div className="w-20 h-20 rounded-none bg-[#1D9E75]/10 flex items-center justify-center text-[#1D9E75] mx-auto relative z-10 transition-transform group-hover:scale-110 duration-300 shadow-xl shadow-[#1D9E75]/5">
                         <step.icon size={36} />
                       </div>
                     </div>
@@ -264,129 +283,176 @@ export default function Home() {
         </section>
 
         {/* ─── Features Section ─── */}
-        <section className="bg-[#060f1e] py-24 relative overflow-hidden">
-          {/* Glow Effects */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#1D9E75]/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/3" />
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#5CAA5]/10 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/3" />
+        <section className="bg-gray-50 py-28 relative overflow-hidden border-t border-gray-100">
+          {/* Ambient glows */}
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[140px] opacity-[0.08]"
+            style={{ background: `radial-gradient(circle, ${features[activeFeature].color}, transparent 70%)` }}
+          />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#1D9E75]/5 blur-[100px] rounded-full" />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-            <div className="text-center mb-20 space-y-4">
-              <Reveal>
-                <h2 className="text-3xl md:text-5xl font-bold text-white">Smart features for <br /><span className="text-[#5DCAA5]">smarter charging</span></h2>
-              </Reveal>
-            </div>
+          <div className="max-w-7xl mx-auto px-6 relative z-10">
+            {/* Header */}
+            <Reveal>
+              <div className="mb-20">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#1D9E75] mb-4">Platform Capabilities</p>
+                <h2 className="text-4xl md:text-5xl font-bold text-[#051428] leading-[1.1] tracking-tight">
+                  Everything you need,<br />
+                  <span style={{ color: features[activeFeature].color, transition: 'color 0.4s ease' }}>nothing you don't.</span>
+                </h2>
+              </div>
+            </Reveal>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {features.map((feature, i) => (
-                <Reveal key={feature.title} delay={i * 0.1}>
-                  <div className="p-8 group hover:bg-white/[0.02] transition-all rounded-3xl">
-                    <div className="w-12 h-12 rounded-2xl bg-[#1D9E75]/10 flex items-center justify-center text-[#1D9E75] mb-6 group-hover:scale-110 transition-all duration-300">
-                      <feature.icon size={26} />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-3 tracking-tight">{feature.title}</h3>
-                    <p className="text-gray-400 leading-relaxed text-[15px]">{feature.desc}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
+            {/* Split layout */}
+            <div className="grid lg:grid-cols-[1fr_1.1fr] gap-12 items-start">
 
-        {/* ─── City Coverage Section ─── */}
-        <section className="py-24 bg-gray-50 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8">
-                <Reveal>
-                  <div className="space-y-4">
-                    <h2 className="text-4xl md:text-5xl font-bold text-[#051428]">Now live across India.</h2>
-                    <p className="text-gray-600 text-lg">We are rapidly expanding our network to make EV travel seamless nationwide. Expanding to 20 cities by 2026.</p>
-                  </div>
-                </Reveal>
-                
-                <div className="h-20 flex items-center">
-                  <AnimatePresence mode="wait">
-                    {activeCity ? (
-                      <motion.div 
-                        key={activeCity}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
-                        className="flex items-center gap-4"
+              {/* Left — Feature list */}
+              <div className="space-y-1">
+                {features.map((feature, i) => {
+                  const isActive = activeFeature === i;
+                  return (
+                    <motion.button
+                      key={feature.title}
+                      onClick={() => setActiveFeature(i)}
+                      className="w-full text-left group"
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: i * 0.07 }}
+                    >
+                      <div
+                        className={`relative flex items-center gap-4 px-5 py-4 rounded-none transition-all duration-300 ${
+                          isActive
+                            ? 'bg-white shadow-sm border border-gray-100'
+                            : 'hover:bg-gray-200/50 border border-transparent'
+                        }`}
                       >
-                        <div className="w-12 h-12 bg-[#1D9E75]/10 rounded-full flex items-center justify-center text-[#1D9E75]">
-                          <MapPin size={24} />
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-[#051428]">{activeCity}</div>
-                          <div className="text-sm font-medium text-[#1D9E75]">Live charging network active</div>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div 
-                        key="empty"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-gray-400 font-medium italic flex items-center gap-2"
-                      >
-                        <Navigation size={18} />
-                        Hover over a map pin to explore live cities
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                        {/* Active left border */}
+                        <div
+                          className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full transition-all duration-300"
+                          style={{ background: isActive ? feature.color : 'transparent' }}
+                        />
 
-                <div className="pt-6">
-                  <button className="flex items-center gap-3 text-[#1D9E75] font-bold hover:gap-5 transition-all outline-none">
-                    Check status in your city <ArrowRight size={20} />
-                  </button>
-                </div>
+                        {/* Icon */}
+                        <div
+                          className="w-10 h-10 rounded-none flex items-center justify-center flex-shrink-0 transition-all duration-300"
+                          style={{
+                            background: isActive ? `${feature.color}15` : 'rgba(0,0,0,0.04)',
+                            color: isActive ? feature.color : '#9CA3AF',
+                          }}
+                        >
+                          <feature.icon size={18} />
+                        </div>
+
+                        {/* Text */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="text-sm font-bold transition-colors duration-300"
+                              style={{ color: isActive ? '#051428' : '#6B7280' }}
+                            >
+                              {feature.title}
+                            </span>
+                            {isActive && (
+                              <span
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wide"
+                                style={{ background: `${feature.color}22`, color: feature.color }}
+                              >
+                                {feature.tag}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <ChevronRight
+                          size={14}
+                          className="flex-shrink-0 transition-all duration-300"
+                          style={{ color: isActive ? feature.color : 'transparent', transform: isActive ? 'translateX(0)' : 'translateX(-4px)' }}
+                        />
+                      </div>
+                    </motion.button>
+                  );
+                })}
               </div>
 
-              <Reveal delay={0.3}>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-transparent to-gray-50 z-10 pointer-events-none" />
-                  <svg viewBox="0 0 100 100" className="w-[120%] h-auto -ml-[10%] opacity-10 drop-shadow-2xl">
-                     <path d="M 38 15 L 35 12 L 40 5 L 45 2 L 50 6 L 55 12 L 58 18 L 62 16 L 65 14 L 68 15 L 70 12 L 75 14 L 85 18 L 92 25 L 88 32 L 80 32 L 72 38 L 75 42 L 72 45 L 65 52 L 58 68 L 52 82 L 48 95 L 45 80 L 40 65 L 35 55 L 28 50 L 15 48 L 8 40 L 15 35 L 20 38 L 28 32 L 28 25 L 32 18 Z" fill="#1D9E75" />
-                  </svg>
-                  {/* Glowing Pins */}
-                  {[
-                    {top: 25, left: 42, name: 'Chandigarh'},
-                    {top: 55, left: 32, name: 'Mumbai'},
-                    {top: 60, left: 35, name: 'Pune'},
-                    {top: 75, left: 45, name: 'Bengaluru'},
-                    {top: 65, left: 45, name: 'Hyderabad'},
-                    {top: 80, left: 48, name: 'Chennai'},
-                    {top: 45, left: 70, name: 'Kolkata'},
-                    {top: 45, left: 28, name: 'Ahmedabad'},
-                    {top: 35, left: 40, name: 'Jaipur'},
-                    {top: 35, left: 52, name: 'Lucknow'},
-                    {top: 28, left: 45, name: 'Delhi NCR'},
-                    {top: 50, left: 42, name: 'Indore'},
-                  ].map((pos, i) => (
-                    <div 
-                      key={i} 
-                      className="absolute group cursor-pointer" 
-                      style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
-                      onMouseEnter={() => setActiveCity(pos.name)}
-                      onMouseLeave={() => setActiveCity(null)}
-                    >
-                      <div className="relative">
-                        <div className={`w-3 h-3 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-300 ${activeCity === pos.name ? 'bg-[#1D9E75] scale-[1.5]' : 'bg-[#1D9E75]'}`} />
-                        <div className={`w-6 h-6 opacity-40 rounded-full animate-ping absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${activeCity === pos.name ? 'bg-[#1D9E75]' : 'bg-[#1D9E75]'}`} />
-                        <div className={`absolute left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 bg-[#051428] shadow-xl rounded-lg text-xs font-bold text-white transition-all duration-300 pointer-events-none z-20 ${activeCity === pos.name ? 'opacity-100 -top-10' : 'opacity-0 -top-4'}`}>
-                           {pos.name}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              {/* Right — Active feature detail */}
+              <div className="lg:sticky lg:top-28">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeFeature}
+                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16, scale: 0.98 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    className="rounded-none border border-gray-200 p-8 relative overflow-hidden bg-white shadow-xl shadow-gray-200/50"
+                  >
+                    {/* Background glow inside card */}
+                    <div
+                      className="absolute top-0 right-0 w-48 h-48 rounded-full blur-[60px] opacity-20 pointer-events-none"
+                      style={{ background: features[activeFeature].color }}
+                    />
 
-                </div>
-              </Reveal>
+                    {/* Tag */}
+                    <span
+                      className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none uppercase tracking-widest mb-6"
+                      style={{
+                        background: `${features[activeFeature].color}18`,
+                        color: features[activeFeature].color,
+                        border: `1px solid ${features[activeFeature].color}30`,
+                      }}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full animate-pulse"
+                        style={{ background: features[activeFeature].color }}
+                      />
+                      {features[activeFeature].tag}
+                    </span>
+
+                    {/* Icon */}
+                    <div
+                      className="w-16 h-16 rounded-none flex items-center justify-center mb-6"
+                      style={{ background: `${features[activeFeature].color}18` }}
+                    >
+                      {React.createElement(features[activeFeature].icon, {
+                        size: 32,
+                        style: { color: features[activeFeature].color },
+                      })}
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-2xl font-bold text-[#051428] mb-4 leading-tight">
+                      {features[activeFeature].title}
+                    </h3>
+
+                    {/* Desc */}
+                    <p className="text-gray-600 leading-relaxed text-[15px] mb-8">
+                      {features[activeFeature].desc}
+                    </p>
+
+
+
+                    {/* Progress dots */}
+                    <div className="flex items-center gap-2 mt-8">
+                      {features.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveFeature(i)}
+                          className="transition-all duration-300 rounded-none"
+                          style={{
+                            width: i === activeFeature ? 20 : 6,
+                            height: 6,
+                            background: i === activeFeature ? features[activeFeature].color : 'rgba(0,0,0,0.1)',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </section>
+
+
 
         {/* ─── Testimonials Strip ─── */}
         <section className="py-24 bg-gray-50 border-t border-gray-100">
@@ -402,7 +468,7 @@ export default function Home() {
                       <p className="text-gray-600 text-lg font-medium leading-[1.6] group-hover:text-gray-900 transition-colors">"{t.quote}"</p>
                     </div>
                     <div className="flex items-center gap-4 mt-8">
-                      <div className="w-11 h-11 rounded-full bg-gray-900 flex items-center justify-center text-xs text-white font-bold">
+                      <div className="w-11 h-11 rounded-none bg-gray-900 flex items-center justify-center text-xs text-white font-bold">
                         {t.initials}
                       </div>
                       <div>
@@ -432,10 +498,10 @@ export default function Home() {
 
             <Reveal delay={0.15}>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-3">
-                <button className="px-7 py-3 bg-[#1D9E75] hover:bg-[#168561] text-white font-semibold rounded-full transition-all hover:-translate-y-0.5 active:scale-95 text-sm shadow-lg shadow-[#1D9E75]/15">
+                <button className="px-7 py-3 bg-[#1D9E75] hover:bg-[#168561] text-white font-semibold rounded-none transition-all hover:-translate-y-0.5 active:scale-95 text-sm shadow-lg shadow-[#1D9E75]/15">
                   Download the App
                 </button>
-                <button className="px-7 py-3 text-[#051428] font-semibold rounded-full transition-all flex items-center gap-2 group/btn border border-gray-200 hover:border-[#1D9E75] text-sm hover:-translate-y-0.5">
+                <button className="px-7 py-3 text-[#051428] font-semibold rounded-none transition-all flex items-center gap-2 group/btn border border-gray-200 hover:border-[#1D9E75] text-sm hover:-translate-y-0.5">
                   Explore Network <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform text-[#1D9E75]" />
                 </button>
               </div>

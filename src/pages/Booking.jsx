@@ -58,14 +58,14 @@ function DateItem({ date, isSelected, onClick }) {
       }`}
     >
       <div className="flex flex-col items-start px-2">
-        <span className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${isSelected ? 'text-gray-900' : 'text-gray-300'}`}>
+        <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 ${isSelected ? 'text-gray-900' : 'text-gray-400'}`}>
           {date.dayName}
         </span>
-        <span className={`text-4xl font-black tracking-tighter ${isSelected ? 'text-gray-900' : 'text-gray-200'}`}>
+        <span className={`text-2xl font-black tracking-tighter ${isSelected ? 'text-gray-900' : 'text-gray-200'}`}>
           {date.dayNum}
         </span>
       </div>
-      <div className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${
+      <div className={`w-8 h-8 rounded-none border flex items-center justify-center transition-all ${
         isSelected ? 'bg-gray-900 border-gray-900 text-white' : 'border-gray-100 text-transparent'
       }`}>
         <Check size={14} />
@@ -174,30 +174,30 @@ export default function Booking() {
       <PageWrapper className="bg-white">
         <PageContainer className="!max-w-4xl pt-20 pb-20">
           <div className="max-w-2xl">
-            <h1 className="text-8xl font-black text-gray-900 tracking-tighter mb-12 animate-in slide-in-from-bottom-4 duration-700">Reserved.</h1>
+            <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-12 animate-in slide-in-from-bottom-4 duration-700">Reserved.</h1>
             <div className="space-y-12">
                <div className="flex flex-wrap gap-x-20 gap-y-10 py-12 border-y border-gray-100">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-2">Order ID</label>
-                    <span className="text-2xl font-black text-gray-900">{confId}</span>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Order ID</label>
+                    <span className="text-xl font-black text-gray-900">{confId}</span>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-2">Station</label>
-                    <span className="text-2xl font-black text-gray-900">{station.name}</span>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Station</label>
+                    <span className="text-xl font-black text-gray-900">{station.name}</span>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-2">Schedule</label>
-                    <span className="text-2xl font-black text-gray-900">{dates.find(d => d.date === dateStr)?.fullDate} · {startLabel}</span>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Schedule</label>
+                    <span className="text-xl font-black text-gray-900">{dates.find(d => d.date === dateStr)?.fullDate} · {startLabel}</span>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-2">Paid</label>
-                    <span className="text-2xl font-black text-gray-900">{formatINR(cost)}</span>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Paid</label>
+                    <span className="text-xl font-black text-gray-900">{formatINR(cost)}</span>
                   </div>
                </div>
 
                <div className="flex gap-4">
-                 <button onClick={() => navigate('/map')} className="h-14 px-10 border border-gray-900 text-gray-900 font-bold uppercase text-[10px] tracking-widest hover:bg-gray-50 transition-colors"> fleet </button>
-                 <button onClick={() => navigate('/')} className="h-14 px-10 bg-gray-900 text-white font-bold uppercase text-[10px] tracking-widest hover:bg-black transition-colors"> home </button>
+                 <button onClick={() => navigate('/map')} className="h-14 px-10 border border-gray-900 text-gray-900 font-bold uppercase text-[9px] tracking-widest hover:bg-gray-50 transition-colors"> fleet </button>
+                 <button onClick={() => navigate('/')} className="h-14 px-10 bg-gray-900 text-white font-bold uppercase text-[9px] tracking-widest hover:bg-black transition-colors"> home </button>
                </div>
             </div>
           </div>
@@ -227,27 +227,27 @@ export default function Booking() {
           
           {/* Main Form */}
           <div className="lg:col-span-8">
-            <header className="mb-20">
-              <h1 className="text-8xl font-black text-gray-900 tracking-tighter mb-4 leading-none">Checkout.</h1>
-              <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.4em]">{charger.company} · {charger.plugType} · {charger.powerKw}kW</p>
+            <header className="mb-16">
+              <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4 leading-none">Checkout.</h1>
+              <p className="text-gray-400 font-bold uppercase text-[9px] tracking-[0.3em]">{charger.company} · {charger.plugType} · {charger.powerKw}kW</p>
             </header>
 
             <div className="space-y-32">
               
               {/* 01. Configure */}
               <section>
-                <div className="flex items-baseline gap-4 mb-12">
-                  <span className="text-3xl font-black text-gray-900 tracking-tighter">01.</span>
-                  <h2 className="text-xs font-black uppercase tracking-widest text-gray-300">Specifications</h2>
+                <div className="flex items-baseline gap-4 mb-10">
+                  <span className="text-xl font-black text-gray-900 tracking-tighter">01.</span>
+                  <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-300">Specifications</h2>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
                   <div className="pb-4 border-b border-gray-100">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-4">Select Vehicle</label>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-300 block mb-4">Select Vehicle</label>
                     <div className="flex items-center group">
                       <select 
                         value={vehicle}
                         onChange={e => setVehicle(e.target.value)}
-                        className="w-full bg-transparent text-xl font-black text-gray-900 appearance-none outline-none cursor-pointer"
+                        className="w-full bg-transparent text-lg font-black text-gray-900 appearance-none outline-none cursor-pointer"
                       >
                         <option>Tata Nexon EV Max</option>
                         <option>MG ZS EV Prestige</option>
@@ -259,17 +259,17 @@ export default function Booking() {
                     </div>
                   </div>
                   <div className="pb-4 border-b border-gray-100">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-4">Location</label>
-                    <span className="text-xl font-black text-gray-900 truncate block">{station.name}</span>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-300 block mb-4">Location</label>
+                    <span className="text-lg font-black text-gray-900 truncate block">{station.name}</span>
                   </div>
                 </div>
               </section>
 
               {/* 02. Date */}
               <section>
-                <div className="flex items-baseline gap-4 mb-12">
-                  <span className="text-3xl font-black text-gray-900 tracking-tighter">02.</span>
-                  <h2 className="text-xs font-black uppercase tracking-widest text-gray-300">Select Date</h2>
+                <div className="flex items-baseline gap-4 mb-10">
+                  <span className="text-xl font-black text-gray-900 tracking-tighter">02.</span>
+                  <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-300">Select Date</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 border-t border-l border-gray-100">
                   {dates.map(date => (
@@ -285,9 +285,9 @@ export default function Booking() {
 
               {/* 03. Time */}
               <section>
-                <div className="flex items-baseline gap-4 mb-12">
-                  <span className="text-3xl font-black text-gray-900 tracking-tighter">03.</span>
-                  <h2 className="text-xs font-black uppercase tracking-widest text-gray-300">Choose Slots</h2>
+                <div className="flex items-baseline gap-4 mb-10">
+                  <span className="text-xl font-black text-gray-900 tracking-tighter">03.</span>
+                  <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-300">Choose Slots</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-px bg-gray-100 border border-gray-100">
                   {SLOTS.map(slot => (
@@ -303,9 +303,9 @@ export default function Booking() {
 
               {/* 04. Payment */}
               <section>
-                <div className="flex items-baseline gap-4 mb-12">
-                  <span className="text-3xl font-black text-gray-900 tracking-tighter">04.</span>
-                  <h2 className="text-xs font-black uppercase tracking-widest text-gray-300">Payment Gateway</h2>
+                <div className="flex items-baseline gap-4 mb-10">
+                  <span className="text-xl font-black text-gray-900 tracking-tighter">04.</span>
+                  <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-300">Payment Gateway</h2>
                 </div>
                 <div className="space-y-4 max-w-2xl">
                   {PAYMENT_METHODS.filter(p => p.id !== 'wallet' || user).map(p => (
@@ -325,8 +325,8 @@ export default function Booking() {
                           <p className="text-[10px] font-bold text-gray-400 tracking-wide">{p.desc}</p>
                         </div>
                       </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${method === p.id ? 'border-gray-900' : 'border-gray-200'}`}>
-                        {method === p.id && <div className="w-2.5 h-2.5 bg-gray-900" />}
+                      <div className={`w-5 h-5 rounded-none border-2 flex items-center justify-center ${method === p.id ? 'border-gray-900' : 'border-gray-200'}`}>
+                        {method === p.id && <div className="w-2.5 h-2.5 bg-gray-900 rounded-none" />}
                       </div>
                     </button>
                   ))}
@@ -343,8 +343,8 @@ export default function Booking() {
                    
                    <div className="space-y-10">
                       <div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-2">Schedule</span>
-                        <p className="text-lg font-black text-gray-900 leading-tight">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Schedule</span>
+                        <p className="text-base font-black text-gray-900 leading-tight">
                           {dates.find(d => d.date === dateStr)?.fullDate}<br/>
                           {startLabel ? `${startLabel} — ${endLabel}` : 'Not scheduled'}
                         </p>
@@ -352,18 +352,18 @@ export default function Booking() {
 
                       <div className="grid grid-cols-2 gap-8">
                         <div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-2">Energy</span>
-                          <p className="text-lg font-black text-gray-900">{kwh > 0 ? `${kwh.toFixed(1)} kWh` : '--'}</p>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Energy</span>
+                          <p className="text-base font-black text-gray-900">{kwh > 0 ? `${kwh.toFixed(1)} kWh` : '--'}</p>
                         </div>
                         <div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-300 block mb-2">Duration</span>
-                          <p className="text-lg font-black text-gray-900">{hrs > 0 ? `${hrs * 60}m` : '--'}</p>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Duration</span>
+                          <p className="text-base font-black text-gray-900">{hrs > 0 ? `${hrs * 60}m` : '--'}</p>
                         </div>
                       </div>
 
                       <div className="pt-10 border-t border-gray-100 flex items-baseline justify-between mb-10">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-300">Estimated Total</span>
-                        <span className="text-4xl font-black text-gray-900 tracking-tighter">{formatINR(cost)}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Estimated Total</span>
+                        <span className="text-3xl font-black text-gray-900 tracking-tighter">{formatINR(cost)}</span>
                       </div>
 
                       <Button

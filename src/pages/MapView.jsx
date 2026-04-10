@@ -37,7 +37,7 @@ function createStationIcon(status, selected = false) {
       position:absolute;top:50%;left:50%;
       transform:translate(-50%,-50%);
       width:${size + 16}px;height:${size + 16}px;
-      border-radius:50%;
+      border-radius:0;
       background:${cfg.color}33;
       animation:ping 1.4s cubic-bezier(0,0,.2,1) infinite;
     "></div>` : ''
@@ -52,7 +52,7 @@ function createStationIcon(status, selected = false) {
           background:${cfg.color};
           border-radius:50% 50% 50% 0;
           transform:translate(-50%,-50%) rotate(-45deg);
-          border:2.5px solid white;
+          border:2.0px solid white;
           box-shadow:0 4px 12px ${cfg.color}66;
         "></div>
       </div>`,
@@ -101,7 +101,10 @@ export default function MapView() {
   const [mapZoom, setMapZoom] = useState(5)
   const [filtered, setFiltered] = useState(stations)
 
-  useEffect(() => { document.title = 'Find Stations — ChargeNet' }, [])
+  useEffect(() => { 
+    document.title = 'Find Stations — ChargeNet' 
+    clearSelectedStation()
+  }, [clearSelectedStation])
 
   useEffect(() => {
     let result = [...stations]
@@ -169,7 +172,7 @@ export default function MapView() {
                 placeholder="Search stations, cities…"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-none text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
@@ -187,7 +190,7 @@ export default function MapView() {
                   <button
                     key={tab}
                     onClick={() => setStatusTab(tab)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-none text-xs font-semibold transition-all ${
                       active
                         ? tab === 'all'
                           ? 'bg-gray-900 text-white'
@@ -208,7 +211,7 @@ export default function MapView() {
             <span className="text-xs text-gray-500 font-medium">{filtered.length} station{filtered.length !== 1 ? 's' : ''} found</span>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-none transition-all ${
                 showFilters ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -226,7 +229,7 @@ export default function MapView() {
                     <button
                       key={o.value}
                       onClick={() => setFilter('availability', o.value)}
-                      className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      className={`flex-1 py-1.5 rounded-none text-xs font-semibold transition-all ${
                         filters.availability === o.value
                           ? 'bg-gray-900 text-white'
                           : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-200 shadow-sm'
@@ -272,7 +275,7 @@ export default function MapView() {
                         <p className="text-xs text-gray-400 mt-0.5 truncate">{station.city} · {formatDistance(station.distance)}</p>
                       </div>
                       <span
-                        className="flex-shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                        className="flex-shrink-0 mt-0.5 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wide"
                         style={{ background: cfg.bg, color: cfg.color }}
                       >
                         {cfg.label}
@@ -304,7 +307,7 @@ export default function MapView() {
         {/* ─── Collapse Toggle ─── */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-30 hidden md:flex items-center justify-center w-6 h-10 bg-white border border-gray-200 rounded-r-lg shadow-md text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-30 hidden md:flex items-center justify-center w-6 h-10 bg-white border border-gray-200 rounded-none shadow-md text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all"
           style={{ left: sidebarCollapsed ? 0 : 340 }}
           title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -351,18 +354,18 @@ export default function MapView() {
           </MapContainer>
 
           {/* Legend Card */}
-          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl p-3.5 z-[1000] shadow-lg">
+          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-100 rounded-none p-3.5 z-[1000] shadow-lg">
             <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2.5">Station Status</p>
             {Object.entries(STATUS_CONFIG).map(([status, cfg]) => (
               <div key={status} className="flex items-center gap-2 mb-1.5 last:mb-0">
-                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cfg.color }} />
+                <div className="w-2.5 h-2.5 rounded-none flex-shrink-0" style={{ background: cfg.color }} />
                 <span className="text-xs text-gray-600 font-medium">{cfg.label}</span>
                 <span className="ml-auto text-xs text-gray-400 font-semibold">{counts[status]}</span>
               </div>
             ))}
             <div className="h-px bg-gray-100 my-2" />
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-gray-900" />
+              <div className="w-2 h-2 rounded-none bg-gray-900" />
               <span className="text-[11px] text-gray-500">Total: {stations.length}</span>
             </div>
           </div>
@@ -371,15 +374,15 @@ export default function MapView() {
           <div className="absolute bottom-8 right-4 flex flex-col gap-1.5 z-[1000]">
             <button
               onClick={() => setMapZoom(z => Math.min(z + 1, 18))}
-              className="w-9 h-9 bg-white border border-gray-200 rounded-xl shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
+              className="w-9 h-9 bg-white border border-gray-200 rounded-none shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
             >+</button>
             <button
               onClick={() => setMapZoom(z => Math.max(z - 1, 3))}
-              className="w-9 h-9 bg-white border border-gray-200 rounded-xl shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
+              className="w-9 h-9 bg-white border border-gray-200 rounded-none shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
             >−</button>
             <button
               onClick={() => { setMapCenter([20.5937, 78.9629]); setMapZoom(5); clearSelectedStation() }}
-              className="w-9 h-9 bg-white border border-gray-200 rounded-xl shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center transition-all hover:shadow-lg"
+              className="w-9 h-9 bg-white border border-gray-200 rounded-none shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center transition-all hover:shadow-lg"
               title="Reset view"
             >
               <Navigation2 size={15} />
@@ -395,7 +398,7 @@ export default function MapView() {
               .filter(Boolean)
             return (
               <div
-                className="absolute bottom-4 left-4 bg-white rounded-2xl shadow-2xl z-[1000] border border-gray-100 overflow-hidden"
+                className="absolute bottom-4 left-4 bg-white rounded-none shadow-2xl z-[1000] border border-gray-100 overflow-hidden"
                 style={{ width: 340, animation: 'slideUp 0.25s ease' }}
               >
                 <style>{`@keyframes slideUp { from { transform: translateY(20px); opacity:0 } to { transform: translateY(0); opacity:1 } }`}</style>
@@ -408,10 +411,10 @@ export default function MapView() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide mb-1.5"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wide mb-1.5"
                         style={{ background: cfg.bg, color: cfg.color }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: cfg.color }} />
+                        <span className="w-1.5 h-1.5 rounded-none inline-block" style={{ background: cfg.color }} />
                         {cfg.label}
                       </span>
                       <p className="text-base font-bold text-gray-900 leading-tight">{selectedStation.name}</p>
@@ -419,7 +422,7 @@ export default function MapView() {
                     </div>
                     <button
                       onClick={clearSelectedStation}
-                      className="flex-shrink-0 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all"
+                      className="flex-shrink-0 w-7 h-7 rounded-none bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all"
                     >
                       <X size={14} />
                     </button>
@@ -427,18 +430,18 @@ export default function MapView() {
 
                   {/* Stats row */}
                   <div className="grid grid-cols-3 gap-2 mt-3">
-                    <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+                    <div className="bg-gray-50 rounded-none p-2.5 text-center">
                       <p className="text-base font-bold text-gray-900">{selectedStation.availableChargers}/{selectedStation.totalChargers}</p>
                       <p className="text-[10px] text-gray-500 font-medium mt-0.5">Chargers Free</p>
                     </div>
-                    <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+                    <div className="bg-gray-50 rounded-none p-2.5 text-center">
                       <div className="flex items-center justify-center gap-0.5">
                         <span className="text-base font-bold text-gray-900">{selectedStation.rating}</span>
                         <Star size={11} className="text-amber-400 fill-amber-400 mb-0.5" />
                       </div>
                       <p className="text-[10px] text-gray-500 font-medium mt-0.5">{selectedStation.totalReviews} Reviews</p>
                     </div>
-                    <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+                    <div className="bg-gray-50 rounded-none p-2.5 text-center">
                       <p className="text-base font-bold text-gray-900">{formatDistance(selectedStation.distance)}</p>
                       <p className="text-[10px] text-gray-500 font-medium mt-0.5">Away</p>
                     </div>
@@ -457,7 +460,7 @@ export default function MapView() {
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Facilities</p>
                       <div className="flex flex-wrap gap-1.5">
                         {facilities.map(({ icon: Icon, label }) => (
-                          <div key={label} className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-lg text-[11px] text-gray-600 font-medium">
+                          <div key={label} className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-none text-[11px] text-gray-600 font-medium">
                             <Icon size={11} className="text-gray-400" />
                             {label}
                           </div>
@@ -469,7 +472,7 @@ export default function MapView() {
                   {/* CTA button */}
                   <button
                     onClick={() => navigate(`/station/${selectedStation.id}`)}
-                    className="mt-3.5 w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all hover:shadow-lg"
+                    className="mt-3.5 w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-bold rounded-none flex items-center justify-center gap-2 transition-all hover:shadow-lg"
                   >
                     View Full Details
                     <ChevronRight size={16} />

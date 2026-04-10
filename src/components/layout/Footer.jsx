@@ -14,7 +14,7 @@ export function Footer() {
           {/* Logo & Tagline */}
           <div className="space-y-6">
             <Link to="/" className="flex items-center gap-2 hover:no-underline">
-              <div className="w-8 h-8 rounded-lg bg-[#1D9E75] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-none bg-[#1D9E75] flex items-center justify-center">
                 <Zap size={18} color="white" fill="white" strokeWidth={1} />
               </div>
               <span className="text-xl font-bold tracking-tight text-white">ChargeNet</span>
@@ -23,16 +23,16 @@ export function Footer() {
               India's most trusted EV charging network, powering 5+ cities with 500+ stations. Charge your journey with confidence.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">
+              <a href="#" className="w-9 h-9 rounded-none bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">
                 <Facebook size={18} />
               </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">
+              <a href="#" className="w-9 h-9 rounded-none bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">
                 <Twitter size={18} />
               </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">
+              <a href="#" className="w-9 h-9 rounded-none bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">
                 <Instagram size={18} />
               </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">
+              <a href="#" className="w-9 h-9 rounded-none bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">
                 <Linkedin size={18} />
               </a>
             </div>
