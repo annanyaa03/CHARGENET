@@ -45,42 +45,17 @@ const CountUp = ({ end, suffix = "" }) => {
   return <>{count.toLocaleString()}{suffix}</>;
 };
 
-const TypingStation = () => {
-  const [text, setText] = useState('');
-  const fullText = 'station';
-  const [isDeleting, setIsDeleting] = useState(false);
-  
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!isDeleting && text.length < fullText.length) {
-        setText(fullText.slice(0, text.length + 1));
-      } else if (isDeleting && text.length > 0) {
-        setText(fullText.slice(0, text.length - 1));
-      } else {
-        setIsDeleting(!isDeleting);
-      }
-    }, isDeleting ? 100 : 200);
-    
-    return () => clearTimeout(timeout);
-  }, [text, isDeleting]);
-  
-  return (
-    <span className="text-[#5DCAA5] relative whitespace-nowrap">
-      {text}
-      <span className="inline-block w-[3px] h-[1em] bg-[#5DCAA5] ml-1 animate-pulse align-middle" />
-    </span>
-  );
-};
 
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCity, setActiveCity] = useState(null);
 
   const stats = [
-    { value: 500, suffix: '+', label: 'Charging Stations' },
-    { value: 5, suffix: '', label: 'Cities Covered' },
-    { value: 10000, suffix: '+', label: 'Registered Users' },
-    { value: 99.2, suffix: '%', label: 'Uptime Reliability' },
+    { value: 50000, suffix: '+', label: 'Charging Stations' },
+    { value: 500, suffix: '+', label: 'Cities Covered' },
+    { value: 5000000, suffix: '+', label: 'Registered Users' },
+    { value: 99.99, suffix: '%', label: 'Uptime Reliability' },
   ];
 
   const steps = [
@@ -137,7 +112,7 @@ export default function Home() {
     },
   ];
 
-  const cities = ['Mumbai', 'Pune', 'Delhi', 'Bengaluru', 'Hyderabad'];
+  const cities = ['Mumbai', 'Pune', 'Delhi', 'Bengaluru', 'Hyderabad', 'Chennai', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Chandigarh', 'Indore'];
 
   const testimonials = [
     { 
@@ -167,7 +142,7 @@ export default function Home() {
     <PageWrapper noPadding={true}>
       <div className="w-full overflow-hidden bg-white">
         {/* ─── Hero Section ─── */}
-        <section className="relative min-h-screen flex items-center justify-center pt-20">
+        <section className="relative min-h-screen flex items-center justify-start pt-20">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img 
@@ -175,26 +150,19 @@ export default function Home() {
               alt="White vehicle on paved road"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#051428]/95 via-[#051428]/88 to-[#051428]/60" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/95 via-[#0a0a0a]/80 to-[#0a0a0a]/40" />
           </div>
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-8">
-            <Reveal>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium">
-                <span className="w-2 h-2 bg-[#1D9E75] rounded-full animate-pulse" />
-                Now live in 5 cities across India
-              </div>
-            </Reveal>
-
+          <div className="relative z-10 max-w-7xl mx-auto px-10 text-left space-y-8">
             <Reveal delay={0.2} y={30}>
-              <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
+              <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight leading-[1.1]" style={{ fontFamily: 'Fraunces, serif' }}>
                 Find your next <br />
-                <TypingStation />
+                <span className="text-white">charge point</span>
               </h1>
             </Reveal>
 
             <Reveal delay={0.4} y={20}>
-              <p className="max-w-2xl mx-auto text-white/70 text-lg md:text-xl leading-relaxed">
+              <p className="max-w-2xl text-white text-lg md:text-xl leading-relaxed">
                 Discover nearby EV charging stations, check real-time availability, 
                 book your slot, and charge with confidence.
               </p>
@@ -202,21 +170,20 @@ export default function Home() {
 
             {/* Search Bar */}
             <Reveal delay={0.6}>
-              <div className="max-w-3xl mx-auto mt-10">
+              <div className="max-w-md mt-10">
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-[#1D9E75] to-[#5DCAA5] rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-                  <div className="relative flex items-center p-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl">
-                    <div className="flex-1 flex items-center px-4">
-                      <Search className="text-white/40 mr-3" size={20} />
+                  <div className="relative flex items-center p-1 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                    <div className="flex-1 flex items-center px-4 gap-3">
+                      <Search className="text-gray-400" size={18} />
                       <input 
                         type="text" 
                         placeholder="Search by city or area..."
-                        className="w-full bg-transparent border-none text-white placeholder-white/40 focus:ring-0 text-lg py-4"
+                        className="w-full bg-transparent border-none outline-none text-gray-600 placeholder-gray-400 py-2 text-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
-                    <button className="bg-[#1D9E75] hover:bg-[#168561] text-white px-8 py-4 rounded-xl font-semibold transition-all shadow-lg active:scale-95">
+                    <button className="bg-white hover:bg-gray-50 text-gray-500 px-5 py-2 rounded-xl font-medium transition-all border border-gray-100 shadow-sm active:scale-95 text-xs">
                       Search
                     </button>
                   </div>
@@ -226,7 +193,7 @@ export default function Home() {
 
             {/* Secondary Buttons */}
             <Reveal delay={0.8}>
-              <div className="flex flex-wrap items-center justify-center gap-6 mt-8">
+              <div className="flex flex-wrap items-center justify-start gap-6 mt-8">
                 <button className="px-8 py-3 rounded-xl border border-white/30 text-white font-semibold hover:bg-white/10 transition-all">
                   Explore Map
                 </button>
@@ -237,21 +204,6 @@ export default function Home() {
               </div>
             </Reveal>
 
-            {/* Review Stats */}
-            <Reveal delay={1}>
-              <div className="flex items-center justify-center gap-3 mt-12 pb-10">
-                <div className="flex -space-x-3">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-[#051428] bg-gray-300 flex items-center justify-center text-[10px] font-bold text-[#051428] overflow-hidden">
-                      <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" />
-                    </div>
-                  ))}
-                </div>
-                <p className="text-white/60 text-sm">
-                  <span className="text-white font-bold">385+ reviews</span> from EV drivers
-                </p>
-              </div>
-            </Reveal>
           </div>
         </section>
 
@@ -344,15 +296,37 @@ export default function Home() {
                   </div>
                 </Reveal>
                 
-                <div className="flex flex-wrap gap-3">
-                  {cities.map((city, i) => (
-                    <Reveal key={city} delay={i * 0.1}>
-                      <div className="px-5 py-2.5 rounded-full bg-white border border-gray-200 shadow-sm flex items-center gap-2 text-gray-700 font-medium hover:border-[#1D9E75] transition-all cursor-default">
-                        <span className="w-2 h-2 bg-[#1D9E75] rounded-full" />
-                        {city}
-                      </div>
-                    </Reveal>
-                  ))}
+                <div className="h-20 flex items-center">
+                  <AnimatePresence mode="wait">
+                    {activeCity ? (
+                      <motion.div 
+                        key={activeCity}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        className="flex items-center gap-4"
+                      >
+                        <div className="w-12 h-12 bg-[#1D9E75]/10 rounded-full flex items-center justify-center text-[#1D9E75]">
+                          <MapPin size={24} />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-[#051428]">{activeCity}</div>
+                          <div className="text-sm font-medium text-[#1D9E75]">Live charging network active</div>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-gray-400 font-medium italic flex items-center gap-2"
+                      >
+                        <Navigation size={18} />
+                        Hover over a map pin to explore live cities
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <div className="pt-6">
@@ -365,18 +339,41 @@ export default function Home() {
               <Reveal delay={0.3}>
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-transparent to-gray-50 z-10 pointer-events-none" />
-                  <svg viewBox="0 0 100 100" className="w-full h-auto opacity-20 grayscale brightness-50">
-                     <path d="M30 10 L40 5 L55 5 L65 10 L75 15 L80 25 L85 40 L85 55 L75 70 L65 85 L50 95 L35 85 L20 70 L10 50 L15 30 L25 20 Z" fill="#1D9E75" />
+                  <svg viewBox="0 0 100 100" className="w-[120%] h-auto -ml-[10%] opacity-10 drop-shadow-2xl">
+                     <path d="M 38 15 L 35 12 L 40 5 L 45 2 L 50 6 L 55 12 L 58 18 L 62 16 L 65 14 L 68 15 L 70 12 L 75 14 L 85 18 L 92 25 L 88 32 L 80 32 L 72 38 L 75 42 L 72 45 L 65 52 L 58 68 L 52 82 L 48 95 L 45 80 L 40 65 L 35 55 L 28 50 L 15 48 L 8 40 L 15 35 L 20 38 L 28 32 L 28 25 L 32 18 Z" fill="#1D9E75" />
                   </svg>
                   {/* Glowing Pins */}
-                  <div className="absolute top-[20%] left-[30%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
-                  <div className="absolute top-[40%] left-[50%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
-                  <div className="absolute top-[60%] left-[40%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
-                  <div className="absolute top-[50%] left-[70%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
-                  <div className="absolute top-[75%] left-[55%]"><div className="w-3 h-3 bg-[#1D9E75] rounded-full animate-ping" /></div>
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-300 font-bold text-sm tracking-widest opacity-40 select-none">
-                    MAP OF INDIA
-                  </div>
+                  {[
+                    {top: 25, left: 42, name: 'Chandigarh'},
+                    {top: 55, left: 32, name: 'Mumbai'},
+                    {top: 60, left: 35, name: 'Pune'},
+                    {top: 75, left: 45, name: 'Bengaluru'},
+                    {top: 65, left: 45, name: 'Hyderabad'},
+                    {top: 80, left: 48, name: 'Chennai'},
+                    {top: 45, left: 70, name: 'Kolkata'},
+                    {top: 45, left: 28, name: 'Ahmedabad'},
+                    {top: 35, left: 40, name: 'Jaipur'},
+                    {top: 35, left: 52, name: 'Lucknow'},
+                    {top: 28, left: 45, name: 'Delhi NCR'},
+                    {top: 50, left: 42, name: 'Indore'},
+                  ].map((pos, i) => (
+                    <div 
+                      key={i} 
+                      className="absolute group cursor-pointer" 
+                      style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
+                      onMouseEnter={() => setActiveCity(pos.name)}
+                      onMouseLeave={() => setActiveCity(null)}
+                    >
+                      <div className="relative">
+                        <div className={`w-3 h-3 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-300 ${activeCity === pos.name ? 'bg-[#1D9E75] scale-[1.5]' : 'bg-[#1D9E75]'}`} />
+                        <div className={`w-6 h-6 opacity-40 rounded-full animate-ping absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${activeCity === pos.name ? 'bg-[#1D9E75]' : 'bg-[#1D9E75]'}`} />
+                        <div className={`absolute left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 bg-[#051428] shadow-xl rounded-lg text-xs font-bold text-white transition-all duration-300 pointer-events-none z-20 ${activeCity === pos.name ? 'opacity-100 -top-10' : 'opacity-0 -top-4'}`}>
+                           {pos.name}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
                 </div>
               </Reveal>
             </div>
@@ -389,20 +386,20 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-8">
               {testimonials.map((t, i) => (
                 <Reveal key={t.name} delay={i * 0.1}>
-                  <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
-                    <div className="space-y-4">
-                      <div className="flex gap-1">
-                        {[1,2,3,4,5].map(s => <Star key={s} size={16} fill="#EAB308" className="text-[#EAB308]" />)}
+                  <div className="flex flex-col justify-between h-full group p-6 rounded-2xl transition-all duration-300 hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 border border-transparent hover:border-gray-100 cursor-pointer">
+                    <div className="space-y-3">
+                      <div className="flex gap-1 mb-2">
+                        {[1,2,3,4,5].map(s => <Star key={s} size={14} fill="#EAB308" className="text-[#EAB308]" />)}
                       </div>
-                      <p className="text-gray-600 text-lg italic leading-relaxed">"{t.quote}"</p>
+                      <p className="text-gray-700 text-base font-medium leading-relaxed group-hover:text-[#051428] transition-colors">"{t.quote}"</p>
                     </div>
-                    <div className="flex items-center gap-4 mt-8 pt-6 border-t border-gray-50">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1D9E75] to-[#5CAA5] flex items-center justify-center text-white font-bold">
+                    <div className="flex items-center gap-3 mt-6">
+                      <div className="w-10 h-10 rounded-full bg-[#1D9E75]/10 flex items-center justify-center text-xs text-[#1D9E75] font-bold">
                         {t.initials}
                       </div>
                       <div>
-                        <h4 className="font-bold text-[#051428]">{t.name}</h4>
-                        <p className="text-gray-400 text-sm font-medium">{t.city}</p>
+                        <h4 className="font-bold text-[#051428] text-sm">{t.name}</h4>
+                        <p className="text-gray-500 text-xs font-medium">{t.city}</p>
                       </div>
                     </div>
                   </div>
