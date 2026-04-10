@@ -14,6 +14,7 @@ const LearnHub = lazy(() => import('../pages/LearnHub'))
 const GuideDetail = lazy(() => import('../pages/GuideDetail'))
 const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
+const Pricing = lazy(() => import('../pages/Pricing'))
 
 // Owner
 const OwnerDashboard = lazy(() => import('../pages/OwnerPortal/Dashboard'))
@@ -53,6 +54,7 @@ export function AppRouter() {
           <Route path="/learn/:guideId" element={<GuideDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/bookings" element={<BookSlot />} />
 
           {/* Protected — any authenticated */}
