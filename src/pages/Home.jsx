@@ -171,8 +171,8 @@ export default function Home() {
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img 
-              src="https://images.unsplash.com/photo-1570160897548-2587dec7bc31?q=80&w=2000&auto=format&fit=crop" 
-              alt="Aerial city at night"
+              src="https://images.pexels.com/photos/2912309/pexels-photo-2912309.jpeg?auto=compress&cs=tinysrgb&w=3840" 
+              alt="White vehicle on paved road"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#051428]/95 via-[#051428]/88 to-[#051428]/60" />
