@@ -11,8 +11,11 @@
   --color-warning: #B45309;
   --color-danger: #B91C1C;
   --color-neutral: #A8A29E;
-  --font-family-sans: 'Inter', sans-serif;
+  --font-family-sans: 'Outfit', sans-serif;
   --font-family-serif: 'Fraunces', serif;
+  /* Premium Typography Spacing */
+  --tracking-premium: 0.35em;
+  --tracking-tight-premium: -0.025em;
 }
 
 @layer base {
@@ -29,7 +32,7 @@
   body {
     background-color: #FAFAF9;
     color: #1C1917;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Outfit', sans-serif;
     font-weight: 400;
     font-size: 16px;
     line-height: 1.5;
@@ -53,12 +56,12 @@
   }
 
   input, textarea, select {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Outfit', sans-serif;
     font-size: 14px;
   }
 
   button {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Outfit', sans-serif;
     cursor: pointer;
   }
 
@@ -307,6 +310,32 @@
   @keyframes fadeIn {
     from { opacity: 0; }
     to   { opacity: 1; }
+  }
+
+  /* ── Premium Typography Utilities ── */
+  .label-premium {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-premium);
+    color: #78716C; /* text-muted */
+    line-height: 1;
+  }
+
+  .heading-premium {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    letter-spacing: var(--tracking-tight-premium);
+    color: #1C1917; /* text-primary */
+    line-height: 1.1;
+  }
+
+  .value-premium {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: #1C1917;
   }
 
   @keyframes scaleIn {

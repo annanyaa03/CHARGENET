@@ -218,9 +218,9 @@ export default function Booking() {
             </div>
             <span className="text-[10px] font-black uppercase tracking-[0.3em]">Cancel Booking</span>
           </button>
-          <div className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-200">
+            <span className="label-premium !text-gray-200">
             Secure Reserve System v2.0
-          </div>
+          </span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
@@ -228,8 +228,8 @@ export default function Booking() {
           {/* Main Form */}
           <div className="lg:col-span-8">
             <header className="mb-16">
-              <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4 leading-none">Checkout.</h1>
-              <p className="text-gray-400 font-bold uppercase text-[9px] tracking-[0.3em]">{charger.company} · {charger.plugType} · {charger.powerKw}kW</p>
+              <h1 className="text-5xl heading-premium mb-4 leading-none">Checkout.</h1>
+              <p className="label-premium !text-gray-300">{charger.company} · {charger.plugType} · {charger.powerKw}kW</p>
             </header>
 
             <div className="space-y-32">
@@ -237,17 +237,17 @@ export default function Booking() {
               {/* 01. Configure */}
               <section>
                 <div className="flex items-baseline gap-4 mb-10">
-                  <span className="text-xl font-black text-gray-900 tracking-tighter">01.</span>
-                  <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-300">Specifications</h2>
+                  <span className="text-xl heading-premium">01.</span>
+                  <h2 className="label-premium !text-gray-300">Specifications</h2>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
                   <div className="pb-4 border-b border-gray-100">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-300 block mb-4">Select Vehicle</label>
+                    <label className="label-premium !text-gray-200 !text-[9px] block mb-4">Select Vehicle</label>
                     <div className="flex items-center group">
                       <select 
                         value={vehicle}
                         onChange={e => setVehicle(e.target.value)}
-                        className="w-full bg-transparent text-lg font-black text-gray-900 appearance-none outline-none cursor-pointer"
+                        className="w-full bg-transparent text-lg value-premium appearance-none outline-none cursor-pointer"
                       >
                         <option>Tata Nexon EV Max</option>
                         <option>MG ZS EV Prestige</option>
@@ -259,8 +259,8 @@ export default function Booking() {
                     </div>
                   </div>
                   <div className="pb-4 border-b border-gray-100">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-300 block mb-4">Location</label>
-                    <span className="text-lg font-black text-gray-900 truncate block">{station.name}</span>
+                    <label className="label-premium !text-gray-200 !text-[9px] block mb-4">Location</label>
+                    <span className="text-lg value-premium truncate block">{station.name}</span>
                   </div>
                 </div>
               </section>
@@ -268,8 +268,8 @@ export default function Booking() {
               {/* 02. Date */}
               <section>
                 <div className="flex items-baseline gap-4 mb-10">
-                  <span className="text-xl font-black text-gray-900 tracking-tighter">02.</span>
-                  <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-300">Select Date</h2>
+                  <span className="text-xl heading-premium">02.</span>
+                  <h2 className="label-premium !text-gray-300">Select Date</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 border-t border-l border-gray-100">
                   {dates.map(date => (
@@ -286,8 +286,8 @@ export default function Booking() {
               {/* 03. Time */}
               <section>
                 <div className="flex items-baseline gap-4 mb-10">
-                  <span className="text-xl font-black text-gray-900 tracking-tighter">03.</span>
-                  <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-300">Choose Slots</h2>
+                  <span className="text-xl heading-premium">03.</span>
+                  <h2 className="label-premium !text-gray-300">Choose Slots</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-px bg-gray-100 border border-gray-100">
                   {SLOTS.map(slot => (
@@ -304,8 +304,8 @@ export default function Booking() {
               {/* 04. Payment */}
               <section>
                 <div className="flex items-baseline gap-4 mb-10">
-                  <span className="text-xl font-black text-gray-900 tracking-tighter">04.</span>
-                  <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-300">Payment Gateway</h2>
+                  <span className="text-xl heading-premium">04.</span>
+                  <h2 className="label-premium !text-gray-300">Payment Gateway</h2>
                 </div>
                 <div className="space-y-4 max-w-2xl">
                   {PAYMENT_METHODS.filter(p => p.id !== 'wallet' || user).map(p => (
@@ -338,32 +338,32 @@ export default function Booking() {
           {/* Sticky Summary */}
           <div className="lg:col-span-4">
              <div className="lg:sticky lg:top-32">
-                <div className="border border-gray-900 p-10">
-                   <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-300 mb-10">Reservation Summary</h3>
+                 <div className="border border-gray-900 p-10">
+                    <h3 className="label-premium !text-gray-200 !text-[10px] !tracking-[0.4em] mb-10">Reservation Summary</h3>
                    
                    <div className="space-y-10">
-                      <div>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Schedule</span>
-                        <p className="text-base font-black text-gray-900 leading-tight">
+                       <div>
+                        <span className="label-premium block mb-2">Schedule</span>
+                        <p className="text-base value-premium leading-tight">
                           {dates.find(d => d.date === dateStr)?.fullDate}<br/>
                           {startLabel ? `${startLabel} — ${endLabel}` : 'Not scheduled'}
                         </p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-8">
-                        <div>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Energy</span>
-                          <p className="text-base font-black text-gray-900">{kwh > 0 ? `${kwh.toFixed(1)} kWh` : '--'}</p>
+                         <div>
+                          <span className="label-premium block mb-2">Energy</span>
+                          <p className="text-base value-premium">{kwh > 0 ? `${kwh.toFixed(1)} kWh` : '--'}</p>
                         </div>
                         <div>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Duration</span>
-                          <p className="text-base font-black text-gray-900">{hrs > 0 ? `${hrs * 60}m` : '--'}</p>
+                          <span className="label-premium block mb-2">Duration</span>
+                          <p className="text-base value-premium">{hrs > 0 ? `${hrs * 60}m` : '--'}</p>
                         </div>
                       </div>
 
-                      <div className="pt-10 border-t border-gray-100 flex items-baseline justify-between mb-10">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Estimated Total</span>
-                        <span className="text-3xl font-black text-gray-900 tracking-tighter">{formatINR(cost)}</span>
+                       <div className="pt-10 border-t border-gray-100 flex items-baseline justify-between mb-10">
+                        <span className="label-premium">Estimated Total</span>
+                        <span className="text-3xl heading-premium">{formatINR(cost)}</span>
                       </div>
 
                       <Button
