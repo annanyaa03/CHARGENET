@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, MapPin, Star, Clock, Zap, BatteryCharging,
@@ -10,6 +10,7 @@ import { stations } from '../mock/stations'
 import { chargers } from '../mock/chargers'
 import { useAuthStore } from '../store/authStore'
 import { motion } from 'framer-motion'
+import { fetchWeather } from '../services/weatherService'
 import toast from 'react-hot-toast'
 
 /* ─── Status Config ────────────────────────────────────────── */
@@ -68,6 +69,10 @@ export default function BookSlot() {
   const [selectedDate, setSelectedDate] = useState(dates[0].date)
   const [selectedSlots, setSelectedSlots] = useState([])
 
+  // Live weather per city (cached)
+  const [cityWeather, setCityWeather] = useState({})
+  const fetchedCities = useRef(new Set())
+
   useEffect(() => {
     document.title = 'Book a Slot — ChargeNet'
     window.scrollTo(0, 0)
@@ -90,6 +95,20 @@ export default function BookSlot() {
     }
     return result.sort((a, b) => a.distance - b.distance)
   }, [selectedCity, searchQuery])
+
+  // Fetch weather for each unique city in the filtered list (one call per city)
+  useEffect(() => {
+    if (step !== 1) return
+    const uniqueCityStations = filteredStations.filter(
+      s => !fetchedCities.current.has(s.city)
+    )
+    uniqueCityStations.forEach(s => {
+      fetchedCities.current.add(s.city)
+      fetchWeather(s.lat, s.lng)
+        .then(data => setCityWeather(prev => ({ ...prev, [s.city]: data })))
+        .catch(() => {})
+    })
+  }, [filteredStations, step])
 
   // Chargers for selected station
   const stationChargers = useMemo(() => {
@@ -197,8 +216,7 @@ export default function BookSlot() {
               />
             </div>
 
-            {/* Station list */}
-            <div className="space-y-4">
+            <div className="divide-y divide-gray-100 border-t border-gray-100">
               {filteredStations.length === 0 ? (
                 <div className="text-center py-16">
                   <MapPin size={32} className="text-gray-200 mx-auto mb-3" />
@@ -209,52 +227,67 @@ export default function BookSlot() {
                   const cfg = STATUS_CFG[station.status]
                   const isSelected = selectedStation?.id === station.id
                   return (
-                    <motion.button
+                    <button
                       key={station.id}
                       onClick={() => setSelectedStation(station)}
-                      whileHover={{ scale: 1.01, zIndex: 10 }}
-                      className={`w-full text-left p-6 transition-all duration-300 relative group ${
-                        isSelected
-                          ? 'bg-white shadow-2xl shadow-gray-200/60 ring-1 ring-gray-900/5'
-                          : 'bg-transparent hover:bg-white hover:shadow-2xl hover:shadow-gray-200/40 hover:ring-1 hover:ring-gray-100'
+                      className={`w-full text-left py-10 px-4 transition-all duration-500 relative group overflow-hidden ${
+                        isSelected ? 'bg-gray-50/50' : 'bg-transparent hover:bg-gray-50/30'
                       }`}
                     >
+                      {/* Interaction Line */}
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-500 ${
+                        isSelected ? 'bg-gray-900 h-full' : 'bg-transparent h-0 group-hover:h-full group-hover:bg-gray-300'
+                      }`} />
+
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-6 min-w-0">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
-                            isSelected ? 'bg-gray-900 text-white shadow-lg' : 'bg-gray-50 text-gray-400 group-hover:bg-gray-900 group-hover:text-white group-hover:shadow-lg'
+                        <div className="flex items-center gap-8 min-w-0">
+                          <div className={`w-14 h-14 rounded-none flex items-center justify-center flex-shrink-0 transition-all duration-700 ${
+                            isSelected ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300 group-hover:bg-gray-200 group-hover:text-gray-900'
                           }`}>
-                            <Zap size={20} className={isSelected ? 'fill-white' : 'group-hover:fill-white'} />
+                            <Zap size={24} className={isSelected ? 'fill-white' : 'group-hover:fill-gray-900'} />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-3 mb-1.5">
-                              <p className="text-base font-bold text-gray-900 truncate tracking-tight">{station.name}</p>
+                            <div className="flex items-center gap-4 mb-3">
+                              <p className="text-xl font-black text-gray-900 truncate tracking-tighter uppercase">{station.name}</p>
                               <span
-                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[9px] font-black uppercase tracking-[0.2em] flex-shrink-0 transition-opacity duration-300 ${!isSelected ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-none text-[10px] font-black uppercase tracking-[0.25em] flex-shrink-0 transition-all duration-500 ${!isSelected ? 'opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0' : 'opacity-100'}`}
                                 style={{ background: cfg.bg, color: cfg.color }}
                               >
                                 {cfg.label}
                               </span>
                             </div>
-                            <div className="flex items-center gap-5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">
-                              <span className="flex items-center gap-2">
-                                <MapPin size={12} className="text-gray-300" strokeWidth={2.5} /> {station.city}
+                            <div className="flex items-center gap-8 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                              <span className="flex items-center gap-2 group-hover:text-gray-600 transition-colors">
+                                <MapPin size={13} className="text-gray-300" strokeWidth={3} /> {station.city}
                               </span>
-                              <span className="flex items-center gap-2">
-                                <Star size={12} className="text-amber-400 fill-amber-400" /> {station.rating}
+                              <span className="hidden sm:flex items-center gap-2">
+                                <Star size={13} className="text-amber-400 fill-amber-400" /> {station.rating}
                               </span>
-                              <span>{station.availableChargers}/{station.totalChargers} FREE</span>
+                              <span className="text-gray-500">{station.availableChargers}/{station.totalChargers} FREE</span>
                               <span className="text-gray-300">{(station.distance / 1000).toFixed(1)} KM</span>
+                              
+                              {cityWeather[station.city] && (
+                                <motion.span 
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  className="flex items-center gap-2 text-sky-500 font-black"
+                                >
+                                  {cityWeather[station.city].weatherEmoji} {cityWeather[station.city].temp}°
+                                </motion.span>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <div className={`w-8 h-8 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-                          isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-100 opacity-0 group-hover:opacity-100 group-hover:border-gray-900'
+                        
+                        <div className={`transition-all duration-500 mr-4 ${
+                          isSelected ? 'opacity-100 scale-110 translate-x-0' : 'opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0'
                         }`}>
-                          {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
+                          <div className={`w-10 h-10 border-2 rounded-none flex items-center justify-center ${isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-200'}`}>
+                            <ChevronRight size={20} className={isSelected ? 'text-white' : 'text-gray-300'} strokeWidth={3} />
+                          </div>
                         </div>
                       </div>
-                    </motion.button>
+                    </button>
                   )
                 })
               )}
@@ -292,7 +325,7 @@ export default function BookSlot() {
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="divide-y divide-gray-100 border-t border-gray-100">
               {stationChargers.length === 0 ? (
                 <div className="text-center py-16">
                   <BatteryCharging size={32} className="text-gray-200 mx-auto mb-3" />
@@ -303,46 +336,51 @@ export default function BookSlot() {
                   const isSelected = selectedCharger?.id === charger.id
                   const cfg = STATUS_CFG[charger.status]
                   return (
-                    <motion.button
+                    <button
                       key={charger.id}
                       onClick={() => setSelectedCharger(charger)}
-                      whileHover={{ scale: 1.01, zIndex: 10 }}
-                      className={`w-full text-left p-6 transition-all duration-300 relative group ${
-                        isSelected
-                          ? 'bg-white shadow-2xl shadow-gray-200/60 ring-1 ring-gray-900/5'
-                          : 'bg-transparent hover:bg-white hover:shadow-2xl hover:shadow-gray-200/40 hover:ring-1 hover:ring-gray-100'
+                      className={`w-full text-left py-8 px-4 transition-all duration-500 relative group ${
+                        isSelected ? 'bg-gray-50/50' : 'bg-transparent hover:bg-gray-50/20'
                       }`}
                     >
+                      {/* Side Interaction Line */}
+                      <div className={`absolute right-0 top-0 bottom-0 w-1 transition-all duration-500 ${
+                        isSelected ? 'bg-blue-600 h-full' : 'bg-transparent h-0 group-hover:h-full group-hover:bg-blue-200'
+                      }`} />
+
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-3">
-                            <p className="text-base font-bold text-gray-900 tracking-tight">{charger.company}</p>
+                          <div className="flex items-center gap-4 mb-4">
+                            <p className="text-lg font-black text-gray-900 tracking-tight uppercase">{charger.company}</p>
                             <span
-                              className={`px-2 py-0.5 rounded-none text-[9px] font-black uppercase tracking-[0.2em] transition-opacity duration-300 ${!isSelected ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}
+                              className={`px-3 py-1 rounded-none text-[9px] font-black uppercase tracking-[0.25em] transition-all duration-500 ${!isSelected ? 'opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0' : 'opacity-100'}`}
                               style={{ background: cfg.bg, color: cfg.color }}
                             >
                               {cfg.label}
                             </span>
                           </div>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50/50 rounded-none text-[10px] font-bold uppercase tracking-wider text-gray-600 transition-colors group-hover:bg-gray-100">
-                              <Plug size={12} className="text-gray-400" /> {charger.plugType}
+                          <div className="flex flex-wrap items-center gap-6">
+                            <span className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-gray-500">
+                              <Plug size={14} className="text-gray-300" /> {charger.plugType}
                             </span>
-                            <span className="flex items-center gap-2 px-3 py-1.5 bg-blue-50/50 rounded-none text-[10px] font-bold uppercase tracking-wider text-blue-700 transition-colors group-hover:bg-blue-100">
-                              <Zap size={12} className="text-blue-400" /> {charger.powerKw} kW
+                            <span className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-blue-600">
+                              <Zap size={14} className="text-blue-300" /> {charger.powerKw} kW
                             </span>
-                            <span className="px-3 py-1.5 bg-emerald-50/50 rounded-none text-[10px] font-bold uppercase tracking-wider text-emerald-700 transition-colors group-hover:bg-emerald-100">
-                              ₹{charger.pricePerKwh}/kWh
+                            <span className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-emerald-600">
+                              <span className="text-emerald-300">₹</span> {charger.pricePerKwh}/kWh
                             </span>
                           </div>
                         </div>
-                        <div className={`w-8 h-8 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 ml-4 transition-all duration-300 ${
-                          isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-200 opacity-0 group-hover:opacity-100 group-hover:border-gray-900'
+                        
+                        <div className={`transition-all duration-500 ${
+                          isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'
                         }`}>
-                          {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
+                          <div className={`w-10 h-10 border-2 rounded-none flex items-center justify-center ${isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-200'}`}>
+                            {isSelected ? <Check size={20} className="text-white" strokeWidth={3} /> : <ChevronRight size={18} className="text-gray-300" />}
+                          </div>
                         </div>
                       </div>
-                    </motion.button>
+                    </button>
                   )
                 })
               )}
@@ -380,35 +418,35 @@ export default function BookSlot() {
               </p>
             </div>
 
-            {/* Date picker */}
-            <div className="mb-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-6">Select Date</p>
-              <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide">
+            <div className="mb-14">
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 mb-8">Select Date</p>
+              <div className="flex border-b border-gray-100">
                 {dates.map(d => {
                   const isSelected = selectedDate === d.date
                   return (
-                    <motion.button
+                    <button
                       key={d.date}
                       onClick={() => setSelectedDate(d.date)}
-                      whileHover={{ scale: 1.05 }}
-                      className={`flex flex-col items-center min-w-[80px] py-4 px-2 transition-all duration-300 group relative ${
+                      className={`flex-1 flex flex-col items-center py-8 px-2 transition-all duration-500 group relative border-b-2 ${
                         isSelected
-                          ? 'bg-gray-900 text-white shadow-2xl shadow-gray-900/20'
-                          : 'bg-transparent text-gray-600 hover:bg-white hover:shadow-xl hover:shadow-gray-200/40 hover:ring-1 hover:ring-gray-100'
+                          ? 'border-gray-900 bg-gray-50/50'
+                          : 'border-transparent text-gray-400 hover:text-gray-900'
                       }`}
                     >
-                      <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-2 transition-colors ${
-                        isSelected ? 'text-gray-400' : 'text-gray-400 group-hover:text-gray-500'
+                      <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-3 transition-colors ${
+                        isSelected ? 'text-gray-900' : 'text-gray-400'
                       }`}>
                         {d.isToday ? 'Today' : d.dayName}
                       </span>
-                      <span className="text-2xl font-black mb-1 leading-none">{d.dayNum}</span>
-                      <span className={`text-[9px] font-bold uppercase tracking-wider ${
-                        isSelected ? 'text-gray-400' : 'text-gray-300 group-hover:text-gray-400'
+                      <span className={`text-4xl font-black mb-1 transition-all duration-500 leading-none tracking-tighter ${isSelected ? 'text-gray-900 scale-110' : 'text-gray-200 group-hover:text-gray-400'}`}>
+                        {d.dayNum}
+                      </span>
+                      <span className={`text-[9px] font-black uppercase tracking-[0.2em] mt-2 transition-colors ${
+                        isSelected ? 'text-gray-500' : 'text-transparent group-hover:text-gray-300'
                       }`}>
                         {d.monthShort}
                       </span>
-                    </motion.button>
+                    </button>
                   )
                 })}
               </div>

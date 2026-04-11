@@ -17,12 +17,28 @@ import toast from 'react-hot-toast'
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
+/* ─── Peak hour logic (real time of day) ────────────────────────────── */
+function getSlotHint(slotIndex) {
+  // slotIndex: 0-23 (each = 30 min, so 0 = 00:00, 14 = 07:00, 17 = 08:30 ...)
+  const hour = Math.floor(slotIndex / 2)
+  // Peak hours: 7-9 AM and 5-8 PM (India national grid peak)
+  if ((hour >= 7 && hour < 10) || (hour >= 17 && hour < 20)) return 'peak'
+  // Off-peak: 11 PM - 5 AM (cheapest grid rate)
+  if (hour >= 23 || hour < 5) return 'offpeak'
+  return null
+}
+
+const currentHour = new Date().getHours()
+const currentSlotIndex = currentHour * 2  // approximate current position in the grid
+
 const SLOTS = Array.from({ length: 24 }, (_, i) => {
   const h = Math.floor(i / 2)
   const m = i % 2 === 0 ? '00' : '30'
   const label = `${String(h).padStart(2, '0')}:${m}`
   const booked = [2, 3, 10, 11, 12, 20, 21, 22].includes(i)
-  return { id: i, label, booked }
+  const hint = getSlotHint(i)
+  const isPast = i < currentSlotIndex
+  return { id: i, label, booked, hint, isPast }
 })
 
 const getNext7Days = () => {
@@ -53,41 +69,49 @@ function DateItem({ date, isSelected, onClick }) {
   return (
     <button
       onClick={() => onClick(date.date)}
-      className={`group flex items-center justify-between py-6 border-b transition-all ${
-        isSelected ? 'border-gray-900' : 'border-gray-100 hover:border-gray-300'
+      className={`group flex flex-col items-center flex-1 py-8 transition-all duration-500 relative border-b-2 sm:border-b-4 ${
+        isSelected ? 'border-gray-900 bg-gray-50/50' : 'border-transparent text-gray-400 hover:text-gray-900'
       }`}
     >
-      <div className="flex flex-col items-start px-2">
-        <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 ${isSelected ? 'text-gray-900' : 'text-gray-400'}`}>
-          {date.dayName}
-        </span>
-        <span className={`text-2xl font-black tracking-tighter ${isSelected ? 'text-gray-900' : 'text-gray-200'}`}>
-          {date.dayNum}
-        </span>
-      </div>
-      <div className={`w-8 h-8 rounded-none border flex items-center justify-center transition-all ${
-        isSelected ? 'bg-gray-900 border-gray-900 text-white' : 'border-gray-100 text-transparent'
-      }`}>
-        <Check size={14} />
-      </div>
+      <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-3 transition-colors ${isSelected ? 'text-gray-900' : 'text-gray-400'}`}>
+        {date.dayName}
+      </span>
+      <span className={`text-4xl font-black mb-1 transition-all duration-500 leading-none tracking-tighter ${isSelected ? 'text-gray-900 scale-110' : 'text-gray-200 group-hover:text-gray-400'}`}>
+        {date.dayNum}
+      </span>
     </button>
   )
 }
 
 function SlotButton({ slot, isSelected, onClick }) {
+  const hintColors = {
+    peak:    { bg: 'bg-amber-50',   text: 'text-amber-600',   label: 'PEAK' },
+    offpeak: { bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'CHEAP' },
+  }
+  const hint = hintColors[slot.hint]
+
   return (
     <button
       onClick={() => onClick(slot)}
       disabled={slot.booked}
-      className={`relative h-14 text-sm font-bold transition-all border ${
+      className={`relative h-16 text-sm font-black transition-all duration-300 flex flex-col items-center justify-center gap-0.5 border-none outline-none ${
         slot.booked
-          ? 'bg-gray-50 border-gray-100 text-gray-200 cursor-not-allowed'
+          ? 'bg-gray-50 shadow-inner text-gray-200 cursor-not-allowed opacity-40'
           : isSelected
-          ? 'bg-gray-900 border-gray-900 text-white z-10'
-          : 'bg-white border-gray-100 text-gray-600 hover:border-gray-900'
+          ? 'bg-gray-900 text-white z-20 scale-105 shadow-2xl'
+          : hint
+          ? `${hint.bg} text-gray-800 hover:bg-gray-100`
+          : 'bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-900'
       }`}
     >
-      {slot.label}
+      <span className="tracking-tighter">{slot.label}</span>
+      {!slot.booked && hint && !isSelected && (
+        <span className={`text-[7px] font-black uppercase tracking-[0.2em] ${hint.text}`}>
+          {hint.label}
+        </span>
+      )}
+      {/* Mini Selection Indicator */}
+      {isSelected && <div className="absolute bottom-1 w-1 h-1 bg-white rounded-none" />}
     </button>
   )
 }
@@ -275,7 +299,7 @@ export default function Booking() {
                   <span className="text-xl heading-premium">02.</span>
                   <h2 className="label-premium !text-gray-300">Select Date</h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 border-t border-l border-gray-100">
+                <div className="flex border-b border-gray-100">
                   {dates.map(date => (
                     <DateItem 
                       key={date.date}
@@ -289,10 +313,26 @@ export default function Booking() {
 
               {/* 03. Time */}
               <section>
-                <div className="flex items-baseline gap-4 mb-10">
+                <div className="flex items-baseline gap-4 mb-6">
                   <span className="text-xl heading-premium">03.</span>
                   <h2 className="label-premium !text-gray-300">Choose Slots</h2>
                 </div>
+
+                {/* Live pricing hint */}
+                <div className="flex flex-wrap items-center gap-4 mb-6 text-[9px] font-black uppercase tracking-[0.2em]">
+                  <span className="flex items-center gap-1.5 text-amber-500">
+                    <span className="w-3 h-3 bg-amber-50 border border-amber-200 inline-block" />
+                    Peak · 7–10am, 5–8pm
+                  </span>
+                  <span className="flex items-center gap-1.5 text-emerald-600">
+                    <span className="w-3 h-3 bg-emerald-50 border border-emerald-200 inline-block" />
+                    Off-Peak · 11pm–5am (cheapest)
+                  </span>
+                  <span className="flex items-center gap-1.5 text-gray-400 ml-auto">
+                    🕐 Now: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-px bg-gray-100 border border-gray-100">
                   {SLOTS.map(slot => (
                     <SlotButton 
@@ -316,21 +356,31 @@ export default function Booking() {
                     <button
                       key={p.id}
                       onClick={() => setMethod(p.id)}
-                      className={`w-full flex items-center justify-between p-8 border transition-all ${
-                        method === p.id ? 'border-gray-900 bg-gray-50' : 'border-gray-100 hover:border-gray-300'
+                      className={`w-full flex items-center justify-between py-10 border-b transition-all duration-500 relative group px-2 overflow-hidden ${
+                        method === p.id ? 'bg-gray-50/50' : 'bg-transparent hover:bg-gray-50/20'
                       }`}
                     >
-                      <div className="flex items-center gap-6">
-                        <div className={`w-10 h-10 flex items-center justify-center rounded-none border ${method === p.id ? 'bg-gray-900 border-gray-900 text-white' : 'border-gray-100 text-gray-300'}`}>
-                          <p.icon size={20} />
+                      {/* Interaction Line */}
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-500 ${
+                        method === p.id ? 'bg-gray-900 h-full' : 'bg-transparent h-0 group-hover:h-full group-hover:bg-gray-200'
+                      }`} />
+
+                      <div className="flex items-center gap-8">
+                        <div className={`w-14 h-14 flex items-center justify-center rounded-none transition-all duration-500 ${method === p.id ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                          <p.icon size={24} />
                         </div>
                         <div className="text-left">
-                          <p className="text-sm font-black uppercase tracking-wider text-gray-900">{p.label}</p>
-                          <p className="text-[10px] font-bold text-gray-400 tracking-wide">{p.desc}</p>
+                          <p className="text-lg font-black uppercase tracking-tighter text-gray-900">{p.label}</p>
+                          <p className="text-[10px] font-black text-gray-400 tracking-[0.2em]">{p.desc}</p>
                         </div>
                       </div>
-                      <div className={`w-5 h-5 rounded-none border-2 flex items-center justify-center ${method === p.id ? 'border-gray-900' : 'border-gray-200'}`}>
-                        {method === p.id && <div className="w-2.5 h-2.5 bg-gray-900 rounded-none" />}
+                      
+                      <div className={`transition-all duration-500 ${
+                        method === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'
+                      }`}>
+                         <div className={`w-10 h-10 border-2 rounded-none flex items-center justify-center ${method === p.id ? 'border-gray-900 bg-gray-900' : 'border-gray-200'}`}>
+                           {method === p.id && <Check size={20} className="text-white" strokeWidth={3} />}
+                         </div>
                       </div>
                     </button>
                   ))}
@@ -342,32 +392,32 @@ export default function Booking() {
           {/* Sticky Summary */}
           <div className="lg:col-span-4">
              <div className="lg:sticky lg:top-32">
-                 <div className="border border-gray-900 p-10">
-                    <h3 className="label-premium !text-gray-200 !text-[10px] !tracking-[0.4em] mb-10">Reservation Summary</h3>
+                 <div className="py-10 border-b-2 border-gray-900 mb-10">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-gray-900 mb-12">Reservation Summary</h3>
                    
-                   <div className="space-y-10">
+                   <div className="space-y-12">
                        <div>
-                        <span className="label-premium block mb-2">Schedule</span>
-                        <p className="text-base value-premium leading-tight">
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 block mb-3">Schedule</span>
+                        <p className="text-xl font-black text-gray-900 leading-tight tracking-tighter uppercase">
                           {dates.find(d => d.date === dateStr)?.fullDate}<br/>
-                          {startLabel ? `${startLabel} — ${endLabel}` : 'Not scheduled'}
+                          <span className="text-gray-400">{startLabel ? `${startLabel} — ${endLabel}` : 'Not scheduled'}</span>
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-8">
+                      <div className="grid grid-cols-2 gap-8 border-t border-gray-50 pt-10">
                          <div>
-                          <span className="label-premium block mb-2">Energy</span>
-                          <p className="text-base value-premium">{kwh > 0 ? `${kwh.toFixed(1)} kWh` : '--'}</p>
+                          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 block mb-3">Energy</span>
+                          <p className="text-xl font-black text-gray-900 tracking-tighter uppercase">{kwh > 0 ? `${kwh.toFixed(1)} kWh` : '--'}</p>
                         </div>
                         <div>
-                          <span className="label-premium block mb-2">Duration</span>
-                          <p className="text-base value-premium">{hrs > 0 ? `${hrs * 60}m` : '--'}</p>
+                          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 block mb-3">Duration</span>
+                          <p className="text-xl font-black text-gray-900 tracking-tighter uppercase">{hrs > 0 ? `${hrs * 60}m` : '--'}</p>
                         </div>
                       </div>
 
-                       <div className="pt-10 border-t border-gray-100 flex items-baseline justify-between mb-10">
-                        <span className="label-premium">Estimated Total</span>
-                        <span className="text-3xl heading-premium">{formatINR(cost)}</span>
+                       <div className="pt-12 border-t border-gray-100 flex items-baseline justify-between mb-12">
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-300">Total Price</span>
+                        <span className="text-5xl font-black tracking-tighter text-gray-900">{formatINR(cost)}</span>
                       </div>
 
                       <Button
@@ -376,15 +426,15 @@ export default function Booking() {
                         loading={processing}
                         onClick={handlePay}
                         disabled={selectedSlots.length === 0}
-                        className="!h-20 !rounded-none !bg-gray-900 hover:!bg-black text-white font-black uppercase text-xs tracking-[0.2em] shadow-none flex items-center justify-center gap-3"
+                        className="!h-24 !rounded-none !bg-gray-900 hover:!bg-black text-white font-black uppercase text-sm tracking-[0.5em] shadow-2xl shadow-gray-900/40 flex items-center justify-center gap-4 transition-all hover:-translate-y-1"
                       >
                          {processing ? 'Processing' : 'Confirm Reserve'}
-                         {!processing && <ArrowRight size={18} />}
+                         {!processing && <ArrowRight size={22} strokeWidth={3} />}
                       </Button>
 
-                      <div className="flex items-center justify-center gap-2 text-gray-300">
-                        <ShieldCheck size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">SSL Encrypted Channel</span>
+                      <div className="flex items-center justify-center gap-3 text-gray-200">
+                        <ShieldCheck size={16} />
+                        <span className="text-[9px] font-black uppercase tracking-[0.4em]">Encrypted Channel v2.4</span>
                       </div>
                    </div>
                 </div>

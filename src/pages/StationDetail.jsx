@@ -5,7 +5,7 @@ import {
   Moon, Accessibility, Check, X as XIcon, Bookmark, BookmarkCheck,
   ArrowLeft, MessageSquare, BatteryCharging, Plug, Smartphone,
   Navigation2, Coffee, TreePine, Utensils, Play, ChevronDown, ChevronRight,
-  Share2, Phone, AlertTriangle, Activity, TrendingUp, Bolt
+  Share2, Phone, AlertTriangle, Activity, TrendingUp, Bolt, Wind, Thermometer
 } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { Button } from '../components/common/Button'
@@ -14,10 +14,11 @@ import { Modal } from '../components/common/Modal'
 import { stations } from '../mock/stations'
 import { chargers } from '../mock/chargers'
 import { reviews } from '../mock/reviews'
-import { amenities } from '../mock/amenities'
 import { useAuthStore } from '../store/authStore'
 import { formatRelativeTime, formatDate } from '../utils/formatTime'
 import { formatINR } from '../utils/formatCurrency'
+import { useWeather } from '../hooks/useWeather'
+import { useNearbyPlaces } from '../hooks/useNearbyPlaces'
 import toast from 'react-hot-toast'
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
@@ -247,8 +248,11 @@ export default function StationDetail() {
   const station = stations.find(s => s.id === id)
   const stationChargers = chargers.filter(c => c.stationId === id)
   const stationReviews = reviews.filter(r => r.stationId === id)
-  const stationAmenities = amenities[id]
   const isSaved = user?.savedStations?.includes(id)
+
+  // ── Live APIs ──
+  const { weather, aqi, loading: weatherLoading } = useWeather(station?.lat, station?.lng)
+  const { places, loading: placesLoading, error: placesError } = useNearbyPlaces(station?.lat, station?.lng, 600)
 
   const cfg = station ? (STATUS_CFG[station.status] || STATUS_CFG.faulty) : null
 
@@ -393,6 +397,25 @@ export default function StationDetail() {
                       From ₹{Math.min(...stationChargers.map(c => c.pricePerKwh))}/kWh
                     </span>
                   )}
+                  {/* Live weather chip */}
+                  {weatherLoading && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 border border-sky-100 rounded-xl text-xs font-semibold text-sky-400 animate-pulse">
+                      🌡️ Loading weather…
+                    </span>
+                  )}
+                  {weather && !weatherLoading && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 border border-sky-100 rounded-xl text-xs font-semibold text-sky-700">
+                      {weather.weatherEmoji} {weather.temp}°C · {weather.weatherLabel}
+                    </span>
+                  )}
+                  {aqi && !weatherLoading && (
+                    <span
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border"
+                      style={{ background: aqi.aqiColor + '18', color: aqi.aqiColor, borderColor: aqi.aqiColor + '30' }}
+                    >
+                      💨 AQI {aqi.aqiLabel}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -491,78 +514,142 @@ export default function StationDetail() {
                   </div>
                 )}
 
-                {/* ── Nearby Tab ── */}
+                {/* ── Nearby Tab — Real data from Overpass/OpenStreetMap ── */}
                 {activeTab === 'Nearby' && (
                   <div>
-                    {!stationAmenities ? (
-                      <div className="text-center py-12">
-                        <TreePine size={36} className="text-gray-200 mx-auto mb-3" />
-                        <p className="text-gray-500 font-medium">No nearby places listed</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {stationAmenities.restaurants?.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="w-6 h-6 rounded-lg bg-orange-100 flex items-center justify-center text-sm text-orange-600"><Utensils size={14} /></div>
-                              <h3 className="text-sm font-bold text-gray-800">Restaurants & Cafes</h3>
-                              <span className="ml-auto text-xs text-gray-400 font-medium">{stationAmenities.restaurants.length} nearby</span>
-                            </div>
-                            <div className="space-y-2">
-                              {stationAmenities.restaurants.map((r, i) => (
-                                <div key={r.id} className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group cursor-default">
-                                  <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-lg flex-shrink-0">
-                                    {r.type === 'Cafe' ? <Coffee size={18} className="text-orange-600" /> : <Utensils size={18} className="text-orange-600" />}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-gray-900 truncate">{r.name}</p>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                      <span className="text-xs text-gray-400 font-medium">{r.type}</span>
-                                      <span className="text-gray-300">·</span>
-                                      <span className="text-xs text-gray-400">{r.distance}m away</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                                    {r.rating && (
-                                      <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg">
-                                        <Star size={10} className="fill-amber-400 text-amber-400" /> {r.rating}
-                                      </span>
-                                    )}
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                                      r.isOpen ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
-                                    }`}>
-                                      {r.isOpen ? 'Open Now' : 'Closed'}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
+                    {placesLoading && (
+                      <div className="space-y-3">
+                        {[1,2,3,4].map(i => (
+                          <div key={i} className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-xl animate-pulse">
+                            <div className="w-10 h-10 rounded-xl bg-gray-200 flex-shrink-0" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-3 bg-gray-200 rounded w-2/3" />
+                              <div className="h-2.5 bg-gray-100 rounded w-1/3" />
                             </div>
                           </div>
-                        )}
-                        {stationAmenities.parks?.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center text-sm text-green-600"><TreePine size={14} /></div>
-                              <h3 className="text-sm font-bold text-gray-800">Parks & Recreation</h3>
-                              <span className="ml-auto text-xs text-gray-400 font-medium">{stationAmenities.parks.length} nearby</span>
-                            </div>
-                            <div className="space-y-2">
-                              {stationAmenities.parks.map(p => (
-                                <div key={p.id} className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors cursor-default">
-                                  <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-lg flex-shrink-0 text-green-600"><TreePine size={20} /></div>
-                                  <div className="flex-1">
-                                    <p className="text-sm font-bold text-gray-900">{p.name}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">{p.distance}m away</p>
-                                  </div>
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-green-50 text-green-600">Park</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <p className="text-[11px] text-gray-400 text-center pt-1">Distances are approximate walking distances from the station.</p>
+                        ))}
+                        <p className="text-center text-xs text-gray-400 pt-2">Fetching live nearby places from OpenStreetMap…</p>
                       </div>
                     )}
+
+                    {placesError && (
+                      <div className="text-center py-10">
+                        <AlertTriangle size={32} className="text-amber-300 mx-auto mb-3" />
+                        <p className="text-gray-500 font-medium text-sm">Couldn't load nearby places</p>
+                        <p className="text-gray-400 text-xs mt-1">Check your internet connection</p>
+                      </div>
+                    )}
+
+                    {places && !placesLoading && (() => {
+                      const totalCount = Object.values(places).flat().length
+                      if (totalCount === 0) return (
+                        <div className="text-center py-12">
+                          <MapPin size={36} className="text-gray-200 mx-auto mb-3" />
+                          <p className="text-gray-500 font-medium">No places found within 600m</p>
+                          <p className="text-xs text-gray-400 mt-1">Data from OpenStreetMap</p>
+                        </div>
+                      )
+
+                      const PlaceRow = ({ item, iconEl }) => (
+                        <div className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors cursor-default group">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-xl flex-shrink-0">
+                            {iconEl}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{item.distance}m away</p>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{item.distance}m</span>
+                        </div>
+                      )
+
+                      return (
+                        <div className="space-y-7">
+                          {places.restaurants?.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-6 h-6 rounded-lg bg-orange-100 flex items-center justify-center"><Utensils size={13} className="text-orange-600" /></div>
+                                <h3 className="text-sm font-bold text-gray-800">Food & Drinks</h3>
+                                <span className="ml-auto text-xs text-gray-400">{places.restaurants.length} nearby</span>
+                              </div>
+                              <div className="space-y-2">
+                                {places.restaurants.slice(0, 6).map(r => (
+                                  <PlaceRow key={r.osmId} item={r}
+                                    iconEl={r.category === 'cafe' ? <Coffee size={18} className="text-orange-500" /> : r.category === 'fastfood' ? <span>🍔</span> : <Utensils size={18} className="text-orange-600" />}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {places.pharmacies?.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center"><span className="text-sm">💊</span></div>
+                                <h3 className="text-sm font-bold text-gray-800">Pharmacies</h3>
+                                <span className="ml-auto text-xs text-gray-400">{places.pharmacies.length} nearby</span>
+                              </div>
+                              <div className="space-y-2">
+                                {places.pharmacies.slice(0, 4).map(r => (
+                                  <PlaceRow key={r.osmId} item={r} iconEl={<span>💊</span>} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {places.grocery?.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center"><span className="text-sm">🛒</span></div>
+                                <h3 className="text-sm font-bold text-gray-800">Grocery & Shops</h3>
+                                <span className="ml-auto text-xs text-gray-400">{places.grocery.length} nearby</span>
+                              </div>
+                              <div className="space-y-2">
+                                {places.grocery.slice(0, 4).map(r => (
+                                  <PlaceRow key={r.osmId} item={r} iconEl={<span>🛒</span>} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {places.parks?.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center"><TreePine size={13} className="text-green-600" /></div>
+                                <h3 className="text-sm font-bold text-gray-800">Parks & Green Spaces</h3>
+                                <span className="ml-auto text-xs text-gray-400">{places.parks.length} nearby</span>
+                              </div>
+                              <div className="space-y-2">
+                                {places.parks.slice(0, 4).map(r => (
+                                  <PlaceRow key={r.osmId} item={r} iconEl={<TreePine size={18} className="text-green-600" />} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {places.banks?.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center"><span className="text-sm">🏦</span></div>
+                                <h3 className="text-sm font-bold text-gray-800">Banks & ATMs</h3>
+                                <span className="ml-auto text-xs text-gray-400">{places.banks.length} nearby</span>
+                              </div>
+                              <div className="space-y-2">
+                                {places.banks.slice(0, 3).map(r => (
+                                  <PlaceRow key={r.osmId} item={r} iconEl={<span>🏦</span>} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2 pt-1">
+                            <div className="flex-1 h-px bg-gray-100" />
+                            <p className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">Live data · OpenStreetMap contributors</p>
+                            <div className="flex-1 h-px bg-gray-100" />
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
 
@@ -582,6 +669,64 @@ export default function StationDetail() {
 
           {/* ─── Sidebar ─── */}
           <div className="lg:sticky lg:top-[90px] self-start space-y-6">
+
+              {/* Live Conditions (Atmospheric Layout) */}
+              {weather && (
+                <div className="py-6 border-b border-gray-100">
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-sky-500 mb-6">Live Conditions</p>
+                  
+                  <div className="flex items-center justify-between mb-8 group cursor-default">
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-6xl font-black text-gray-900 tracking-tighter leading-none">{weather.temp}°</span>
+                        <span className="text-lg text-gray-400 font-black">C</span>
+                      </div>
+                      <p className="text-base font-bold text-gray-500 mt-2">{weather.weatherLabel}</p>
+                    </div>
+                    <span className="text-7xl drop-shadow-sm group-hover:scale-110 transition-transform duration-500 ease-out">{weather.weatherEmoji}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-y-6 gap-x-8">
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Feels Like</p>
+                      <p className="text-base font-black text-gray-800 tracking-tight">{weather.feelsLike}°C</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Wind</p>
+                      <p className="text-base font-black text-gray-800 tracking-tight">{weather.windKmh} <span className="text-[10px] text-gray-400 font-bold ml-1">km/h</span></p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Humidity</p>
+                      <p className="text-base font-black text-gray-800 tracking-tight">{weather.humidity}%</p>
+                    </div>
+                    {aqi && (
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: aqi.aqiColor }}>Air Quality</p>
+                        <p className="text-base font-black tracking-tight" style={{ color: aqi.aqiColor }}>{aqi.aqiLabel}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mt-6">
+                    <div className="h-px flex-1 bg-gray-50" />
+                    <p className="text-[8px] text-gray-300 font-black uppercase tracking-widest">Open-Meteo · Live</p>
+                  </div>
+                </div>
+              )}
+
+              {weatherLoading && (
+                <div className="py-8 border-b border-gray-100 animate-pulse">
+                  <div className="h-2.5 bg-gray-50 rounded-full w-24 mb-6" />
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="h-12 bg-gray-100 rounded-none w-24" />
+                    <div className="w-16 h-16 rounded-full bg-gray-50" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="h-8 bg-gray-50 rounded-none" />
+                    <div className="h-8 bg-gray-50 rounded-none" />
+                  </div>
+                </div>
+              )}
               <div className="pb-6 border-b border-gray-100">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-bold text-gray-900">Availability</p>
@@ -625,11 +770,12 @@ export default function StationDetail() {
                 <p className="text-center text-[11px] text-gray-400 mt-2">Instant confirmation · Free cancellation</p>
               </div>
 
-            <div className="py-6 border-b border-gray-100">
-              <div className="mb-4">
-                <p className="text-sm font-bold text-gray-900">Station Info</p>
+            <div className="py-8">
+              <div className="mb-6 flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Station Info</p>
+                <div className="h-px flex-1 bg-gray-50 ml-4" />
               </div>
-              <div className="p-4 space-y-3 text-sm">
+              <div className="space-y-4 text-sm px-1">
                 {[
                   { label: 'City', value: station.city },
                   { label: 'Open Hours', value: station.openHours },
@@ -637,46 +783,30 @@ export default function StationDetail() {
                   { label: 'Available Now', value: station.availableChargers, highlight: station.availableChargers > 0 },
                   { label: 'Distance', value: `${(station.distance / 1000).toFixed(1)} km` },
                 ].map(row => (
-                  <div key={row.label} className="flex items-center justify-between gap-2">
-                    <span className="text-gray-400 font-medium">{row.label}</span>
-                    <span className={`font-bold text-right ${row.highlight ? 'text-emerald-600' : 'text-gray-800'}`}>
+                  <div key={row.label} className="flex items-center justify-between group">
+                    <span className="text-gray-400 font-bold text-[11px] uppercase tracking-wide group-hover:text-gray-600 transition-colors">{row.label}</span>
+                    <span className={`font-black tracking-tight ${row.highlight ? 'text-emerald-500' : 'text-gray-900'}`}>
                       {row.value}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
-
-            <div className="py-6 border-b border-gray-100">
-              <div className="mb-4">
-                <p className="text-sm font-bold text-gray-900">Get Directions</p>
-              </div>
-              <div className="p-4 space-y-2">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors hover:no-underline"
-                >
-                  <Navigation2 size={15} /> Open in Google Maps
-                </a>
-                <p className="text-[11px] text-gray-400 text-center">{station.address}</p>
-              </div>
-            </div>
-
-            {station.status !== 'active' ? (
-              <div className="py-6">
-                <div className="flex items-start gap-4 py-4">
-                  <AlertTriangle size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-bold text-amber-800">Station Notice</p>
-                    <p className="text-xs text-amber-600 mt-0.5">
-                      This station is currently {station.status}. We recommend finding an alternative nearby.
-                    </p>
+            {station.status !== 'active' && (
+              <div className="py-8">
+                <div className="p-4 bg-amber-50 border-l-4 border-amber-400">
+                  <div className="flex gap-3">
+                    <AlertTriangle size={18} className="text-amber-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-black text-amber-900 uppercase tracking-wide">Station Notice</p>
+                      <p className="text-xs text-amber-700 mt-1 font-medium leading-relaxed">
+                        This station is currently <span className="font-bold underline">{station.status}</span>. We recommend verifying availability before arrival.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       </PageContainer>
