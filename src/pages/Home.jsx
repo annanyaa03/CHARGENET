@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Zap, MapPin, Search, ArrowRight, Play, Star, 
+  Zap, MapPin, Search, Play, Star, 
   CalendarCheck, BatteryCharging, 
   Navigation, Clock, CreditCard, Headphones, ChevronRight
 } from 'lucide-react';
@@ -50,15 +50,8 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCity, setActiveCity] = useState(null);
-  const [ctaMousePos, setCtaMousePos] = useState({ x: 50, y: 50 });
   const [activeFeature, setActiveFeature] = useState(0);
 
-  const handleCtaMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setCtaMousePos({ x, y });
-  };
 
   const stats = [
     { value: 50000, suffix: '+', label: 'Charging Stations' },
@@ -483,31 +476,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ─── CTA Section ─── */}
-        <section className="py-20 bg-white border-t border-gray-100">
-          <div className="max-w-3xl mx-auto px-6 text-center flex flex-col items-center gap-5">
-            <Reveal>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1D9E75] mb-1">Get started</p>
-              <h2 className="text-2xl md:text-3xl font-bold text-[#051428] tracking-tight leading-snug">
-                Ready to charge smarter?
-              </h2>
-              <p className="text-gray-500 text-sm md:text-base mt-2 max-w-md mx-auto">
-                Join India's largest EV charging network. No subscription required.
-              </p>
-            </Reveal>
-
-            <Reveal delay={0.15}>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-3">
-                <button className="px-7 py-3 bg-[#1D9E75] hover:bg-[#168561] text-white font-semibold rounded-none transition-all hover:-translate-y-0.5 active:scale-95 text-sm shadow-lg shadow-[#1D9E75]/15">
-                  Download the App
-                </button>
-                <button className="px-7 py-3 text-[#051428] font-semibold rounded-none transition-all flex items-center gap-2 group/btn border border-gray-200 hover:border-[#1D9E75] text-sm hover:-translate-y-0.5">
-                  Explore Network <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform text-[#1D9E75]" />
-                </button>
-              </div>
-            </Reveal>
-          </div>
-        </section>
       </div>
     </PageWrapper>
   );

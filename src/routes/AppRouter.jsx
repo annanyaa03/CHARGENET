@@ -16,6 +16,11 @@ const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
 const Pricing = lazy(() => import('../pages/Pricing'))
 
+// Solutions
+const SolutionsIndividuals = lazy(() => import('../pages/Solutions/Individuals'))
+const SolutionsBusiness = lazy(() => import('../pages/Solutions/Business'))
+const SolutionsFleet = lazy(() => import('../pages/Solutions/Fleet'))
+
 // Owner
 const OwnerDashboard = lazy(() => import('../pages/OwnerPortal/Dashboard'))
 const ManageStations = lazy(() => import('../pages/OwnerPortal/ManageStations'))
@@ -56,6 +61,11 @@ export function AppRouter() {
           <Route path="/register" element={<Register />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/bookings" element={<BookSlot />} />
+
+          {/* Solutions */}
+          <Route path="/solutions/individuals" element={<SolutionsIndividuals />} />
+          <Route path="/solutions/business" element={<SolutionsBusiness />} />
+          <Route path="/solutions/fleet" element={<SolutionsFleet />} />
 
           {/* Protected — any authenticated */}
           <Route path="/station/:id/book/:chargerId" element={<Booking />} />

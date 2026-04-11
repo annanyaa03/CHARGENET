@@ -17,9 +17,9 @@ import {
 
 const navData = {
   solutions: [
-    { icon: Route, label: 'For Individuals', subtitle: 'Home charging solutions', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { icon: BatteryMedium, label: 'For Business', subtitle: 'Workplace & retail charging', color: 'text-teal-600', bg: 'bg-teal-50' },
-    { icon: Newspaper, label: 'Fleet Solutions', subtitle: 'Scaling your EV fleet', color: 'text-amber-600', bg: 'bg-amber-50' },
+    { icon: Route, label: 'For Individuals', subtitle: 'Home charging solutions', color: 'text-blue-600', bg: 'bg-blue-50', to: '/solutions/individuals' },
+    { icon: BatteryMedium, label: 'For Business', subtitle: 'Workplace & retail charging', color: 'text-teal-600', bg: 'bg-teal-50', to: '/solutions/business' },
+    { icon: Newspaper, label: 'Fleet Solutions', subtitle: 'Scaling your EV fleet', color: 'text-amber-600', bg: 'bg-amber-50', to: '/solutions/fleet' },
   ],
   resources: [
     { icon: BookOpen, label: 'Charging Guide', subtitle: 'Everything you need to know', color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -100,7 +100,7 @@ export function Navbar({ solid = false }) {
           return (
             <Link
               key={index}
-              to="#"
+              to={item.to || '#'}
               role="menuitem"
               className="flex items-start gap-3.5 px-4 py-3 hover:bg-gray-50 transition-all mx-2 rounded-none text-left group"
               onClick={() => setActiveDropdown(null)}
