@@ -10,9 +10,10 @@ import {
 import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { Button } from '../components/common/Button'
 import { useAuthStore } from '../store/authStore'
-import { stations } from '../mock/stations'
-import { chargers } from '../mock/chargers'
 import { formatINR } from '../utils/formatCurrency'
+import { getStationById } from '../services/stationService'
+import { getSlotsByStation } from '../services/slotService'
+import { createBooking } from '../services/bookingService'
 import toast from 'react-hot-toast'
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
@@ -124,21 +125,42 @@ export default function Booking() {
   const { user } = useAuthStore()
   
   const dates = useMemo(() => getNext7Days(), [])
-  const [dateStr, setDateStr] = useState(dates[0].date)
-  const [selectedSlots, setSelectedSlots] = useState([])
-  const [vehicle, setVehicle] = useState(user?.evModel || 'Tata Nexon EV')
-  const [method, setMethod] = useState('upi')
-  const [processing, setProcessing] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [confId] = useState('CN' + Math.random().toString(36).slice(2, 8).toUpperCase())
+  const [station, setStation] = useState(null)
+  const [charger, setCharger] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const station = stations.find(s => s.id === id)
-  const charger = chargers.find(c => c.id === chargerId)
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const sData = await getStationById(id)
+        setStation(sData)
+        
+        const qData = await getSlotsByStation(id)
+        const foundCharger = qData.find(c => c.id === chargerId)
+        setCharger(foundCharger)
+      } catch (err) {
+        console.error('Failed to load booking data:', err)
+        toast.error('Failed to load station or charger details')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [id, chargerId])
 
   useEffect(() => {
     window.scrollTo(0, 0)
     document.title = 'Checkout — ChargeNet'
   }, [])
+
+  if (loading) return (
+    <PageWrapper className="bg-white">
+      <PageContainer>
+        <div className="py-20 text-center text-gray-400">Loading checkout data…</div>
+      </PageContainer>
+    </PageWrapper>
+  )
 
   if (!station || !charger) {
     return (
@@ -182,15 +204,27 @@ export default function Booking() {
     const contiguous = sorted.every((v, i, a) => i === 0 || v === a[i-1] + 1)
     if (!contiguous) return toast.error('Please pick continuous time slots')
 
-    if (method === 'wallet' && (user?.walletBalance || 0) < cost) {
-      return toast.error('Insufficient wallet balance')
-    }
-
     setProcessing(true)
-    await new Promise(r => setTimeout(r, 2000))
-    setProcessing(false)
-    setSuccess(true)
-    toast.success('Confirmed')
+    try {
+      const startTime = SLOTS.find(s => s.id === sorted[0]).label
+      const endTime = SLOTS.find(s => s.id === sorted[sorted.length - 1] + 1)?.label || '23:59'
+      
+      const booking = await createBooking({
+        stationId: station.id,
+        slotId: charger.id,
+        date: dateStr,
+        startTime,
+        endTime,
+        totalAmount: cost
+      })
+      
+      toast.success('Booking created!')
+      navigate(`/payment/${booking.id}`, { state: { ...booking, station, charger } })
+    } catch (err) {
+      toast.error(err.message || 'Failed to create booking')
+    } finally {
+      setProcessing(false)
+    }
   }
 
   if (success) {

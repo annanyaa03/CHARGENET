@@ -9,10 +9,10 @@ import {
   ShieldCheck, Lightbulb, Accessibility, ChevronLeft,
   BatteryCharging, SlidersHorizontal, CheckCircle2
 } from 'lucide-react'
-import { stations } from '../mock/stations'
 import { useMapStore } from '../store/mapStore'
 import { formatDistance } from '../utils/plugTypes'
 import { Navbar } from '../components/layout/Navbar'
+import { getNearbyStations } from '../services/stationService'
 
 // Fix Leaflet default icons
 delete L.Icon.Default.prototype._getIconUrl
@@ -99,12 +99,45 @@ export default function MapView() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mapCenter, setMapCenter] = useState([20.5937, 78.9629])
   const [mapZoom, setMapZoom] = useState(5)
-  const [filtered, setFiltered] = useState(stations)
+  const [stations, setStations] = useState([])
+  const [filtered, setFiltered] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => { 
     document.title = 'Find Stations — ChargeNet' 
     clearSelectedStation()
+
+    // Geolocation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords
+          setMapCenter([latitude, longitude])
+          setMapZoom(12)
+          fetchStations(latitude, longitude)
+        },
+        () => {
+          // Default or fallback
+          fetchStations(20.5937, 78.9629)
+        }
+      )
+    } else {
+      fetchStations(20.5937, 78.9629)
+    }
   }, [clearSelectedStation])
+
+  const fetchStations = async (lat, lng) => {
+    setLoading(true)
+    try {
+      const data = await getNearbyStations(lat, lng)
+      setStations(data)
+      setFiltered(data)
+    } catch (err) {
+      console.error('Failed to fetch stations:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     let result = [...stations]
@@ -119,7 +152,7 @@ export default function MapView() {
     }
     if (filters.availability === 'available') result = result.filter(s => s.availableChargers > 0)
     setFiltered(result)
-  }, [filters, statusTab, searchQuery])
+  }, [filters, statusTab, searchQuery, stations])
 
   const handleSelectStation = (station) => {
     setSelectedStation(station)

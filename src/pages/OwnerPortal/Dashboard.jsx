@@ -5,10 +5,9 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { PageWrapper, PageContainer } from '../../components/layout/PageWrapper'
 import { Button } from '../../components/common/Button'
 import { Badge } from '../../components/common/Badge'
-import { stations } from '../../mock/stations'
-import { chargers } from '../../mock/chargers'
-import { reviews } from '../../mock/reviews'
 import { formatINR } from '../../utils/formatCurrency'
+import { getMyStations } from '../../services/stationService'
+import toast from 'react-hot-toast'
 
 const REVENUE_DATA = [
   { day: 'Mon', revenue: 4200 },
@@ -22,13 +21,30 @@ const REVENUE_DATA = [
 
 export default function OwnerDashboard() {
   const navigate = useNavigate()
-  const myStations = stations.slice(0, 2) // Mock first 2 as owned
-  const myChargers = chargers.filter(c => myStations.some(s => s.id === c.stationId))
-  const myReviews = reviews.filter(r => myStations.some(s => s.id === r.stationId))
+  const [stations, setStations] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     document.title = 'Owner Dashboard — ChargeNet'
+    loadStations()
   }, [])
+
+  const loadStations = async () => {
+    setLoading(true)
+    try {
+      const data = await getMyStations()
+      setStations(data)
+    } catch (err) {
+      console.error('Failed to load owned stations:', err)
+      toast.error('Failed to load dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const myStations = stations
+  const myChargers = []
+  const myReviews = []
 
   const stats = [
     { label: 'Total Revenue', value: '₹40,500', sub: '+12% from last week', icon: DollarSign, color: 'text-success' },
@@ -170,37 +186,45 @@ export default function OwnerDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {myStations.map(st => (
-                  <tr key={st.id} className="text-sm hover:bg-background/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-primary">{st.name}</p>
-                      <p className="text-xs text-muted flex items-center gap-1 mt-0.5 tracking-tight">
-                        <MapPin size={10} /> {st.city}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant={st.status} label={st.status.charAt(0).toUpperCase() + st.status.slice(1)} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-primary font-medium">{st.availableChargers}/{st.totalChargers}</p>
-                      <p className="text-[10px] text-muted font-medium">Available</p>
-                    </td>
-                    <td className="px-6 py-4 text-primary font-medium">
-                      {formatINR(st.id === 'st-001' ? 8200 : 6400)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 w-16 bg-background rounded-full overflow-hidden border border-border">
-                          <div className={`h-full bg-accent`} style={{ width: st.id === 'st-001' ? '82%' : '65%' }} />
-                        </div>
-                        <span className="text-xs text-muted">{st.id === 'st-001' ? '82%' : '65%'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/owner/stations?id=${st.id}`)}>Edit</Button>
+                {myStations.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-20 text-center text-gray-400">
+                      No stations found. <Button variant="ghost" className="text-accent underline" onClick={() => navigate('/owner/stations')}>Add one</Button>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  myStations.map(st => (
+                    <tr key={st.id} className="text-sm hover:bg-background/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-medium text-primary">{st.name}</p>
+                        <p className="text-xs text-muted flex items-center gap-1 mt-0.5 tracking-tight">
+                          <MapPin size={10} /> {st.city}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={st.status} label={st.status.charAt(0).toUpperCase() + st.status.slice(1)} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-primary font-medium">{st.availableChargers}/{st.totalChargers}</p>
+                        <p className="text-[10px] text-muted font-medium">Available</p>
+                      </td>
+                      <td className="px-6 py-4 text-primary font-medium">
+                        {formatINR(0)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 w-16 bg-background rounded-full overflow-hidden border border-border">
+                            <div className="h-full bg-accent" style={{ width: '0%' }} />
+                          </div>
+                          <span className="text-xs text-muted">0%</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/owner/stations`)}>Edit</Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

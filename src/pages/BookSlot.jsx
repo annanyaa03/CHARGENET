@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import {
   Search, MapPin, Star, Clock, Zap, BatteryCharging,
   ChevronDown, ArrowRight, Plug, Shield, Calendar,
-  Sparkles, Check, ChevronRight, ArrowLeft
+  Sparkles, Check, ChevronRight, ArrowLeft, Thermometer
 } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { stations } from '../mock/stations'
 import { chargers } from '../mock/chargers'
-import { useAuthStore } from '../store/authStore'
-import { motion } from 'framer-motion'
-import { fetchWeather } from '../services/weatherService'
+import { Navbar } from '../components/layout/Navbar'
+import { getStations } from '../services/stationService'
+import { getSlotsByStation, getAvailableSlots } from '../services/slotService'
+import { createBooking } from '../services/bookingService'
 import toast from 'react-hot-toast'
 
 /* ─── Status Config ────────────────────────────────────────── */
@@ -58,16 +59,19 @@ export default function BookSlot() {
   const [step, setStep] = useState(1)
 
   // Step 1: City + Station
+  const [stations, setStations] = useState([])
   const [selectedCity, setSelectedCity] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStation, setSelectedStation] = useState(null)
 
   // Step 2: Charger
+  const [stationChargers, setStationChargers] = useState([])
   const [selectedCharger, setSelectedCharger] = useState(null)
 
   // Step 3: Date + Time
   const [selectedDate, setSelectedDate] = useState(dates[0].date)
   const [selectedSlots, setSelectedSlots] = useState([])
+  const [availableSlots, setAvailableSlots] = useState(SLOTS) // Keep SLOTS as base template or fetch from backend
 
   // Live weather per city (cached)
   const [cityWeather, setCityWeather] = useState({})
@@ -76,13 +80,39 @@ export default function BookSlot() {
   useEffect(() => {
     document.title = 'Book a Slot — ChargeNet'
     window.scrollTo(0, 0)
+    fetchInitialStations()
   }, [])
+
+  const fetchInitialStations = async () => {
+    try {
+      const data = await getStations({})
+      setStations(data)
+    } catch (err) {
+      console.error('Failed to fetch stations:', err)
+    }
+  }
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [step])
 
-  // Filtered stations
+  // Fetch chargers when station selected
+  useEffect(() => {
+    if (selectedStation) {
+      getSlotsByStation(selectedStation.id)
+        .then(setStationChargers)
+        .catch(err => console.error('Failed to fetch slots:', err))
+    }
+  }, [selectedStation])
+
+  // Fetch availability when date/charger changes
+  useEffect(() => {
+    if (selectedStation && selectedCharger && selectedDate) {
+      // In a real app, you'd fetch specific availability for the date
+      // For now we'll simulate or use the base SLOTS
+    }
+  }, [selectedStation, selectedCharger, selectedDate])
+
   const filteredStations = useMemo(() => {
     let result = stations.filter(s => s.status === 'active' || s.status === 'busy')
     if (selectedCity) result = result.filter(s => s.city === selectedCity)
@@ -94,27 +124,7 @@ export default function BookSlot() {
       )
     }
     return result.sort((a, b) => a.distance - b.distance)
-  }, [selectedCity, searchQuery])
-
-  // Fetch weather for each unique city in the filtered list (one call per city)
-  useEffect(() => {
-    if (step !== 1) return
-    const uniqueCityStations = filteredStations.filter(
-      s => !fetchedCities.current.has(s.city)
-    )
-    uniqueCityStations.forEach(s => {
-      fetchedCities.current.add(s.city)
-      fetchWeather(s.lat, s.lng)
-        .then(data => setCityWeather(prev => ({ ...prev, [s.city]: data })))
-        .catch(() => {})
-    })
-  }, [filteredStations, step])
-
-  // Chargers for selected station
-  const stationChargers = useMemo(() => {
-    if (!selectedStation) return []
-    return chargers.filter(c => c.stationId === selectedStation.id && (c.status === 'active' || c.status === 'busy'))
-  }, [selectedStation])
+  }, [stations, selectedCity, searchQuery])
 
   const toggleSlot = (slot) => {
     if (slot.booked) return
@@ -124,10 +134,27 @@ export default function BookSlot() {
     })
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!isAuthenticated) { navigate('/login'); return }
-    if (selectedCharger && selectedStation) {
-      navigate(`/station/${selectedStation.id}/book/${selectedCharger.id}`)
+    if (selectedCharger && selectedStation && selectedSlots.length > 0) {
+      try {
+        const startTime = SLOTS.find(s => s.id === selectedSlots[0]).label
+        const endTime = SLOTS.find(s => s.id === selectedSlots[selectedSlots.length - 1]).label // Simplified
+        
+        const booking = await createBooking({
+          stationId: selectedStation.id,
+          slotId: selectedCharger.id,
+          date: selectedDate,
+          startTime,
+          endTime,
+          totalAmount: Math.round(selectedSlots.length * 0.5 * (selectedCharger.powerKw || 50) * 0.85 * (selectedCharger.pricePerKwh || 15))
+        })
+        
+        toast.success('Booking created!')
+        navigate(`/payment/${booking.id}`, { state: { ...booking, station: selectedStation, charger: selectedCharger } })
+      } catch (err) {
+        toast.error(err.message || 'Failed to create booking')
+      }
     }
   }
 
@@ -272,7 +299,7 @@ export default function BookSlot() {
                                   animate={{ opacity: 1, x: 0 }}
                                   className="flex items-center gap-2 text-sky-500 font-black"
                                 >
-                                  {cityWeather[station.city].weatherEmoji} {cityWeather[station.city].temp}°
+                                  <Thermometer size={14} /> {cityWeather[station.city].temp}°
                                 </motion.span>
                               )}
                             </div>

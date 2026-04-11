@@ -25,8 +25,8 @@ export default function Register() {
   const onSubmit = async (data) => {
     setLoading(true)
     try {
-      const user = registerUser(data)
-      toast.success(`Welcome to ChargeNet, ${user.name.split(' ')[0]}!`)
+      const user = await registerUser(data)
+      toast.success(`Welcome to ChargeNet, ${user.user_metadata?.full_name?.split(' ')[0] || 'User'}!`)
       if (user.role === 'owner') navigate('/owner/dashboard')
       else navigate('/')
     } catch (err) {

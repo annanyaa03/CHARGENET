@@ -10,8 +10,12 @@ import { stations } from '../mock/stations'
 import { reviews } from '../mock/reviews'
 import { formatINR } from '../utils/formatCurrency'
 import { formatDate } from '../utils/formatTime'
+import { getProfile } from '../services/profileService'
+import { getMyBookings } from '../services/bookingService'
+import { getMySessions } from '../services/sessionService'
+import toast from 'react-hot-toast'
 
-const TABS = ['My Bookings', 'My Reviews', 'Saved Stations', 'Spending']
+const TABS = ['My Bookings', 'Saved Stations', 'Spending']
 
 const MOCK_BOOKINGS = [
   { id: 'bk-001', station: 'Bengaluru Koramangala Charge Point', charger: 'ChargeZone CCS2 150kW', date: '2025-04-05', time: '10:00 – 11:00', cost: 345, status: 'upcoming' },
@@ -33,14 +37,37 @@ export default function Profile() {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuthStore()
   const [activeTab, setActiveTab] = useState(0)
+  const [bookings, setBookings] = useState([])
+  const [sessions, setSessions] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     document.title = 'My Profile — ChargeNet'
-    if (!isAuthenticated) navigate('/login')
+    if (!isAuthenticated) {
+      navigate('/login')
+    } else {
+      loadUserData()
+    }
   }, [isAuthenticated])
 
+  const loadUserData = async () => {
+    setLoading(true)
+    try {
+      const [bData, sData] = await Promise.all([
+        getMyBookings(),
+        getMySessions()
+      ])
+      setBookings(bData)
+      setSessions(sData)
+    } catch (err) {
+      console.error('Failed to load profile data:', err)
+      toast.error('Failed to load profile data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const savedStations = stations.filter(s => user?.savedStations?.includes(s.id))
-  const myReviews = reviews.filter(r => r.reviewerName === user?.name)
 
   const totalSpend = SPENDING_DATA.reduce((a, b) => a + b.amount, 0)
   const totalKwh = (totalSpend / 18).toFixed(0)
@@ -85,45 +112,33 @@ export default function Profile() {
         {/* Tab Content */}
         {activeTab === 0 && (
           <div className="space-y-3">
-            {MOCK_BOOKINGS.map(b => (
-              <div key={b.id} className="bg-surface border border-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                   style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-                <div>
-                  <p className="text-sm font-semibold text-primary">{b.station}</p>
-                  <p className="text-xs text-muted mt-0.5">{b.charger}</p>
-                  <p className="text-xs text-muted mt-1">{b.date} · {b.time}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-primary">{formatINR(b.cost)}</span>
-                  <Badge variant={b.status === 'upcoming' ? 'active' : b.status === 'completed' ? 'neutral' : 'danger'}
-                         label={b.status.charAt(0).toUpperCase() + b.status.slice(1)} />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 1 && (
-          <div>
-            {myReviews.length === 0 ? (
+            {bookings.length === 0 ? (
               <div className="text-center py-16">
-                <Star size={32} className="text-border mx-auto mb-3" />
-                <p className="text-sm text-muted">You haven't written any reviews yet.</p>
-                <Button variant="primary" size="sm" className="mt-4" onClick={() => navigate('/map')}>Find a Station</Button>
+                <Calendar size={32} className="text-border mx-auto mb-3" />
+                <p className="text-sm text-muted">No bookings found</p>
               </div>
             ) : (
-              myReviews.map(r => (
-                <div key={r.id} className="py-4 border-b border-border">
-                  <p className="text-sm font-medium text-primary">{stations.find(s => s.id === r.stationId)?.name}</p>
-                  <p className="text-xs text-muted">{formatDate(r.date)}</p>
-                  <p className="text-sm text-muted mt-1">{r.text}</p>
+              bookings.map(b => (
+                <div key={b.id} className="bg-surface border border-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                     style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+                  <div>
+                    <p className="text-sm font-semibold text-primary">{b.station?.name || 'Station'}</p>
+                    <p className="text-xs text-muted mt-0.5">{b.charger?.company || b.slot_id}</p>
+                    <p className="text-xs text-muted mt-1">{b.date} · {b.start_time} – {b.end_time}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-primary">{formatINR(b.total_amount)}</span>
+                    <Badge variant={b.status === 'confirmed' ? 'active' : b.status === 'completed' ? 'neutral' : 'danger'}
+                           label={b.status.charAt(0).toUpperCase() + b.status.slice(1)} />
+                  </div>
                 </div>
               ))
             )}
           </div>
         )}
 
-        {activeTab === 2 && (
+
+        {activeTab === 1 && (
           <div>
             {savedStations.length === 0 ? (
               <div className="text-center py-16">
@@ -150,13 +165,13 @@ export default function Profile() {
           </div>
         )}
 
-        {activeTab === 3 && (
+        {activeTab === 2 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { label: 'Total Spent', value: formatINR(totalSpend), icon: BarChart3 },
                 { label: 'Total kWh', value: `${totalKwh} kWh`, icon: User },
-                { label: 'Sessions', value: '12', icon: Star },
+                { label: 'Sessions', value: sessions.length.toString(), icon: Star },
               ].map(s => (
                 <div key={s.label} className="bg-surface border border-border rounded-xl p-4" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
                   <p className="text-xs text-muted">{s.label}</p>
@@ -164,23 +179,7 @@ export default function Profile() {
                 </div>
               ))}
             </div>
-            <div className="bg-surface border border-border rounded-xl p-4" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-primary">Monthly Spending</h3>
-                <Button variant="ghost" size="sm" icon={Download} onClick={() => toast?.success?.('Invoice downloaded')}>
-                  Invoice
-                </Button>
-              </div>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={SPENDING_DATA}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#78716C' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 12, fill: '#78716C' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v}`} />
-                  <Tooltip formatter={v => [formatINR(v), 'Spent']} />
-                  <Line type="monotone" dataKey="amount" stroke="#0F766E" strokeWidth={2} dot={{ fill: '#0F766E', r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {/* ... Spending Chart ... */}
           </div>
         )}
       </PageContainer>

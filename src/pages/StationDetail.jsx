@@ -5,15 +5,15 @@ import {
   Moon, Accessibility, Check, X as XIcon, Bookmark, BookmarkCheck,
   ArrowLeft, MessageSquare, BatteryCharging, Plug, Smartphone,
   Navigation2, Coffee, TreePine, Utensils, Play, ChevronDown, ChevronRight,
-  Share2, Phone, AlertTriangle, Activity, TrendingUp, Bolt, Wind, Thermometer
+  Share2, Phone, AlertTriangle, Activity, TrendingUp, Bolt, Wind, Thermometer,
+  Cloud, ShoppingCart, Landmark
 } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { Button } from '../components/common/Button'
 import { Badge, PlugBadge } from '../components/common/Badge'
 import { Modal } from '../components/common/Modal'
-import { stations } from '../mock/stations'
-import { chargers } from '../mock/chargers'
-import { reviews } from '../mock/reviews'
+import { getStationById } from '../services/stationService'
+import { getSlotsByStation } from '../services/slotService'
 import { useAuthStore } from '../store/authStore'
 import { formatRelativeTime, formatDate } from '../utils/formatTime'
 import { formatINR } from '../utils/formatCurrency'
@@ -241,29 +241,47 @@ export default function StationDetail() {
   const [activeTab, setActiveTab] = useState('Nearby')
   const [reviewModal, setReviewModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState([])
-  const [userRating, setUserRating] = useState(0)
-  const [reviewText, setReviewText] = useState('')
-  const [sharePopup, setSharePopup] = useState(false)
-
-  const station = stations.find(s => s.id === id)
-  const stationChargers = chargers.filter(c => c.stationId === id)
-  const stationReviews = reviews.filter(r => r.stationId === id)
-  const isSaved = user?.savedStations?.includes(id)
+  const [station, setStation] = useState(null)
+  const [stationChargers, setStationChargers] = useState([])
+  const [stationReviews, setStationReviews] = useState([])
+  const [loading, setLoading] = useState(true)
 
   // ── Live APIs ──
   const { weather, aqi, loading: weatherLoading } = useWeather(station?.lat, station?.lng)
   const { places, loading: placesLoading, error: placesError } = useNearbyPlaces(station?.lat, station?.lng, 600)
 
-  const cfg = station ? (STATUS_CFG[station.status] || STATUS_CFG.faulty) : null
+  const isSaved = user?.savedStations?.includes(id)
 
   useEffect(() => {
-    if (station) document.title = `${station.name} — ChargeNet`
-  }, [station])
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const data = await getStationById(id)
+        setStation(data)
+        document.title = `${data.name} — ChargeNet`
+        
+        // Fetch chargers (slots)
+        const slots = await getSlotsByStation(id)
+        setStationChargers(slots)
+        
+        // Reviews would ideally come from a service too, but if backend doesn't have it yet, we can keep it empty or mock
+        setStationReviews(data.reviews || [])
+      } catch (err) {
+        console.error('Failed to load station:', err)
+        toast.error('Failed to load station details')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [id])
 
-  if (!station) return (
+  const cfg = station ? (STATUS_CFG[station.status] || STATUS_CFG.faulty) : null
+
+  if (loading) return (
     <PageWrapper>
       <PageContainer>
-        <div className="text-center py-20 text-gray-400">Station not found.</div>
+        <div className="text-center py-20 text-gray-400">Loading station details…</div>
       </PageContainer>
     </PageWrapper>
   )
@@ -400,12 +418,12 @@ export default function StationDetail() {
                   {/* Live weather chip */}
                   {weatherLoading && (
                     <span className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 border border-sky-100 rounded-xl text-xs font-semibold text-sky-400 animate-pulse">
-                      🌡️ Loading weather…
+                      <Thermometer size={14} /> Loading weather…
                     </span>
                   )}
                   {weather && !weatherLoading && (
                     <span className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 border border-sky-100 rounded-xl text-xs font-semibold text-sky-700">
-                      {weather.weatherEmoji} {weather.temp}°C · {weather.weatherLabel}
+                      <Thermometer size={14} /> {weather.temp}°C · {weather.weatherLabel}
                     </span>
                   )}
                   {aqi && !weatherLoading && (
@@ -413,7 +431,7 @@ export default function StationDetail() {
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border"
                       style={{ background: aqi.aqiColor + '18', color: aqi.aqiColor, borderColor: aqi.aqiColor + '30' }}
                     >
-                      💨 AQI {aqi.aqiLabel}
+                      <Wind size={14} className="mr-1" /> AQI {aqi.aqiLabel}
                     </span>
                   )}
                 </div>
@@ -575,7 +593,7 @@ export default function StationDetail() {
                               <div className="space-y-2">
                                 {places.restaurants.slice(0, 6).map(r => (
                                   <PlaceRow key={r.osmId} item={r}
-                                    iconEl={r.category === 'cafe' ? <Coffee size={18} className="text-orange-500" /> : r.category === 'fastfood' ? <span>🍔</span> : <Utensils size={18} className="text-orange-600" />}
+                                    iconEl={r.category === 'cafe' ? <Coffee size={18} className="text-orange-500" /> : r.category === 'fastfood' ? <Utensils size={18} className="text-orange-600" /> : <Utensils size={18} className="text-orange-600" />}
                                   />
                                 ))}
                               </div>
@@ -585,13 +603,13 @@ export default function StationDetail() {
                           {places.pharmacies?.length > 0 && (
                             <div>
                               <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center"><span className="text-sm">💊</span></div>
+                                <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center"><Activity size={14} className="text-red-500" /></div>
                                 <h3 className="text-sm font-bold text-gray-800">Pharmacies</h3>
                                 <span className="ml-auto text-xs text-gray-400">{places.pharmacies.length} nearby</span>
                               </div>
                               <div className="space-y-2">
                                 {places.pharmacies.slice(0, 4).map(r => (
-                                  <PlaceRow key={r.osmId} item={r} iconEl={<span>💊</span>} />
+                                  <PlaceRow key={r.osmId} item={r} iconEl={<Activity size={18} className="text-red-500" />} />
                                 ))}
                               </div>
                             </div>
@@ -600,13 +618,13 @@ export default function StationDetail() {
                           {places.grocery?.length > 0 && (
                             <div>
                               <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center"><span className="text-sm">🛒</span></div>
+                                <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center"><ShoppingCart size={14} className="text-emerald-600" /></div>
                                 <h3 className="text-sm font-bold text-gray-800">Grocery & Shops</h3>
                                 <span className="ml-auto text-xs text-gray-400">{places.grocery.length} nearby</span>
                               </div>
                               <div className="space-y-2">
                                 {places.grocery.slice(0, 4).map(r => (
-                                  <PlaceRow key={r.osmId} item={r} iconEl={<span>🛒</span>} />
+                                  <PlaceRow key={r.osmId} item={r} iconEl={<ShoppingCart size={18} className="text-emerald-600" />} />
                                 ))}
                               </div>
                             </div>
@@ -630,13 +648,13 @@ export default function StationDetail() {
                           {places.banks?.length > 0 && (
                             <div>
                               <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center"><span className="text-sm">🏦</span></div>
+                                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center"><Landmark size={14} className="text-blue-600" /></div>
                                 <h3 className="text-sm font-bold text-gray-800">Banks & ATMs</h3>
                                 <span className="ml-auto text-xs text-gray-400">{places.banks.length} nearby</span>
                               </div>
                               <div className="space-y-2">
                                 {places.banks.slice(0, 3).map(r => (
-                                  <PlaceRow key={r.osmId} item={r} iconEl={<span>🏦</span>} />
+                                  <PlaceRow key={r.osmId} item={r} iconEl={<Landmark size={18} className="text-blue-600" />} />
                                 ))}
                               </div>
                             </div>
@@ -683,7 +701,9 @@ export default function StationDetail() {
                       </div>
                       <p className="text-base font-bold text-gray-500 mt-2">{weather.weatherLabel}</p>
                     </div>
-                    <span className="text-7xl drop-shadow-sm group-hover:scale-110 transition-transform duration-500 ease-out">{weather.weatherEmoji}</span>
+                    <div className="text-sky-500 drop-shadow-sm group-hover:scale-110 transition-transform duration-500 ease-out">
+                      <Cloud size={64} />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-y-6 gap-x-8">

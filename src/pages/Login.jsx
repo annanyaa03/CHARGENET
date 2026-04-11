@@ -34,8 +34,8 @@ export default function Login() {
   const onSubmit = async (data) => {
     setLoading(true)
     try {
-      const user = login(data.email, data.password)
-      toast.success(`Welcome back, ${user.name.split(' ')[0]}!`)
+      const user = await login(data.email, data.password)
+      toast.success(`Welcome back, ${user.user_metadata?.full_name?.split(' ')[0] || 'User'}!`)
       if (user.role === 'owner') navigate('/owner/dashboard')
       else if (user.role === 'admin') navigate('/admin/dashboard')
       else navigate('/')

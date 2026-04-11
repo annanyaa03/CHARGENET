@@ -3,8 +3,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { CheckCircle, Calendar, QrCode, Wallet, CreditCard, Smartphone, ArrowLeft } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { Button } from '../components/common/Button'
-import { useAuthStore } from '../store/authStore'
 import { formatINR } from '../utils/formatCurrency'
+import { createPaymentOrder, verifyPayment } from '../services/paymentService'
 import toast from 'react-hot-toast'
 
 const PAYMENT_METHODS = [
@@ -40,11 +40,51 @@ export default function Payment() {
       toast.error('Insufficient wallet balance')
       return
     }
+    
     setLoading(true)
-    await new Promise(r => setTimeout(r, 1500))
-    setLoading(false)
-    setSuccess(true)
-    toast.success('Payment successful!')
+    try {
+      // 1. Create Order in Backend
+      const amount = booking.totalAmount || booking.estimatedCost
+      const order = await createPaymentOrder(bookingId, amount)
+      
+      // 2. Initialize Razorpay
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'ChargeNet',
+        description: `Booking for ${booking.station?.name || 'EV Station'}`,
+        order_id: order.id,
+        handler: async (response) => {
+          try {
+            // 3. Verify Payment with Backend
+            await verifyPayment({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            })
+            setSuccess(true)
+            toast.success('Payment successful!')
+          } catch (err) {
+            toast.error('Payment verification failed')
+          }
+        },
+        prefill: {
+          name: user?.name,
+          email: user?.email
+        },
+        theme: {
+          color: '#111827'
+        }
+      }
+      
+      const rzp = new window.Razorpay(options)
+      rzp.open()
+    } catch (err) {
+      toast.error(err.message || 'Payment initialization failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (success) {

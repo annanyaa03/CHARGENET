@@ -1,41 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-
-const mockUsers = [
-  {
-    id: 'usr-001',
-    name: 'Arjun Sharma',
-    email: 'driver@chargenet.in',
-    password: 'password123',
-    role: 'driver',
-    evModel: 'Tata Nexon EV',
-    avatar: null,
-    walletBalance: 1250,
-    savedStations: ['stn-001', 'stn-005'],
-  },
-  {
-    id: 'usr-002',
-    name: 'Priya Mehta',
-    email: 'owner@chargenet.in',
-    password: 'password123',
-    role: 'owner',
-    evModel: null,
-    avatar: null,
-    walletBalance: 0,
-    savedStations: [],
-  },
-  {
-    id: 'usr-003',
-    name: 'Rahul Admin',
-    email: 'admin@chargenet.in',
-    password: 'password123',
-    role: 'admin',
-    evModel: null,
-    avatar: null,
-    walletBalance: 0,
-    savedStations: [],
-  },
-]
+import { supabase } from '../lib/supabase'
 
 export const useAuthStore = create(
   persist(
@@ -45,42 +10,62 @@ export const useAuthStore = create(
       token: null,
       isAuthenticated: false,
 
-      login: (email, password) => {
-        const found = mockUsers.find(
-          (u) => u.email === email && u.password === password
-        )
-        if (!found) throw new Error('Invalid email or password')
-        const { password: _pw, ...userWithoutPassword } = found
+      login: async (email, password) => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+        
+        const user = data.user
+        const role = user?.user_metadata?.role || 'driver'
+        
         set({
-          user: userWithoutPassword,
-          role: found.role,
-          token: 'mock-token-' + found.id,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            name: user?.user_metadata?.full_name || user?.email,
+            role,
+            ...user?.user_metadata
+          },
+          role,
+          token: data.session?.access_token,
           isAuthenticated: true,
         })
-        return userWithoutPassword
+        return user
       },
 
-      register: (data) => {
-        const newUser = {
-          id: 'usr-' + Date.now(),
-          name: data.name,
-          email: data.email,
-          role: data.role || 'driver',
-          evModel: data.evModel || null,
-          avatar: null,
-          walletBalance: 0,
-          savedStations: [],
-        }
+      register: async (formData) => {
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.name,
+              role: formData.role || 'driver',
+              ev_model: formData.evModel || null
+            }
+          }
+        })
+        if (error) throw error
+        
+        const user = data.user
+        const role = user?.user_metadata?.role || 'driver'
+
         set({
-          user: newUser,
-          role: newUser.role,
-          token: 'mock-token-' + newUser.id,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            name: user?.user_metadata?.full_name || user?.email,
+            role,
+            ...user?.user_metadata
+          },
+          role,
+          token: data.session?.access_token,
           isAuthenticated: true,
         })
-        return newUser
+        return user
       },
 
-      logout: () => {
+      logout: async () => {
+        await supabase.auth.signOut()
         set({ user: null, role: null, token: null, isAuthenticated: false })
       },
 
