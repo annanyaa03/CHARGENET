@@ -9,6 +9,7 @@ import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { stations } from '../mock/stations'
 import { chargers } from '../mock/chargers'
 import { useAuthStore } from '../store/authStore'
+import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 
 /* ─── Status Config ────────────────────────────────────────── */
@@ -192,12 +193,12 @@ export default function BookSlot() {
                 placeholder="Search station by name or address..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-11 pr-4 bg-gray-50 border border-gray-100 rounded-xl text-sm text-gray-800 font-medium placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
+                className="w-full h-12 pl-11 pr-4 bg-gray-50 border border-gray-100 rounded-none text-sm text-gray-800 font-medium placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
               />
             </div>
 
             {/* Station list */}
-            <div className="space-y-2">
+            <div className="space-y-4">
               {filteredStations.length === 0 ? (
                 <div className="text-center py-16">
                   <MapPin size={32} className="text-gray-200 mx-auto mb-3" />
@@ -208,52 +209,52 @@ export default function BookSlot() {
                   const cfg = STATUS_CFG[station.status]
                   const isSelected = selectedStation?.id === station.id
                   return (
-                    <button
+                    <motion.button
                       key={station.id}
                       onClick={() => setSelectedStation(station)}
-                      className={`w-full text-left p-4 rounded-xl border transition-all duration-200 group ${
+                      whileHover={{ scale: 1.01, zIndex: 10 }}
+                      className={`w-full text-left p-6 transition-all duration-300 relative group ${
                         isSelected
-                          ? 'border-gray-900 bg-gray-50 shadow-sm'
-                          : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
+                          ? 'bg-white shadow-2xl shadow-gray-200/60 ring-1 ring-gray-900/5'
+                          : 'bg-transparent hover:bg-white hover:shadow-2xl hover:shadow-gray-200/40 hover:ring-1 hover:ring-gray-100'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                            isSelected ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
+                        <div className="flex items-center gap-6 min-w-0">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
+                            isSelected ? 'bg-gray-900 text-white shadow-lg' : 'bg-gray-50 text-gray-400 group-hover:bg-gray-900 group-hover:text-white group-hover:shadow-lg'
                           }`}>
-                            <Zap size={18} />
+                            <Zap size={20} className={isSelected ? 'fill-white' : 'group-hover:fill-white'} />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <p className="text-sm font-bold text-gray-900 truncate">{station.name}</p>
+                            <div className="flex items-center gap-3 mb-1.5">
+                              <p className="text-base font-bold text-gray-900 truncate tracking-tight">{station.name}</p>
                               <span
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase flex-shrink-0"
+                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[9px] font-black uppercase tracking-[0.2em] flex-shrink-0 transition-opacity duration-300 ${!isSelected ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}
                                 style={{ background: cfg.bg, color: cfg.color }}
                               >
-                                <span className="w-1 h-1 rounded-full" style={{ background: cfg.dot }} />
                                 {cfg.label}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-gray-400">
-                              <span className="flex items-center gap-1">
-                                <MapPin size={10} /> {station.city}
+                            <div className="flex items-center gap-5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">
+                              <span className="flex items-center gap-2">
+                                <MapPin size={12} className="text-gray-300" strokeWidth={2.5} /> {station.city}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Star size={10} className="text-amber-400 fill-amber-400" /> {station.rating}
+                              <span className="flex items-center gap-2">
+                                <Star size={12} className="text-amber-400 fill-amber-400" /> {station.rating}
                               </span>
-                              <span>{station.availableChargers}/{station.totalChargers} free</span>
-                              <span>{(station.distance / 1000).toFixed(1)} km</span>
+                              <span>{station.availableChargers}/{station.totalChargers} FREE</span>
+                              <span className="text-gray-300">{(station.distance / 1000).toFixed(1)} KM</span>
                             </div>
                           </div>
                         </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                          isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-200'
+                        <div className={`w-8 h-8 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                          isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-100 opacity-0 group-hover:opacity-100 group-hover:border-gray-900'
                         }`}>
-                          {isSelected && <Check size={12} className="text-white" />}
+                          {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
                         </div>
                       </div>
-                    </button>
+                    </motion.button>
                   )
                 })
               )}
@@ -291,7 +292,7 @@ export default function BookSlot() {
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {stationChargers.length === 0 ? (
                 <div className="text-center py-16">
                   <BatteryCharging size={32} className="text-gray-200 mx-auto mb-3" />
@@ -302,45 +303,46 @@ export default function BookSlot() {
                   const isSelected = selectedCharger?.id === charger.id
                   const cfg = STATUS_CFG[charger.status]
                   return (
-                    <button
+                    <motion.button
                       key={charger.id}
                       onClick={() => setSelectedCharger(charger)}
-                      className={`w-full text-left p-5 rounded-xl border transition-all duration-200 ${
+                      whileHover={{ scale: 1.01, zIndex: 10 }}
+                      className={`w-full text-left p-6 transition-all duration-300 relative group ${
                         isSelected
-                          ? 'border-gray-900 bg-gray-50 shadow-sm'
-                          : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
+                          ? 'bg-white shadow-2xl shadow-gray-200/60 ring-1 ring-gray-900/5'
+                          : 'bg-transparent hover:bg-white hover:shadow-2xl hover:shadow-gray-200/40 hover:ring-1 hover:ring-gray-100'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <p className="text-sm font-bold text-gray-900">{charger.company}</p>
+                          <div className="flex items-center gap-3 mb-3">
+                            <p className="text-base font-bold text-gray-900 tracking-tight">{charger.company}</p>
                             <span
-                              className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase"
+                              className={`px-2 py-0.5 rounded-none text-[9px] font-black uppercase tracking-[0.2em] transition-opacity duration-300 ${!isSelected ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}
                               style={{ background: cfg.bg, color: cfg.color }}
                             >
                               {cfg.label}
                             </span>
                           </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="flex items-center gap-1 px-2.5 py-1 bg-gray-50 rounded-lg text-xs font-semibold text-gray-600">
-                              <Plug size={11} /> {charger.plugType}
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50/50 rounded-none text-[10px] font-bold uppercase tracking-wider text-gray-600 transition-colors group-hover:bg-gray-100">
+                              <Plug size={12} className="text-gray-400" /> {charger.plugType}
                             </span>
-                            <span className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 rounded-lg text-xs font-semibold text-blue-700">
-                              <Zap size={11} /> {charger.powerKw} kW
+                            <span className="flex items-center gap-2 px-3 py-1.5 bg-blue-50/50 rounded-none text-[10px] font-bold uppercase tracking-wider text-blue-700 transition-colors group-hover:bg-blue-100">
+                              <Zap size={12} className="text-blue-400" /> {charger.powerKw} kW
                             </span>
-                            <span className="px-2.5 py-1 bg-emerald-50 rounded-lg text-xs font-semibold text-emerald-700">
+                            <span className="px-3 py-1.5 bg-emerald-50/50 rounded-none text-[10px] font-bold uppercase tracking-wider text-emerald-700 transition-colors group-hover:bg-emerald-100">
                               ₹{charger.pricePerKwh}/kWh
                             </span>
                           </div>
                         </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-4 transition-all ${
-                          isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-200'
+                        <div className={`w-8 h-8 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 ml-4 transition-all duration-300 ${
+                          isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-200 opacity-0 group-hover:opacity-100 group-hover:border-gray-900'
                         }`}>
-                          {isSelected && <Check size={12} className="text-white" />}
+                          {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
                         </div>
                       </div>
-                    </button>
+                    </motion.button>
                   )
                 })
               )}
@@ -379,67 +381,75 @@ export default function BookSlot() {
             </div>
 
             {/* Date picker */}
-            <div className="mb-8">
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Select Date</p>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {dates.map(d => (
-                  <button
-                    key={d.date}
-                    onClick={() => setSelectedDate(d.date)}
-                    className={`flex flex-col items-center min-w-[72px] py-3 px-4 rounded-xl border transition-all ${
-                      selectedDate === d.date
-                        ? 'border-gray-900 bg-gray-900 text-white shadow-lg shadow-gray-900/20'
-                        : 'border-gray-100 bg-white text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${
-                      selectedDate === d.date ? 'text-gray-400' : 'text-gray-400'
-                    }`}>
-                      {d.isToday ? 'Today' : d.dayName}
-                    </span>
-                    <span className="text-xl font-black">{d.dayNum}</span>
-                    <span className={`text-[10px] font-semibold ${
-                      selectedDate === d.date ? 'text-gray-400' : 'text-gray-400'
-                    }`}>
-                      {d.monthShort}
-                    </span>
-                  </button>
-                ))}
+            <div className="mb-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-6">Select Date</p>
+              <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide">
+                {dates.map(d => {
+                  const isSelected = selectedDate === d.date
+                  return (
+                    <motion.button
+                      key={d.date}
+                      onClick={() => setSelectedDate(d.date)}
+                      whileHover={{ scale: 1.05 }}
+                      className={`flex flex-col items-center min-w-[80px] py-4 px-2 transition-all duration-300 group relative ${
+                        isSelected
+                          ? 'bg-gray-900 text-white shadow-2xl shadow-gray-900/20'
+                          : 'bg-transparent text-gray-600 hover:bg-white hover:shadow-xl hover:shadow-gray-200/40 hover:ring-1 hover:ring-gray-100'
+                      }`}
+                    >
+                      <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-2 transition-colors ${
+                        isSelected ? 'text-gray-400' : 'text-gray-400 group-hover:text-gray-500'
+                      }`}>
+                        {d.isToday ? 'Today' : d.dayName}
+                      </span>
+                      <span className="text-2xl font-black mb-1 leading-none">{d.dayNum}</span>
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                        isSelected ? 'text-gray-400' : 'text-gray-300 group-hover:text-gray-400'
+                      }`}>
+                        {d.monthShort}
+                      </span>
+                    </motion.button>
+                  )
+                })}
               </div>
             </div>
 
             {/* Time grid */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Select Time Slots</p>
+            <div className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Select Time Slots</p>
                 {selectedSlots.length > 0 && (
-                  <span className="text-xs font-bold text-gray-600">
+                  <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
                     {selectedSlots.length} slot{selectedSlots.length > 1 ? 's' : ''} · {selectedSlots.length * 30}min
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                {SLOTS.map(slot => (
-                  <button
-                    key={slot.id}
-                    onClick={() => toggleSlot(slot)}
-                    disabled={slot.booked}
-                    className={`h-11 rounded-lg text-xs font-bold transition-all ${
-                      slot.booked
-                        ? 'bg-gray-50 text-gray-200 cursor-not-allowed line-through'
-                        : selectedSlots.includes(slot.id)
-                        ? 'bg-gray-900 text-white shadow-md shadow-gray-900/20'
-                        : 'bg-white border border-gray-100 text-gray-600 hover:border-gray-900 hover:text-gray-900'
-                    }`}
-                  >
-                    {slot.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+                {SLOTS.map(slot => {
+                  const isSelected = selectedSlots.includes(slot.id)
+                  return (
+                    <motion.button
+                      key={slot.id}
+                      onClick={() => toggleSlot(slot)}
+                      disabled={slot.booked}
+                      whileHover={!slot.booked ? { scale: 1.05 } : {}}
+                      className={`h-12 rounded-none text-xs font-bold transition-all duration-300 ${
+                        slot.booked
+                          ? 'text-gray-200 cursor-not-allowed line-through opacity-40'
+                          : isSelected
+                          ? 'bg-gray-900 text-white shadow-xl shadow-gray-900/20'
+                          : 'bg-transparent text-gray-600 hover:bg-white hover:shadow-lg hover:shadow-gray-200/40 hover:ring-1 hover:ring-gray-100'
+                      }`}
+                    >
+                      {slot.label}
+                    </motion.button>
+                  )
+                })}
               </div>
-              <div className="flex items-center gap-4 mt-3 text-[11px] text-gray-400">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-white border border-gray-100" /> Available</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-900" /> Selected</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-50" /> Booked</span>
+              <div className="flex items-center gap-6 mt-6 text-[9px] font-black uppercase tracking-[0.2em] text-gray-300">
+                <span className="flex items-center gap-2 transition-colors hover:text-gray-400"><span className="w-2 h-2 rounded-full border border-gray-200" /> Available</span>
+                <span className="flex items-center gap-2 transition-colors hover:text-gray-400"><span className="w-2 h-2 rounded-full bg-gray-900" /> Selected</span>
+                <span className="flex items-center gap-2 transition-colors hover:text-gray-400"><span className="w-2 h-2 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-[6px]">×</span> Booked</span>
               </div>
             </div>
 

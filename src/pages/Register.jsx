@@ -54,15 +54,15 @@ export default function Register() {
     <div className="min-h-screen bg-[#FAFAF9] flex flex-col font-sans selection:bg-accent/10">
       <Navbar solid />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 sm:py-32">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-24 pb-20 sm:pt-32 sm:pb-24">
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
-          className="w-full max-w-[420px]"
+          className="w-full max-w-[400px]"
         >
           {/* Brand & Identity */}
-          <motion.div variants={item} className="mb-12">
+          <motion.div variants={item} className="mb-6">
             <Link to="/" className="inline-flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-xl shadow-primary/10">
                 <Zap size={20} className="text-white fill-white" />
@@ -72,9 +72,9 @@ export default function Register() {
           </motion.div>
 
           {/* Header */}
-          <motion.div variants={item} className="mb-10">
-            <h1 className="heading-premium text-3xl mb-2">Join the Network</h1>
-            <p className="text-sm text-muted">Create an account to start your smart charging journey</p>
+          <motion.div variants={item} className="mb-8">
+            <h1 className="heading-premium text-2xl mb-1">Join the Network</h1>
+            <p className="label-premium !text-[9px] !text-muted/40 !tracking-[0.2em]">Create an account to start your smart charging journey</p>
           </motion.div>
 
           {/* Form */}
@@ -82,11 +82,11 @@ export default function Register() {
             <motion.div variants={item} className="space-y-6">
               
               {/* Full Name */}
-              <div className="relative">
-                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'name' ? '!text-accent' : '!text-muted/40'}`}>
+              <div className="relative group">
+                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'name' ? '!text-accent' : '!text-muted/30'}`}>
                   Full Name
                 </label>
-                <div className="relative group">
+                <div className="relative">
                   <User size={16} className={`absolute left-0 top-1/2 -translate-y-1/2 transition-colors ${focusedField === 'name' ? 'text-accent' : 'text-muted/40'}`} />
                   <input
                     type="text"
@@ -94,7 +94,7 @@ export default function Register() {
                     onFocus={() => setFocusedField('name')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="Arjun Sharma"
-                    className="w-full bg-transparent border-b border-border py-4 pl-8 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
+                    className="w-full bg-transparent border-b border-border/60 py-4 pl-8 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
                   />
                   <motion.div 
                     initial={false}
@@ -106,11 +106,11 @@ export default function Register() {
               </div>
 
               {/* Email */}
-              <div className="relative">
-                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'email' ? '!text-accent' : '!text-muted/40'}`}>
+              <div className="relative group">
+                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'email' ? '!text-accent' : '!text-muted/30'}`}>
                   Email Address
                 </label>
-                <div className="relative group">
+                <div className="relative">
                   <Mail size={16} className={`absolute left-0 top-1/2 -translate-y-1/2 transition-colors ${focusedField === 'email' ? 'text-accent' : 'text-muted/40'}`} />
                   <input
                     type="email"
@@ -118,7 +118,7 @@ export default function Register() {
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="name@example.com"
-                    className="w-full bg-transparent border-b border-border py-4 pl-8 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
+                    className="w-full bg-transparent border-b border-border/60 py-4 pl-8 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
                   />
                   <motion.div 
                     initial={false}
@@ -130,8 +130,8 @@ export default function Register() {
               </div>
 
               {/* Account Type Toggle (Subtle) */}
-              <div className="space-y-3">
-                <label className="label-premium !text-[9px] !text-muted/40 block mb-3">Account Type</label>
+              <div className="space-y-4">
+                <label className="label-premium !text-[9px] !text-muted/30 block">Account Type</label>
                 <div className="flex gap-4">
                   {['driver', 'owner'].map((t) => (
                     <label key={t} className="relative flex-1 cursor-pointer">
@@ -141,7 +141,7 @@ export default function Register() {
                         {...register('role')} 
                         className="peer sr-only"
                       />
-                      <div className="w-full py-3 px-4 border border-border/60 rounded-xl text-center label-premium !text-[9px] !text-muted/40 !tracking-widest peer-checked:border-accent peer-checked:bg-accent/5 peer-checked:text-accent transition-all hover:bg-surface">
+                      <div className="w-full py-3.5 px-4 border border-border/60 rounded-xl text-center label-premium !text-[9px] !text-muted/40 !tracking-widest peer-checked:border-accent peer-checked:bg-accent/5 peer-checked:text-accent transition-all hover:bg-surface">
                         {t === 'driver' ? 'EV Driver' : 'Station Owner'}
                       </div>
                     </label>
@@ -182,11 +182,11 @@ export default function Register() {
               </AnimatePresence>
 
               {/* Password */}
-              <div className="relative">
-                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'password' ? '!text-accent' : '!text-muted/40'}`}>
+              <div className="relative group">
+                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'password' ? '!text-accent' : '!text-muted/30'}`}>
                   Choice of Password
                 </label>
-                <div className="relative group">
+                <div className="relative">
                   <Lock size={16} className={`absolute left-0 top-1/2 -translate-y-1/2 transition-colors ${focusedField === 'password' ? 'text-accent' : 'text-muted/40'}`} />
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -194,7 +194,7 @@ export default function Register() {
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="••••••••"
-                    className="w-full bg-transparent border-b border-border py-4 pl-8 pr-10 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
+                    className="w-full bg-transparent border-b border-border/60 py-4 pl-8 pr-10 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
                   />
                   <button 
                     type="button" 

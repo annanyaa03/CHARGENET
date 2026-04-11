@@ -70,7 +70,7 @@ export default function Login() {
     <div className="min-h-screen bg-[#FAFAF9] flex flex-col font-sans selection:bg-accent/10">
       <Navbar solid />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-20">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-32 pb-20 sm:pt-40">
         <motion.div
           variants={container}
           initial="hidden"
@@ -78,7 +78,7 @@ export default function Login() {
           className="w-full max-w-[400px]"
         >
           {/* Brand & Identity */}
-          <motion.div variants={item} className="flex flex-col items-center mb-12">
+          <motion.div variants={item} className="flex flex-col items-center mb-8">
             <Link to="/" className="group flex flex-col items-center gap-4">
               <motion.div 
                 whileHover={{ rotate: 10, scale: 1.05 }}
@@ -94,21 +94,21 @@ export default function Login() {
           </motion.div>
 
           {/* Header */}
-          <motion.div variants={item} className="mt-20 pt-8 border-t border-border/40 text-center">
-            <h1 className="heading-premium text-2xl !text-primary/90">Welcome Back</h1>
+          <motion.div variants={item} className="mb-8 text-center">
+            <h1 className="heading-premium text-2xl text-primary">Welcome Back</h1>
             <p className="label-premium !text-[9px] !text-muted/30 mt-2">Sign in to manage your charging experience</p>
           </motion.div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <motion.div variants={item} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            <motion.div variants={item} className="space-y-6">
               
               {/* Email Field */}
-              <div className="relative">
-                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-colors ${focusedField === 'email' ? '!text-accent' : '!text-muted/40'}`}>
+              <div className="relative group">
+                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'email' ? '!text-accent' : '!text-muted/30'}`}>
                   Email Address
                 </label>
-                <div className="relative group">
+                <div className="relative">
                   <Mail size={16} className={`absolute left-0 top-1/2 -translate-y-1/2 transition-colors ${focusedField === 'email' ? 'text-accent' : 'text-muted/40'}`} />
                   <input
                     type="email"
@@ -116,9 +116,8 @@ export default function Login() {
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="name@example.com"
-                    className="w-full bg-transparent border-b border-border py-3 pl-8 text-sm outline-none transition-all placeholder:text-muted/30 focus:border-accent"
+                    className="w-full bg-transparent border-b border-border/60 py-4 pl-8 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
                   />
-                  {/* Animated line under input */}
                   <motion.div 
                     initial={false}
                     animate={{ scaleX: focusedField === 'email' ? 1 : 0 }}
@@ -129,16 +128,16 @@ export default function Login() {
               </div>
 
               {/* Password Field */}
-              <div className="relative">
-                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-colors ${focusedField === 'password' ? '!text-accent' : '!text-muted/40'}`}>
+              <div className="relative group">
+                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'password' ? '!text-accent' : '!text-muted/30'}`}>
                   Access Password
                 </label>
                 <div className="flex justify-between items-center mb-1">
-                  <button type="button" className="absolute right-0 -top-6 text-[9px] font-bold uppercase tracking-widest text-muted hover:text-primary transition-colors">
+                  <button type="button" className="absolute right-0 -top-6 label-premium !text-[9px] !text-muted/40 hover:!text-primary transition-all">
                     Forgot Password?
                   </button>
                 </div>
-                <div className="relative group">
+                <div className="relative">
                   <Lock size={16} className={`absolute left-0 top-1/2 -translate-y-1/2 transition-colors ${focusedField === 'password' ? 'text-accent' : 'text-muted/40'}`} />
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -146,7 +145,7 @@ export default function Login() {
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="••••••••"
-                    className="w-full bg-transparent border-b border-border py-3 pl-8 pr-10 text-sm outline-none transition-all placeholder:text-muted/30 focus:border-accent"
+                    className="w-full bg-transparent border-b border-border/60 py-4 pl-8 pr-10 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
                   />
                   <button 
                     type="button"

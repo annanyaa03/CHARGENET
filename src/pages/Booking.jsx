@@ -208,31 +208,35 @@ export default function Booking() {
 
   return (
     <PageWrapper className="bg-white">
-      <PageContainer className="!max-w-7xl pb-20 pt-10">
+      <PageContainer className="!max-w-7xl pb-20 pt-8 sm:pt-12">
         
         {/* Navigation */}
-        <div className="flex items-center justify-between mb-24 border-b border-gray-50 pb-8">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-4 text-gray-300 hover:text-gray-900 transition-all group">
-            <div className="p-2 border border-gray-100 group-hover:border-gray-900">
-              <ArrowLeft size={16} />
+        <div className="flex items-center justify-between mb-12 border-b border-gray-100 pb-6">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-4 text-gray-400 hover:text-gray-900 transition-all group">
+            <div className="p-1.5 border border-gray-100 group-hover:border-gray-900 transition-all">
+              <ArrowLeft size={14} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Cancel Booking</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Cancel Booking</span>
           </button>
-            <span className="label-premium !text-gray-200">
-            Secure Reserve System v2.0
-          </span>
+          <div className="hidden sm:flex items-center gap-6">
+            <span className="text-[9px] font-black uppercase tracking-[0.5em] text-gray-200">
+              Secure Reserve System v2.0
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           
           {/* Main Form */}
           <div className="lg:col-span-8">
-            <header className="mb-16">
-              <h1 className="text-5xl heading-premium mb-4 leading-none">Checkout.</h1>
-              <p className="label-premium !text-gray-300">{charger.company} · {charger.plugType} · {charger.powerKw}kW</p>
+            <header className="mb-12">
+              <h1 className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-none cursor-default">Checkout.</h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-300">
+                {charger.company} <span className="mx-3 text-gray-100">|</span> {charger.plugType} <span className="mx-3 text-gray-100">|</span> {charger.powerKw}kW
+              </p>
             </header>
 
-            <div className="space-y-32">
+            <div className="space-y-20">
               
               {/* 01. Configure */}
               <section>
