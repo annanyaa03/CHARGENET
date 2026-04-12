@@ -57,8 +57,8 @@ export default function Profile() {
         getMyBookings(),
         getMySessions()
       ])
-      setBookings(bData)
-      setSessions(sData)
+      setBookings(bData.data || [])
+      setSessions(sData.data || [])
     } catch (err) {
       console.error('Failed to load profile data:', err)
       toast.error('Failed to load profile data')

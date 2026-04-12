@@ -12,6 +12,9 @@ const Payment = lazy(() => import('../pages/Payment'))
 const Profile = lazy(() => import('../pages/Profile'))
 const LearnHub = lazy(() => import('../pages/LearnHub'))
 const GuideDetail = lazy(() => import('../pages/GuideDetail'))
+const ChargingGuide = lazy(() => import('../pages/Resources/ChargingGuide'))
+const HelpCenter = lazy(() => import('../pages/Resources/HelpCenter'))
+const Blog = lazy(() => import('../pages/Resources/Blog'))
 const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
 const Pricing = lazy(() => import('../pages/Pricing'))
@@ -60,6 +63,9 @@ export function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/resources/guide" element={<ChargingGuide />} />
+          <Route path="/resources/help" element={<HelpCenter />} />
+          <Route path="/resources/blog" element={<Blog />} />
           <Route path="/bookings" element={<BookSlot />} />
 
           {/* Solutions */}

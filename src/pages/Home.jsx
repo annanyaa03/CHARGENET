@@ -201,9 +201,13 @@ export default function Home() {
                         className="w-full bg-transparent border-none outline-none text-white placeholder-white/30 py-2.5 text-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') navigate(searchQuery ? `/map?q=${encodeURIComponent(searchQuery)}` : '/map') }}
                       />
                     </div>
-                    <button className="bg-[#1D9E75] hover:bg-[#168561] text-white px-6 py-2.5 rounded-none font-bold transition-all active:scale-95 text-xs shadow-lg shadow-[#1D9E75]/20">
+                    <button 
+                      onClick={() => navigate(searchQuery ? `/map?q=${encodeURIComponent(searchQuery)}` : '/map')}
+                      className="bg-[#1D9E75] hover:bg-[#168561] text-white px-6 py-2.5 rounded-none font-bold transition-all active:scale-95 text-xs shadow-lg shadow-[#1D9E75]/20"
+                    >
                       Search
                     </button>
                   </div>
@@ -214,10 +218,16 @@ export default function Home() {
             {/* Secondary Buttons */}
             <Reveal delay={0.8}>
               <div className="flex flex-wrap items-center justify-start gap-6 mt-8">
-                <button className="px-8 py-3 rounded-none border border-white/30 text-white font-semibold hover:bg-white/10 transition-all">
+                <button 
+                  onClick={() => navigate('/map')}
+                  className="px-8 py-3 rounded-none border border-white/30 text-white font-semibold hover:bg-white/10 transition-all"
+                >
                   Explore Map
                 </button>
-                <button className="px-8 py-3 rounded-none text-white/70 font-semibold hover:text-white transition-all flex items-center gap-2">
+                <button 
+                  onClick={() => navigate('/learn')}
+                  className="px-8 py-3 rounded-none text-white/70 font-semibold hover:text-white transition-all flex items-center gap-2"
+                >
                   <Play size={18} fill="currentColor" />
                   Learn More
                 </button>

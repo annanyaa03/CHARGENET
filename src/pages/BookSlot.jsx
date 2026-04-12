@@ -85,8 +85,8 @@ export default function BookSlot() {
 
   const fetchInitialStations = async () => {
     try {
-      const data = await getStations({})
-      setStations(data)
+      const res = await getStations({})
+      setStations(res.data || [])
     } catch (err) {
       console.error('Failed to fetch stations:', err)
     }
@@ -96,11 +96,10 @@ export default function BookSlot() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [step])
 
-  // Fetch chargers when station selected
   useEffect(() => {
     if (selectedStation) {
       getSlotsByStation(selectedStation.id)
-        .then(setStationChargers)
+        .then(res => setStationChargers(res.data || []))
         .catch(err => console.error('Failed to fetch slots:', err))
     }
   }, [selectedStation])

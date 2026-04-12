@@ -256,16 +256,17 @@ export default function StationDetail() {
     const loadData = async () => {
       setLoading(true)
       try {
-        const data = await getStationById(id)
-        setStation(data)
-        document.title = `${data.name} — ChargeNet`
+        const res = await getStationById(id)
+        const stationData = res.data
+        setStation(stationData)
+        document.title = `${stationData.name} — ChargeNet`
         
         // Fetch chargers (slots)
-        const slots = await getSlotsByStation(id)
-        setStationChargers(slots)
+        const slotsRes = await getSlotsByStation(id)
+        setStationChargers(slotsRes.data || [])
         
         // Reviews would ideally come from a service too, but if backend doesn't have it yet, we can keep it empty or mock
-        setStationReviews(data.reviews || [])
+        setStationReviews(stationData.reviews || [])
       } catch (err) {
         console.error('Failed to load station:', err)
         toast.error('Failed to load station details')

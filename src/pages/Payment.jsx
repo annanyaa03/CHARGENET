@@ -45,7 +45,8 @@ export default function Payment() {
     try {
       // 1. Create Order in Backend
       const amount = booking.totalAmount || booking.estimatedCost
-      const order = await createPaymentOrder(bookingId, amount)
+      const res = await createPaymentOrder(bookingId, amount)
+      const order = res.data || res
       
       // 2. Initialize Razorpay
       const options = {

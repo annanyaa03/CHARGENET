@@ -32,8 +32,8 @@ export default function OwnerDashboard() {
   const loadStations = async () => {
     setLoading(true)
     try {
-      const data = await getMyStations()
-      setStations(data)
+      const res = await getMyStations()
+      setStations(res.data || [])
     } catch (err) {
       console.error('Failed to load owned stations:', err)
       toast.error('Failed to load dashboard data')

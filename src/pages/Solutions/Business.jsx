@@ -113,39 +113,37 @@ export default function Business() {
           </div>
         </section>
 
-        {/* Feature Grid - Interactive Floating Cards */}
-        <section className="py-32 px-6 bg-[#FAFAF9] border-t border-gray-100">
-          <div className="max-w-7xl mx-auto">
+        {/* Value Proposition - Cardless List Layout */}
+        <section className="py-24 px-6 bg-[#FAFAF9]">
+          <div className="max-w-4xl mx-auto">
             <Reveal>
-               <div className="mb-16">
-                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-gray-400 mb-4">Value Proposition</p>
-                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-[#051428]">More than just a charger.</h2>
+               <div className="mb-12">
+                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#1D9E75] mb-3">Value Proposition</p>
+                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-[#051428] leading-tight">More than just a charger.</h2>
                </div>
             </Reveal>
 
-            <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+            <div className="divide-y divide-gray-200 border-y border-gray-200">
               {features.map((feature, i) => (
                 <Reveal key={feature.title} delay={i * 0.1}>
-                  <motion.div 
-                    whileHover={{ y: -8 }}
-                    className="p-10 lg:p-12 bg-white border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgb(29,158,117,0.08)] hover:border-[#1D9E75]/30 transition-all duration-500 rounded-none h-full flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="w-14 h-14 bg-[#FAFAF9] border border-gray-100 flex items-center justify-center mb-8 text-[#051428] group-hover:bg-[#1D9E75] group-hover:text-white group-hover:border-[#1D9E75] transition-all duration-500">
-                        <feature.icon size={22} className="transform group-hover:scale-110 transition-transform duration-500" />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-4 text-[#051428] tracking-tight">{feature.title}</h3>
-                      <p className="text-gray-500 text-[15px] leading-relaxed mb-10">
+                  <div className="py-8 group flex flex-col md:flex-row md:items-center gap-6 md:gap-12 hover:bg-white transition-colors px-6 -mx-6">
+                    <div className="w-14 h-14 bg-white border border-gray-200 shadow-sm flex items-center justify-center shrink-0 text-[#051428] group-hover:bg-[#1D9E75] group-hover:border-[#1D9E75] group-hover:text-white transition-all duration-500">
+                      <feature.icon size={22} className="transform group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2 text-[#051428] tracking-tight group-hover:text-[#1D9E75] transition-colors">{feature.title}</h3>
+                      <p className="text-gray-500 text-[15px] leading-relaxed max-w-2xl">
                         {feature.desc}
                       </p>
                     </div>
-                    <div>
-                       <div className="h-px w-12 bg-gray-200 mb-6 group-hover:w-full group-hover:bg-[#1D9E75]/20 transition-all duration-700" />
-                       <button className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 group-hover:text-[#1D9E75] transition-colors">
-                         Explore Technicals <ArrowRight size={14} className="transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-500" />
+
+                    <div className="shrink-0 mt-2 md:mt-0 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-500 hidden md:block">
+                       <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#1D9E75] hover:bg-[#1D9E75] hover:text-white transition-colors">
+                         <ArrowRight size={16} />
                        </button>
                     </div>
-                  </motion.div>
+                  </div>
                 </Reveal>
               ))}
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -12,7 +12,7 @@ import {
 import { useMapStore } from '../store/mapStore'
 import { formatDistance } from '../utils/plugTypes'
 import { Navbar } from '../components/layout/Navbar'
-import { getNearbyStations } from '../services/stationService'
+import { getStations } from '../services/stationService'
 
 // Fix Leaflet default icons
 delete L.Icon.Default.prototype._getIconUrl
@@ -92,8 +92,12 @@ const STATUS_TABS = ['all', 'active', 'busy', 'inactive', 'faulty']
 
 export default function MapView() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const queryParams = new URLSearchParams(location.search)
+  const initialQuery = queryParams.get('q') || ''
+
   const { selectedStation, setSelectedStation, clearSelectedStation, filters, setFilter, resetFilters } = useMapStore()
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [statusTab, setStatusTab] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -114,22 +118,23 @@ export default function MapView() {
           const { latitude, longitude } = pos.coords
           setMapCenter([latitude, longitude])
           setMapZoom(12)
-          fetchStations(latitude, longitude)
+          fetchStations()
         },
         () => {
           // Default or fallback
-          fetchStations(20.5937, 78.9629)
+          fetchStations()
         }
       )
     } else {
-      fetchStations(20.5937, 78.9629)
+      fetchStations()
     }
   }, [clearSelectedStation])
 
-  const fetchStations = async (lat, lng) => {
+  const fetchStations = async () => {
     setLoading(true)
     try {
-      const data = await getNearbyStations(lat, lng)
+      const res = await getStations({})
+      const data = res.data || []
       setStations(data)
       setFiltered(data)
     } catch (err) {

@@ -22,9 +22,9 @@ const navData = {
     { icon: Newspaper, label: 'Fleet Solutions', subtitle: 'Scaling your EV fleet', color: 'text-amber-600', bg: 'bg-amber-50', to: '/solutions/fleet' },
   ],
   resources: [
-    { icon: BookOpen, label: 'Charging Guide', subtitle: 'Everything you need to know', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { icon: Lightbulb, label: 'Help Center', subtitle: 'Support & documentation', color: 'text-amber-600', bg: 'bg-amber-50' },
-    { icon: Newspaper, label: 'Latest Blog', subtitle: 'Industry news & updates', color: 'text-teal-600', bg: 'bg-teal-50' },
+    { icon: BookOpen, label: 'Charging Guide', subtitle: 'Everything you need to know', color: 'text-blue-600', bg: 'bg-blue-50', to: '/resources/guide' },
+    { icon: Lightbulb, label: 'Help Center', subtitle: 'Support & documentation', color: 'text-amber-600', bg: 'bg-amber-50', to: '/resources/help' },
+    { icon: Newspaper, label: 'Latest Blog', subtitle: 'Industry news & updates', color: 'text-teal-600', bg: 'bg-teal-50', to: '/resources/blog' },
   ]
 };
 

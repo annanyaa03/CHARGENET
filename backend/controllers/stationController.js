@@ -13,7 +13,6 @@ const getStations = async (req, res, next) => {
     let query = supabase
       .from('stations')
       .select('*')
-      .eq('status', 'active');
 
     if (city) {
       query = query.ilike('city', `%${city}%`);

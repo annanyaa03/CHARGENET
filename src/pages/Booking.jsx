@@ -133,11 +133,11 @@ export default function Booking() {
     const loadData = async () => {
       setLoading(true)
       try {
-        const sData = await getStationById(id)
-        setStation(sData)
+        const resStation = await getStationById(id)
+        setStation(resStation.data)
         
-        const qData = await getSlotsByStation(id)
-        const foundCharger = qData.find(c => c.id === chargerId)
+        const resSlots = await getSlotsByStation(id)
+        const foundCharger = (resSlots.data || []).find(c => c.id === chargerId)
         setCharger(foundCharger)
       } catch (err) {
         console.error('Failed to load booking data:', err)
