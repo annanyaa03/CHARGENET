@@ -1,4 +1,19 @@
+const { supabaseAdmin } = require('../config/supabase');
 
+/**
+ * @desc    Get user profile
+ * @route   GET /api/profile
+ * @access  Private
+ */
+const getProfile = async (req, res, next) => {
+  try {
+    // req.user is already populated by authMiddleware
+    res.status(200).json({
+      success: true,
+      data: req.user
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
