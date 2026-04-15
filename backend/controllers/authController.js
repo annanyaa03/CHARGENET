@@ -1,4 +1,10 @@
+const { supabase, supabaseAdmin } = require('../config/supabase');
 
+/**
+ * @desc    Register a new user
+ * @route   POST /api/auth/register
+ * @access  Public
+ */
 const register = async (req, res, next) => {
   try {
     const { email, password, full_name, phone } = req.body;
