@@ -1,21 +1,40 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-const supabaseServiceRoleKey = process.env.SUPABASE_SECRET_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SECRET_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
-  console.error('Missing Supabase environment variables');
+const isPlaceholder = (val) => {
+  if (!val || val.trim() === '' || val.startsWith('ADD_YOUR')) return true;
+  // Supabase keys are JWTs and almost always start with 'ey'
+  // If it's a long string but doesn't start with 'ey', it's likely a placeholder or custom string
+  if (val.length > 20 && !val.startsWith('ey')) return true;
+  return false;
+};
+
+// Whether Supabase is properly configured
+const supabaseEnabled = !isPlaceholder(SUPABASE_URL) && !isPlaceholder(SUPABASE_ANON_KEY);
+const adminEnabled = supabaseEnabled && !isPlaceholder(SUPABASE_SERVICE_KEY);
+
+if (!supabaseEnabled) {
+  console.warn('[Supabase] CRITICAL WARNING: URL or Anon key is missing or invalid (must start with "ey"). Internal DB queries will be skipped.');
+} else if (!adminEnabled) {
+  console.warn('[Supabase] WARNING: Service role key missing or invalid — admin operations disabled.');
 }
 
-// Client for general operations (honors RLS)
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Only create real clients when keys are valid
+const supabase = supabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const supabaseAdmin = adminEnabled ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY) : supabase;
 
-// Client for administrative operations (bypasses RLS)
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-module.exports = {
-  supabase,
-  supabaseAdmin
+module.exports = { 
+  supabase, 
+  supabaseAdmin, 
+  supabaseEnabled, 
+  adminEnabled,
+  configStatus: {
+    urlSet: !!SUPABASE_URL && !SUPABASE_URL.includes('ADD_YOUR'),
+    anonKeyValid: supabaseEnabled,
+    serviceKeyValid: adminEnabled
+  }
 };

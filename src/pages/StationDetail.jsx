@@ -352,6 +352,11 @@ export default function StationDetail() {
                         <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: cfg.color }} />
                         {cfg.label}
                       </span>
+                      {station.isExternal && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide badge-external" style={{ background: '#EEF2FF', color: '#4F46E5', border: '1px solid #E0E7FF' }}>
+                          Source: {station.source}
+                        </span>
+                      )}
                     </div>
                     <h1 className="text-2xl font-black text-gray-900 leading-tight">{station.name}</h1>
                     <div className="flex items-start gap-1.5 text-sm text-gray-500 mt-1.5">
@@ -776,6 +781,10 @@ export default function StationDetail() {
               <div className="py-6">
                 <button
                   onClick={() => {
+                    if (station.isExternal) {
+                      toast.error('Booking is only available for ChargeNet network stations')
+                      return
+                    }
                     if (!isAuthenticated) { navigate('/login'); return }
                     const available = stationChargers.find(c => c.status === 'active') || stationChargers[0]
                     if (available) {
@@ -784,11 +793,21 @@ export default function StationDetail() {
                       toast.error('No chargers available at this station')
                     }
                   }}
-                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl text-sm transition-all hover:shadow-lg flex items-center justify-center gap-2"
+                  className={`w-full py-3 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${
+                    station.isExternal 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 shadow-none'
+                      : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
+                  }`}
+                  disabled={station.isExternal}
                 >
-                  <BatteryCharging size={16} /> Book a Slot
+                  <BatteryCharging size={16} /> 
+                  {station.isExternal ? 'Booking Unavailable' : 'Book a Slot'}
                 </button>
-                <p className="text-center text-[11px] text-gray-400 mt-2">Instant confirmation · Free cancellation</p>
+                <p className="text-center text-[11px] text-gray-400 mt-2">
+                  {station.isExternal 
+                    ? 'This is a public station not managed by ChargeNet' 
+                    : 'Instant confirmation · Free cancellation'}
+                </p>
               </div>
 
             <div className="py-8">

@@ -62,9 +62,23 @@ function createStationIcon(status, selected = false) {
   })
 }
 
-function MapController({ center, zoom }) {
+function MapController({ center, zoom, onMoveEnd }) {
   const map = useMap()
-  useEffect(() => { map.flyTo(center, zoom, { duration: 1.2 }) }, [center, zoom])
+  
+  useEffect(() => {
+    if (center) map.setView(center, zoom, { animate: true })
+  }, [center, zoom, map])
+
+  useEffect(() => {
+    const handleMove = () => {
+      const newCenter = map.getCenter()
+      const newZoom = map.getZoom()
+      onMoveEnd?.([newCenter.lat, newCenter.lng], newZoom)
+    }
+    map.on('moveend', handleMove)
+    return () => map.off('moveend', handleMove)
+  }, [map, onMoveEnd])
+
   return null
 }
 
@@ -107,33 +121,30 @@ export default function MapView() {
   const [filtered, setFiltered] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { 
-    document.title = 'Find Stations — ChargeNet' 
-    clearSelectedStation()
-
-    // Geolocation
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords
-          setMapCenter([latitude, longitude])
-          setMapZoom(12)
-          fetchStations()
-        },
-        () => {
-          // Default or fallback
-          fetchStations()
-        }
-      )
-    } else {
-      fetchStations()
-    }
-  }, [clearSelectedStation])
-
-  const fetchStations = async () => {
+  const fetchStations = async (latArg, lngArg, zoomArg) => {
     setLoading(true)
     try {
-      const res = await getStations({})
+      // Use provided args or fallback to state
+      const targetLat = latArg ?? mapCenter[0]
+      const targetLng = lngArg ?? mapCenter[1]
+      const targetZoom = zoomArg ?? mapZoom
+      
+      // Calculate radius roughly based on zoom level: 
+      // z15 =~ 5km, z10 =~ 50km, z5 =~ 500km
+      const baseRadius = Math.pow(2, 14 - targetZoom) * 2;
+      const radius = targetZoom < 8 ? Math.max(100, baseRadius) : Math.max(5, baseRadius);
+      
+      const fetchParams = { 
+        lat: targetLat, 
+        lng: targetLng, 
+      }
+      
+      // Only apply radius filtering if we are zoomed in enough or not searching globally
+      if (targetZoom >= 6) {
+        fetchParams.radius = Math.min(1000, radius); 
+      }
+      
+      const res = await getStations(fetchParams)
       const data = res.data || []
       setStations(data)
       setFiltered(data)
@@ -143,6 +154,34 @@ export default function MapView() {
       setLoading(false)
     }
   }
+
+  // Initial Geolocation
+  useEffect(() => {
+    document.title = 'Find Stations — ChargeNet'
+    clearSelectedStation()
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords
+          setMapCenter([latitude, longitude])
+          setMapZoom(12)
+          fetchStations(latitude, longitude, 12)
+        },
+        () => fetchStations(20.5937, 78.9629, 5) // Fallback to India center
+      )
+    } else {
+      fetchStations(20.5937, 78.9629, 5)
+    }
+  }, [clearSelectedStation])
+
+  // Debounced map-move fetch
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Fetch if map has moved from initial or on mount
+      fetchStations()
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [mapCenter, mapZoom])
 
   useEffect(() => {
     let result = [...stations]
@@ -192,6 +231,7 @@ export default function MapView() {
         .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
         .sidebar-scroll::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 4px; }
         .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+        .badge-external { background: #EEF2FF; color: #4F46E5; border: 1px solid #E0E7FF; }
       `}</style>
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -310,7 +350,14 @@ export default function MapView() {
                         <p className={`text-sm font-semibold truncate transition-colors ${isSelected ? 'text-emerald-700' : 'text-gray-800 group-hover:text-gray-900'}`}>
                           {station.name}
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{station.city} · {formatDistance(station.distance)}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-gray-400 truncate">{station.city} · {formatDistance(station.distance)}</p>
+                          {station.isExternal && (
+                            <span className="px-1.5 py-0.5 rounded-none text-[9px] font-bold uppercase tracking-wider badge-external">
+                              Public
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span
                         className="flex-shrink-0 mt-0.5 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wide"
@@ -364,7 +411,14 @@ export default function MapView() {
               url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
-            <MapController center={mapCenter} zoom={mapZoom} />
+            <MapController 
+              center={mapCenter} 
+              zoom={mapZoom} 
+              onMoveEnd={(newCenter, newZoom) => {
+                setMapCenter(newCenter)
+                setMapZoom(newZoom)
+              }} 
+            />
             {filtered.map(station => (
               <Marker
                 key={station.id}
@@ -448,13 +502,20 @@ export default function MapView() {
                   {/* Header row */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wide mb-1.5"
-                        style={{ background: cfg.bg, color: cfg.color }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-none inline-block" style={{ background: cfg.color }} />
-                        {cfg.label}
-                      </span>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                         <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wide"
+                          style={{ background: cfg.bg, color: cfg.color }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-none inline-block" style={{ background: cfg.color }} />
+                          {cfg.label}
+                        </span>
+                        {selectedStation.isExternal && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wide badge-external">
+                            {selectedStation.source}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-base font-bold text-gray-900 leading-tight">{selectedStation.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5 truncate">{selectedStation.address}</p>
                     </div>

@@ -1,49 +1,81 @@
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const { haversineDistance } = require('../utils/helpers');
+const { fetchAllExternalStations } = require('../services/externalStationService');
 
 /**
- * @desc    Get all active stations with optional filters
+ * @desc    Get all stations — internal DB + external APIs merged
  * @route   GET /api/stations
  * @access  Public
  */
 const getStations = async (req, res, next) => {
   try {
-    const { city, connector_type, lat, lng, radius = 10 } = req.query;
+    const {
+      city,
+      connector_type,
+      lat,
+      lng,
+      radius = 25,
+      include_external = 'true'
+    } = req.query;
 
-    let query = supabase
-      .from('stations')
-      .select('*')
+    const latNum = lat ? parseFloat(lat) : null;
+    const lngNum = lng ? parseFloat(lng) : null;
+    const radiusNum = parseFloat(radius);
 
-    if (city) {
-      query = query.ilike('city', `%${city}%`);
+    // ── 1. Internal Stations from Supabase ──────────────────────────────────
+    let allStations = [];
+    if (supabase) {
+      try {
+        let query = supabase.from('stations').select('*');
+        if (city) query = query.ilike('city', `%${city}%`);
+        if (connector_type) query = query.contains('connector_types', [connector_type]);
+
+        const { data: internalStations, error } = await query;
+        if (error) {
+          console.warn('[Stations] Internal DB query failed:', error.message);
+        } else {
+          allStations = (internalStations || []).map(s => ({ ...s, is_external: false, source: 'ChargeNet' }));
+          console.log(`[Stations] Internal: ${allStations.length} stations`);
+        }
+      } catch (dbErr) {
+        console.warn('[Stations] Supabase runtime error:', dbErr.message);
+      }
+    } else {
+      console.warn('[Stations] Supabase client not initialized (check keys in .env)');
     }
 
-    if (connector_type) {
-      query = query.contains('connector_types', [connector_type]);
+    // ── 2. External Stations (OCM + OSM + NREL) ─────────────────────────────
+    if (include_external !== 'false' && latNum !== null && lngNum !== null) {
+      const externalStations = await fetchAllExternalStations(latNum, lngNum, radiusNum);
+
+      // De-duplicate: skip external if an internal station is within 100m
+      const filtered = externalStations.filter(ext => {
+        if (!ext.lat || !ext.lng) return false;
+        const isDuplicate = allStations.some(int => {
+          if (!int.lat || !int.lng) return false;
+          return haversineDistance(ext.lat, ext.lng, int.lat, int.lng) < 0.1; // 100m
+        });
+        return !isDuplicate;
+      });
+
+      allStations = [...allStations, ...filtered];
     }
 
-    const { data: stations, error } = await query;
-
-    if (error) throw error;
-
-    // Geo search filter (if lat, lng provided)
-    let filteredStations = stations;
-    if (lat && lng) {
-      filteredStations = stations.filter(station => {
-        const distance = haversineDistance(
-          parseFloat(lat),
-          parseFloat(lng),
-          station.lat,
-          station.lng
-        );
-        return distance <= parseFloat(radius);
+    // ── 3. Geo-radius filter ─────────────────────────────────────────────────
+    if (latNum !== null && lngNum !== null) {
+      allStations = allStations.filter(station => {
+        if (!station.lat || !station.lng) return false;
+        const distance = haversineDistance(latNum, lngNum, station.lat, station.lng);
+        return distance <= radiusNum;
       });
     }
 
+    console.log(`[Stations] Total returned: ${allStations.length}`);
+
     res.status(200).json({
       success: true,
-      count: filteredStations.length,
-      data: filteredStations
+      count: allStations.length,
+      data: allStations
     });
   } catch (error) {
     next(error);
@@ -59,6 +91,20 @@ const getStation = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    // Handle external station IDs (osm-*, ocm-*, nrel-*)
+    if (id.startsWith('osm-') || id.startsWith('ocm-') || id.startsWith('nrel-')) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          id,
+          name: 'External Station',
+          is_external: true,
+          slots: [],
+          reviews: []
+        }
+      });
+    }
+
     const { data: station, error } = await supabase
       .from('stations')
       .select('*, slots(*), reviews(*)')
@@ -66,15 +112,11 @@ const getStation = async (req, res, next) => {
       .single();
 
     if (error) throw error;
-
     if (!station) {
       return res.status(404).json({ success: false, message: 'Station not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      data: station
-    });
+    res.status(200).json({ success: true, data: station });
   } catch (error) {
     next(error);
   }
@@ -87,27 +129,16 @@ const getStation = async (req, res, next) => {
  */
 const createStation = async (req, res, next) => {
   try {
-    const { 
-      name, description, address, city, state, lat, lng, 
-      total_slots, price_per_kwh, connector_types, amenities 
-    } = req.body;
+    const { name, description, address, city, state, lat, lng, total_slots, price_per_kwh, connector_types, amenities } = req.body;
 
     const { data, error } = await supabaseAdmin
       .from('stations')
-      .insert([{
-        owner_id: req.user.id,
-        name, description, address, city, state, lat, lng,
-        total_slots, price_per_kwh, connector_types, amenities
-      }])
+      .insert([{ owner_id: req.user.id, name, description, address, city, state, lat, lng, total_slots, price_per_kwh, connector_types, amenities }])
       .select()
       .single();
 
     if (error) throw error;
-
-    res.status(201).json({
-      success: true,
-      data: data
-    });
+    res.status(201).json({ success: true, data });
   } catch (error) {
     next(error);
   }
@@ -121,15 +152,9 @@ const createStation = async (req, res, next) => {
 const updateStation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    // Authorization check
-    const { data: station } = await supabase
-      .from('stations')
-      .select('owner_id')
-      .eq('id', id)
-      .single();
+    const { data: station } = await supabase.from('stations').select('owner_id').eq('id', id).single();
 
-    if (!station || station.owner_id !== req.user.id && req.user.role !== 'admin') {
+    if (!station || (station.owner_id !== req.user.id && req.user.role !== 'admin')) {
       return res.status(403).json({ success: false, message: 'Not authorized to update this station' });
     }
 
@@ -141,11 +166,7 @@ const updateStation = async (req, res, next) => {
       .single();
 
     if (error) throw error;
-
-    res.status(200).json({
-      success: true,
-      data: updatedStation
-    });
+    res.status(200).json({ success: true, data: updatedStation });
   } catch (error) {
     next(error);
   }
@@ -159,29 +180,16 @@ const updateStation = async (req, res, next) => {
 const deleteStation = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { data: station } = await supabase.from('stations').select('owner_id').eq('id', id).single();
 
-    // Authorization check
-    const { data: station } = await supabase
-      .from('stations')
-      .select('owner_id')
-      .eq('id', id)
-      .single();
-
-    if (!station || station.owner_id !== req.user.id && req.user.role !== 'admin') {
+    if (!station || (station.owner_id !== req.user.id && req.user.role !== 'admin')) {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this station' });
     }
 
-    const { error } = await supabaseAdmin
-      .from('stations')
-      .delete()
-      .eq('id', id);
-
+    const { error } = await supabaseAdmin.from('stations').delete().eq('id', id);
     if (error) throw error;
 
-    res.status(200).json({
-      success: true,
-      message: 'Station deleted successfully'
-    });
+    res.status(200).json({ success: true, message: 'Station deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -194,18 +202,9 @@ const deleteStation = async (req, res, next) => {
  */
 const getMyStations = async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from('stations')
-      .select('*')
-      .eq('owner_id', req.user.id);
-
+    const { data, error } = await supabase.from('stations').select('*').eq('owner_id', req.user.id);
     if (error) throw error;
-
-    res.status(200).json({
-      success: true,
-      count: data.length,
-      data: data
-    });
+    res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {
     next(error);
   }
