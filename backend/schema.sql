@@ -2,7 +2,13 @@
 -- Paste this into the Supabase SQL Editor
 
 -- 1. Create Enums
-
+CREATE TYPE user_role AS ENUM ('user', 'station_owner', 'admin');
+CREATE TYPE station_status AS ENUM ('active', 'inactive', 'maintenance');
+CREATE TYPE slot_status AS ENUM ('available', 'booked', 'charging', 'maintenance');
+CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'cancelled', 'completed');
+CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'refunded');
+CREATE TYPE session_status AS ENUM ('active', 'completed');
+CREATE TYPE transaction_status AS ENUM ('pending', 'success', 'failed', 'refunded');
 
 -- 2. Create Tables
 
