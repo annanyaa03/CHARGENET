@@ -7,16 +7,7 @@ const { calculateBookingAmount } = require('../utils/helpers');
  * @access  Private
  */
 const createBooking = async (req, res, next) => {
-  try {
-    const { 
-        station_id, 
-        slot_id, 
-        scheduled_date, 
-        start_time, 
-        end_time,
-        duration_hours,
-        estimated_units
-    } = req.body;
+
 
     // 1. Fetch station details for price
     const { data: station, error: stationError } = await supabase
