@@ -1,18 +1,3 @@
-const { supabase, supabaseAdmin } = require('../config/supabase');
-
-/**
- * @desc    Get all slots for a station with availability
- * @route   GET /api/slots/:stationId
- * @access  Public
- */
-const getSlots = async (req, res, next) => {
-  try {
-    const { stationId } = req.params;
-
-    const { data: slots, error } = await supabase
-      .from('slots')
-      .select('*')
-      .eq('station_id', stationId);
 
     if (error) throw error;
 
