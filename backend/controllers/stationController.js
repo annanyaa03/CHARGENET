@@ -1,4 +1,12 @@
+const { supabase, supabaseAdmin } = require('../config/supabase');
+const { haversineDistance } = require('../utils/helpers');
+const { fetchAllExternalStations } = require('../services/externalStationService');
 
+/**
+ * @desc    Get all stations — internal DB + external APIs merged
+ * @route   GET /api/stations
+ * @access  Public
+ */
     const {
       city,
       connector_type,
