@@ -7,8 +7,6 @@ const { fetchAllExternalStations } = require('../services/externalStationService
  * @route   GET /api/stations
  * @access  Public
  */
-const getStations = async (req, res, next) => {
-  try {
     const {
       city,
       connector_type,
