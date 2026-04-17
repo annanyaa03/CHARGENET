@@ -157,7 +157,7 @@ export function Navbar({ solid = false }) {
                 Find Stations
               </Link>
               <Link 
-                to="/bookings" 
+                to="/booking" 
                 className={`font-medium transition-colors ${
                   isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white hover:text-white/80'
                 }`}

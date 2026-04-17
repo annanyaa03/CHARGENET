@@ -8,6 +8,8 @@ const MapViewPage = lazy(() => import('../pages/MapView'))
 const StationDetail = lazy(() => import('../pages/StationDetail'))
 const Booking = lazy(() => import('../pages/Booking'))
 const BookSlot = lazy(() => import('../pages/BookSlot'))
+const BookingLanding = lazy(() => import('../pages/BookingLanding'))
+const BookingSuccess = lazy(() => import('../pages/BookingSuccess'))
 const Payment = lazy(() => import('../pages/Payment'))
 const Profile = lazy(() => import('../pages/Profile'))
 const LearnHub = lazy(() => import('../pages/LearnHub'))
@@ -66,7 +68,12 @@ export function AppRouter() {
           <Route path="/resources/guide" element={<ChargingGuide />} />
           <Route path="/resources/help" element={<HelpCenter />} />
           <Route path="/resources/blog" element={<Blog />} />
+          {/* Booking Flow */}
+          <Route path="/booking" element={<BookingLanding />} />
+          <Route path="/book/:stationId" element={<BookSlot />} />
+          <Route path="/book" element={<BookSlot />} />
           <Route path="/bookings" element={<BookSlot />} />
+          <Route path="/booking-success" element={<BookingSuccess />} />
 
           {/* Solutions */}
           <Route path="/solutions/individuals" element={<SolutionsIndividuals />} />

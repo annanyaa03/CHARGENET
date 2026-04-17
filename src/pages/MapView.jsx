@@ -124,30 +124,27 @@ export default function MapView() {
   const fetchStations = async (latArg, lngArg, zoomArg) => {
     setLoading(true)
     try {
-      // Use provided args or fallback to state
       const targetLat = latArg ?? mapCenter[0]
       const targetLng = lngArg ?? mapCenter[1]
       const targetZoom = zoomArg ?? mapZoom
       
-      // Calculate radius roughly based on zoom level: 
-      // z15 =~ 5km, z10 =~ 50km, z5 =~ 500km
-      const baseRadius = Math.pow(2, 14 - targetZoom) * 2;
-      const radius = targetZoom < 8 ? Math.max(100, baseRadius) : Math.max(5, baseRadius);
+      // Calculate search radius based on zoom level
+      const baseRadius = Math.pow(2, 14 - targetZoom) * 2
+      const radius = targetZoom < 8 ? Math.max(100, baseRadius) : Math.max(5, baseRadius)
       
-      const fetchParams = { 
+      const res = await getStations({ 
         lat: targetLat, 
         lng: targetLng, 
-      }
+        radius: targetZoom >= 6 ? Math.min(1000, radius) : null 
+      })
       
-      // Only apply radius filtering if we are zoomed in enough or not searching globally
-      if (targetZoom >= 6) {
-        fetchParams.radius = Math.min(1000, radius); 
-      }
+      console.log('[MapView] getStations Response:', res)
       
-      const res = await getStations(fetchParams)
       const data = res.data || []
       setStations(data)
       setFiltered(data)
+      
+      console.log(`[MapView] Stations State Updated: ${data.length} records`)
     } catch (err) {
       console.error('Failed to fetch stations:', err)
     } finally {

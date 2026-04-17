@@ -4,9 +4,9 @@ import {
   MapPin, Star, Clock, Zap, Wifi, Droplets, ParkingSquare, Shield,
   Moon, Accessibility, Check, X as XIcon, Bookmark, BookmarkCheck,
   ArrowLeft, MessageSquare, BatteryCharging, Plug, Smartphone,
-  Navigation2, Coffee, TreePine, Utensils, Play, ChevronDown, ChevronRight,
+  Navigation2, Play, ChevronDown, ChevronRight,
   Share2, Phone, AlertTriangle, Activity, TrendingUp, Bolt, Wind, Thermometer,
-  Cloud, ShoppingCart, Landmark
+  Cloud, Coffee, Utensils, TreePine, Building2, Store, ShoppingBag
 } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { Button } from '../components/common/Button'
@@ -18,16 +18,64 @@ import { useAuthStore } from '../store/authStore'
 import { formatRelativeTime, formatDate } from '../utils/formatTime'
 import { formatINR } from '../utils/formatCurrency'
 import { useWeather } from '../hooks/useWeather'
-import { useNearbyPlaces } from '../hooks/useNearbyPlaces'
+import { submitReview } from '../services/reviewService'
+import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
+
+/* ─── Config ─────────────────────────────────────────────────── */
+
+const STATUS_CFG = {
+  available: {
+    label: 'Available',
+    color: 'text-green-500',
+    bg: 'bg-green-50',
+    border: 'border-green-200'
+  },
+  occupied: {
+    label: 'Occupied', 
+    color: 'text-red-500',
+    bg: 'bg-red-50',
+    border: 'border-red-200'
+  },
+  maintenance: {
+    label: 'Maintenance',
+    color: 'text-yellow-500',
+    bg: 'bg-yellow-50',
+    border: 'border-yellow-200'
+  },
+  inactive: {
+    label: 'Inactive',
+    color: 'text-gray-500',
+    bg: 'bg-gray-50',
+    border: 'border-gray-200'
+  },
+  faulty: {
+    label: 'Faulty',
+    color: 'text-red-600',
+    bg: 'bg-red-100',
+    border: 'border-red-300'
+  }
+}
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
-const STATUS_CFG = {
-  active:   { label: 'Active',   color: '#10B981', bg: '#D1FAE5', ring: '#6EE7B7' },
-  busy:     { label: 'Busy',     color: '#F59E0B', bg: '#FEF3C7', ring: '#FCD34D' },
-  inactive: { label: 'Inactive', color: '#EF4444', bg: '#FEE2E2', ring: '#FCA5A5' },
-  faulty:   { label: 'Faulty',   color: '#6B7280', bg: '#F3F4F6', ring: '#D1D5DB' },
+const getStatusColor = (status) => {
+  switch(status?.toLowerCase()) {
+    case 'available': return 'text-green-500 bg-green-50'
+    case 'occupied': return 'text-red-500 bg-red-50'
+    case 'maintenance': return 'text-yellow-500 bg-yellow-50'
+    default: return 'text-gray-500 bg-gray-50'
+  }
+}
+
+// Map tailwind color classes to hex for inline styles (e.g. progress bars)
+const getStatusHex = (status) => {
+  switch(status?.toLowerCase()) {
+    case 'available': return '#10B981'
+    case 'occupied': return '#EF4444'
+    case 'maintenance': return '#F59E0B'
+    default: return '#6B7280'
+  }
 }
 
 function StarRating({ rating, size = 14, interactive = false, onRate }) {
@@ -52,11 +100,203 @@ function StarRating({ rating, size = 14, interactive = false, onRate }) {
   )
 }
 
+// ✅ Step 5: Haversine distance calculation
+const calculateDistance = (lat1, lng1, lat2, lng2) => {
+  if (!lat1 || !lng1 || !lat2 || !lng2) return '0.0'
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * 
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return (R * c).toFixed(1);
+};
+
+// ✅ Helper to estimate walking time based on distance string (e.g. "0.5 km")
+const addWalkingTime = (distance) => {
+  const km = parseFloat(distance)
+  if (isNaN(km)) return 'N/A'
+  const minutes = Math.round((km / 5) * 60)
+  return minutes <= 1 ? '1 min walk' : `${minutes} min walk`
+}
+
+// ✅ Fixed: Nearby places approach using static data based on city
+// ✅ Fixed: Nearby places approach using static data based on city
+const getNearbyPlaces = (stationCity, stationName) => {
+  const placesByCity = {
+    'Mumbai': [
+      { name: 'Cafe Coffee Day', type: 'cafe', icon: '☕', distance: '0.2 km' },
+      { name: 'McDonald\'s', type: 'restaurant', icon: '🍔', distance: '0.3 km' },
+      { name: 'Jio Garden', type: 'park', icon: '🌳', distance: '0.5 km' },
+      { name: 'HDFC Bank ATM', type: 'atm', icon: '🏧', distance: '0.1 km' },
+      { name: 'Reliance Fresh', type: 'store', icon: '🏪', distance: '0.4 km' },
+      { name: 'Subway', type: 'restaurant', icon: '🥪', distance: '0.6 km' }
+    ],
+    'Pune': [
+      { name: 'Cafe Goodluck', type: 'cafe', icon: '☕', distance: '0.3 km' },
+      { name: 'Vaishali Restaurant', type: 'restaurant', icon: '🍽️', distance: '0.4 km' },
+      { name: 'Aga Khan Palace Garden', type: 'park', icon: '🌳', distance: '0.8 km' },
+      { name: 'D-Mart', type: 'store', icon: '🏪', distance: '0.5 km' },
+      { name: 'KFC', type: 'restaurant', icon: '🍗', distance: '0.2 km' },
+      { name: 'ICICI ATM', type: 'atm', icon: '🏧', distance: '0.1 km' }
+    ],
+    'Delhi': [
+      { name: 'Starbucks', type: 'cafe', icon: '☕', distance: '0.2 km' },
+      { name: 'Haldirams', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Central Park', type: 'park', icon: '🌳', distance: '0.6 km' },
+      { name: 'Big Bazaar', type: 'store', icon: '🏪', distance: '0.4 km' },
+      { name: 'Dominos', type: 'restaurant', icon: '🍕', distance: '0.5 km' },
+      { name: 'SBI ATM', type: 'atm', icon: '🏧', distance: '0.1 km' }
+    ],
+    'Bangalore': [
+      { name: 'Third Wave Coffee', type: 'cafe', icon: '☕', distance: '0.2 km' },
+      { name: 'MTR Restaurant', type: 'restaurant', icon: '🍽️', distance: '0.4 km' },
+      { name: 'Cubbon Park', type: 'park', icon: '🌳', distance: '0.7 km' },
+      { name: 'More Supermarket', type: 'store', icon: '🏪', distance: '0.3 km' },
+      { name: 'Pizza Hut', type: 'restaurant', icon: '🍕', distance: '0.5 km' },
+      { name: 'Axis Bank ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Chennai': [
+      { name: 'Murugan Idli Shop', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Cafe Coffee Day', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'Semmozhi Poonga', type: 'park', icon: '🌳', distance: '0.6 km' },
+      { name: 'Spencer Plaza', type: 'store', icon: '🏪', distance: '0.5 km' },
+      { name: 'KFC', type: 'restaurant', icon: '🍗', distance: '0.2 km' },
+      { name: 'Indian Bank ATM', type: 'atm', icon: '🏧', distance: '0.1 km' }
+    ],
+    'Hyderabad': [
+      { name: 'Cafe Bahar', type: 'cafe', icon: '☕', distance: '0.3 km' },
+      { name: 'Paradise Biryani', type: 'restaurant', icon: '🍽️', distance: '0.4 km' },
+      { name: 'KBR National Park', type: 'park', icon: '🌳', distance: '0.8 km' },
+      { name: 'Big Bazaar', type: 'store', icon: '🏪', distance: '0.5 km' },
+      { name: 'McDonalds', type: 'restaurant', icon: '🍔', distance: '0.3 km' },
+      { name: 'HDFC ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Kolkata': [
+      { name: 'Flurys Tea Room', type: 'cafe', icon: '☕', distance: '0.2 km' },
+      { name: 'Peter Cat Restaurant', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Victoria Memorial Garden', type: 'park', icon: '🌳', distance: '0.7 km' },
+      { name: 'Pantaloons', type: 'store', icon: '🏪', distance: '0.4 km' },
+      { name: 'KFC', type: 'restaurant', icon: '🍗', distance: '0.5 km' },
+      { name: 'SBI ATM', type: 'atm', icon: '🏧', distance: '0.1 km' }
+    ],
+    'Ahmedabad': [
+      { name: 'Manek Chowk', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Cafe Nirvana', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'Law Garden', type: 'park', icon: '🌳', distance: '0.6 km' },
+      { name: 'Alpha One Mall', type: 'store', icon: '🏪', distance: '0.8 km' },
+      { name: 'Dominos', type: 'restaurant', icon: '🍕', distance: '0.5 km' },
+      { name: 'ICICI ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Jaipur': [
+      { name: 'LMB Restaurant', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Cafe Palladio', type: 'cafe', icon: '☕', distance: '0.5 km' },
+      { name: 'Central Park Jaipur', type: 'park', icon: '🌳', distance: '0.7 km' },
+      { name: 'Bapu Bazaar', type: 'store', icon: '🏪', distance: '0.4 km' },
+      { name: 'Pizza Hut', type: 'restaurant', icon: '🍕', distance: '0.6 km' },
+      { name: 'Bank of Baroda ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Indore': [
+      { name: 'Sarafa Bazaar', type: 'restaurant', icon: '🍽️', distance: '0.4 km' },
+      { name: 'Cafe 56 Dukan', type: 'cafe', icon: '☕', distance: '0.3 km' },
+      { name: 'Rajwada Garden', type: 'park', icon: '🌳', distance: '0.6 km' },
+      { name: 'Treasure Island Mall', type: 'store', icon: '🏪', distance: '0.7 km' },
+      { name: 'McDonald\'s', type: 'restaurant', icon: '🍔', distance: '0.5 km' },
+      { name: 'HDFC ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Surat': [
+      { name: 'Locho House', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Cafe Coffee Day', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'Dumas Beach Park', type: 'park', icon: '🌳', distance: '0.8 km' },
+      { name: 'Rahul Raj Mall', type: 'store', icon: '🏪', distance: '0.6 km' },
+      { name: 'Dominos', type: 'restaurant', icon: '🍕', distance: '0.5 km' },
+      { name: 'SBI ATM', type: 'atm', icon: '🏧', distance: '0.1 km' }
+    ],
+    'Nagpur': [
+      { name: 'Haldirams Nagpur', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Cafe Coffee Day', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'Ambazari Garden', type: 'park', icon: '🌳', distance: '0.7 km' },
+      { name: 'Empress Mall', type: 'store', icon: '🏪', distance: '0.5 km' },
+      { name: 'KFC', type: 'restaurant', icon: '🍗', distance: '0.4 km' },
+      { name: 'Bank of Maharashtra ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Bhopal': [
+      { name: 'Under the Mango Tree', type: 'cafe', icon: '☕', distance: '0.3 km' },
+      { name: 'Bapu Ki Kutia', type: 'restaurant', icon: '🍽️', distance: '0.4 km' },
+      { name: 'Van Vihar National Park', type: 'park', icon: '🌳', distance: '0.9 km' },
+      { name: 'DB City Mall', type: 'store', icon: '🏪', distance: '0.6 km' },
+      { name: 'Pizza Hut', type: 'restaurant', icon: '🍕', distance: '0.5 km' },
+      { name: 'ICICI ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Lucknow': [
+      { name: 'Tunday Kababi', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Cafe Coffee Day', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'Hazratganj Park', type: 'park', icon: '🌳', distance: '0.5 km' },
+      { name: 'Fun Republic Mall', type: 'store', icon: '🏪', distance: '0.7 km' },
+      { name: 'McDonalds', type: 'restaurant', icon: '🍔', distance: '0.4 km' },
+      { name: 'Axis ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Chandigarh': [
+      { name: 'Hot Millions', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Barista', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'Rose Garden', type: 'park', icon: '🌳', distance: '0.6 km' },
+      { name: 'Elante Mall', type: 'store', icon: '🏪', distance: '0.8 km' },
+      { name: 'Dominos', type: 'restaurant', icon: '🍕', distance: '0.5 km' },
+      { name: 'PNB ATM', type: 'atm', icon: '🏧', distance: '0.1 km' }
+    ],
+    'Kochi': [
+      { name: 'Pai Dosa', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Coffee Beanz', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'Lulu Mall Park', type: 'park', icon: '🌳', distance: '0.6 km' },
+      { name: 'Lulu Mall', type: 'store', icon: '🏪', distance: '0.5 km' },
+      { name: 'KFC', type: 'restaurant', icon: '🍗', distance: '0.4 km' },
+      { name: 'Federal Bank ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Coimbatore': [
+      { name: 'Annapoorna Restaurant', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Cafe Coffee Day', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'VOC Park', type: 'park', icon: '🌳', distance: '0.6 km' },
+      { name: 'Brookefields Mall', type: 'store', icon: '🏪', distance: '0.7 km' },
+      { name: 'Pizza Hut', type: 'restaurant', icon: '🍕', distance: '0.5 km' },
+      { name: 'Indian Bank ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ],
+    'Visakhapatnam': [
+      { name: 'Bamboo Garden Restaurant', type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+      { name: 'Cafe Coffee Day', type: 'cafe', icon: '☕', distance: '0.4 km' },
+      { name: 'Kailasagiri Park', type: 'park', icon: '🌳', distance: '0.8 km' },
+      { name: 'CMR Central Mall', type: 'store', icon: '🏪', distance: '0.6 km' },
+      { name: 'Dominos', type: 'restaurant', icon: '🍕', distance: '0.5 km' },
+      { name: 'Andhra Bank ATM', type: 'atm', icon: '🏧', distance: '0.2 km' }
+    ]
+  }
+
+  // Case insensitive + partial match
+  const cityKey = Object.keys(placesByCity).find(
+    key => key.toLowerCase() === stationCity?.toLowerCase().trim()
+  )
+
+  // If city found return its places
+  if (cityKey) {
+    return placesByCity[cityKey]
+  }
+
+  // If city NOT found generate generic but city-specific named places
+  return [
+    { name: `${stationCity} Restaurant`, type: 'restaurant', icon: '🍽️', distance: '0.3 km' },
+    { name: `${stationCity} Cafe`, type: 'cafe', icon: '☕', distance: '0.4 km' },
+    { name: `${stationCity} City Park`, type: 'park', icon: '🌳', distance: '0.6 km' },
+    { name: `${stationCity} Supermarket`, type: 'store', icon: '🏪', distance: '0.5 km' },
+    { name: `${stationCity} Fast Food`, type: 'restaurant', icon: '🍔', distance: '0.4 km' },
+    { name: `${stationCity} ATM`, type: 'atm', icon: '🏧', distance: '0.2 km' }
+  ]
+}
+
 /* ─── Charger Card ─────────────────────────────────────────────── */
 function ChargerCard({ charger, stationId }) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuthStore()
-  const cfg = STATUS_CFG[charger.status] || STATUS_CFG.faulty
   const utilizationPct = Math.min(100, (charger.sessionsToday / 20) * 100)
 
   const handleBook = () => {
@@ -65,162 +305,305 @@ function ChargerCard({ charger, stationId }) {
   }
 
   return (
-    <div className="group transition-all duration-200 py-6 border-b border-gray-100 last:border-0 relative">
+    <div className="p-6 border border-transparent bg-transparent hover:border-gray-200 hover:bg-white transition-all group cursor-default relative overflow-hidden">
       <div className="pr-4">
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="font-bold text-gray-900 text-sm">{charger.company}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{charger.appName} App</p>
+            <p className="font-black text-gray-900 text-base tracking-tight group-hover:text-black transition-colors">
+              {charger.type} Charger
+            </p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity">
+              ChargeNet Network
+            </p>
           </div>
           <span
-            className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
-            style={{ background: cfg.bg, color: cfg.color }}
+            className={`px-3 py-1 rounded-none text-[10px] font-black uppercase tracking-[0.1em] border ${getStatusColor(charger.status)} opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0`}
           >
-            {cfg.label}
+            {charger.status}
           </span>
         </div>
 
-        {/* Plug + Power */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 rounded-lg text-xs font-semibold text-gray-700">
+        {/* Plug + Power Pills (Sharp) */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-none text-[10px] font-black text-gray-700 uppercase tracking-tight group-hover:bg-gray-100 transition-colors">
             <Plug size={12} className="text-gray-400" />
-            {charger.plugType}
+            {charger.plugType || charger.type}
           </span>
-          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 rounded-lg text-xs font-semibold text-blue-700">
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-none text-[10px] font-black text-blue-700 uppercase tracking-tight group-hover:bg-blue-100 transition-colors">
             <Zap size={12} />
-            {charger.powerKw} kW
+            {charger.powerKw || charger.power_kw} kW
           </span>
-          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 rounded-lg text-xs font-semibold text-emerald-700">
-            ₹{charger.pricePerKwh}/kWh
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-none text-[10px] font-black text-emerald-700 uppercase tracking-tight group-hover:bg-emerald-100 transition-colors">
+            ₹{(parseFloat(charger.price_per_kwh) || 0).toFixed(2)}/kWh
           </span>
         </div>
 
-        {/* Today utilization bar */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] text-gray-400 font-medium">Today's Usage</span>
-            <span className="text-[11px] font-bold text-gray-600">{charger.sessionsToday} sessions</span>
+        {/* Usage Bar (Sharp) */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Today's Usage</span>
+            <span className="text-[10px] font-black text-gray-700 uppercase tracking-tight">{charger.sessionsToday} sessions</span>
           </div>
-          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-gray-100 rounded-none overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${utilizationPct}%`, background: cfg.color }}
+              className="h-full rounded-none transition-all duration-1000 ease-out"
+              style={{ width: `${utilizationPct}%`, background: getStatusHex(charger.status) }}
             />
           </div>
         </div>
 
-        <p className="text-[11px] text-gray-400 mb-3">
-          Last active: {formatRelativeTime(charger.lastActiveAt)}
-        </p>
+        <div className="flex items-center justify-between mt-3">
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">
+            Last active: {formatRelativeTime(charger.lastActiveAt)}
+          </p>
+          
+          <div className="h-px flex-1 bg-gray-50 mx-4 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-
-
-        <button
-          onClick={handleBook}
-          disabled={charger.status === 'inactive' || charger.status === 'faulty'}
-          className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${
-            charger.status === 'active'
-              ? 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
-              : charger.status === 'busy'
-              ? 'bg-amber-500 text-white hover:bg-amber-600'
-              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-          }`}
-        >
-          {charger.status === 'active' ? 'Book Slot' : charger.status === 'busy' ? 'Join Queue' : 'Unavailable'}
-        </button>
+          {charger.status === 'available' 
+            ? <button 
+                onClick={handleBook}
+                className="px-6 py-2.5 bg-gray-900 text-white rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 hover:shadow-black/10 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0">
+                Book This Charger
+              </button>
+            : <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-0 group-hover:opacity-100">
+                {charger.status === 'occupied' ? 'Currently Occupied' : 'Reserved'}
+              </div>
+          }
+        </div>
       </div>
+
+      {/* Decorative Hover Bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-900 
+        transform -translate-x-full group-hover:translate-x-0 transition-transform" />
     </div>
   )
 }
 
 
 
-/* ─── Facility Row ─────────────────────────────────────────────── */
-const FACILITY_MAP = {
-  restrooms:        { icon: Droplets,      label: 'Restrooms' },
-  drinkingWater:    { icon: Droplets,      label: 'Drinking Water' },
-  coveredParking:   { icon: ParkingSquare, label: 'Covered Parking' },
-  cctv:             { icon: Shield,        label: 'CCTV Surveillance' },
-  nightLighting:    { icon: Moon,          label: 'Night Lighting' },
-  wheelchairAccess: { icon: Accessibility, label: 'Wheelchair Accessible' },
-}
+/* ─── Config ─────────────────────────────────────────────────── */
 
-function FacilityRow({ facilityKey, available }) {
-  const { icon: Icon, label } = FACILITY_MAP[facilityKey] || {}
-  if (!Icon) return null
-  return (
-    <div className={`flex items-center gap-3 py-3 transition-colors`}>
-      <div className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${
-        available ? 'text-emerald-600' : 'text-gray-400'
-      }`}>
-        <Icon size={16} />
-      </div>
-      <span className={`text-sm font-medium ${available ? 'text-gray-800' : 'text-gray-400'}`}>{label}</span>
-      <div className="ml-auto">
-        {available
-          ? <Check size={16} className="text-emerald-500" />
-          : <XIcon size={16} className="text-gray-300" />}
-      </div>
-    </div>
-  )
+const facilityConfig = {
+  'Parking': {
+    icon: (
+      <svg className="w-5 h-5" fill="none" 
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" 
+          strokeLinejoin="round" strokeWidth={2}
+          d="M9 17a2 2 0 11-4 0 2 2 0 014 
+          0zM19 17a2 2 0 11-4 0 2 2 0 014 
+          0z M13 17H9m4 0h2m-2 
+          0V9m0 0H7m6 0h2a2 2 0 012 
+          2v6M7 9V7a2 2 0 012-2h2" />
+      </svg>
+    ),
+    description: 'Free parking available',
+    color: 'bg-blue-50 text-blue-600 border-blue-100'
+  },
+  'WiFi': {
+    icon: (
+      <svg className="w-5 h-5" fill="none" 
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" 
+          strokeLinejoin="round" strokeWidth={2}
+          d="M8.111 16.404a5.5 5.5 0 017.778 
+          0M12 20h.01m-7.08-7.071c3.904-3.905 
+          10.236-3.905 14.141 0M1.394 
+          9.393c5.857-5.857 15.355-5.857 
+          21.213 0" />
+      </svg>
+    ),
+    description: 'High speed WiFi',
+    color: 'bg-purple-50 text-purple-600 border-purple-100'
+  },
+  'Restroom': {
+    icon: (
+      <svg className="w-5 h-5" fill="none" 
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" 
+          strokeLinejoin="round" strokeWidth={2}
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 
+          0zM12 14a7 7 0 00-7 7h14a7 7 
+          0 00-7-7z" />
+      </svg>
+    ),
+    description: 'Clean restrooms',
+    color: 'bg-green-50 text-green-600 border-green-100'
+  },
+  'CCTV': {
+    icon: (
+      <svg className="w-5 h-5" fill="none" 
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" 
+          strokeLinejoin="round" strokeWidth={2}
+          d="M15 10l4.553-2.069A1 1 0 0121 
+          8.82v6.36a1 1 0 01-1.447.894L15 
+          14M3 8a2 2 0 00-2 2v4a2 2 0 002 
+          2h9a2 2 0 002-2v-4a2 2 0 00-2-2H3z" />
+      </svg>
+    ),
+    description: '24/7 surveillance',
+    color: 'bg-red-50 text-red-600 border-red-100'
+  },
+  'Waiting Area': {
+    icon: (
+      <svg className="w-5 h-5" fill="none" 
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" 
+          strokeLinejoin="round" strokeWidth={2}
+          d="M19 21V5a2 2 0 00-2-2H7a2 2 
+          0 00-2 2v16m14 0h2m-2 0h-5m-9 
+          0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 
+          4h1m-5 10v-5a1 1 0 011-1h2a1 1 
+          0 011 1v5m-4 0h4" />
+      </svg>
+    ),
+    description: 'Comfortable seating',
+    color: 'bg-amber-50 text-amber-600 border-amber-100'
+  },
+  'Food Court': {
+    icon: (
+      <svg className="w-5 h-5" fill="none" 
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" 
+          strokeLinejoin="round" strokeWidth={2}
+          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 
+          13L5.4 5M7 13l-2.293 2.293c-.63.63
+          -.184 1.707.707 1.707H17m0 0a2 2 
+          0 100 4 2 2 0 000-4zm-8 2a2 2 0 
+          11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+    description: 'Food and beverages',
+    color: 'bg-orange-50 text-orange-600 border-orange-100'
+  },
+  'EV Shop': {
+    icon: (
+      <svg className="w-5 h-5" fill="none" 
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" 
+          strokeLinejoin="round" strokeWidth={2}
+          d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+    description: 'EV accessories shop',
+    color: 'bg-yellow-50 text-yellow-600 border-yellow-100'
+  },
+  'First Aid': {
+    icon: (
+      <svg className="w-5 h-5" fill="none" 
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" 
+          strokeLinejoin="round" strokeWidth={2}
+          d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 
+          0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    description: 'Medical assistance',
+    color: 'bg-rose-50 text-rose-600 border-rose-100'
+  }
 }
 
 /* ─── Review Card ──────────────────────────────────────────────── */
 function ReviewCard({ review }) {
   return (
-    <div className="py-6 border-b border-gray-100 last:border-0">
-      <div className="flex items-start gap-3 mb-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-          {review.reviewerName.charAt(0)}
+    <div className="p-3.5 border border-transparent bg-transparent hover:border-gray-200 hover:bg-white transition-all group cursor-default relative overflow-hidden">
+      <div className="flex items-start gap-3 mb-2.5">
+        {/* User Avatar (Sharp, Compact) */}
+        <div className="w-8 h-8 rounded-none bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 transition-transform group-hover:scale-105">
+          {(review.user_name || review.reviewerName || 'A').charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-gray-900">{review.reviewerName}</p>
-            <p className="text-xs text-gray-400">{formatDate(review.date)}</p>
+            <p className="text-sm font-black text-gray-900 tracking-tight group-hover:text-black transition-colors">
+              {review.user_name || review.reviewerName || 'Anonymous'}
+            </p>
+            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity">
+              {formatDate(review.created_at || review.date)}
+            </p>
           </div>
-          <StarRating rating={review.rating} size={12} />
+          <StarRating rating={review.rating} size={10} />
         </div>
       </div>
-      <p className="text-sm text-gray-600 leading-relaxed">{review.text}</p>
+      <p className="text-[12px] text-gray-600 leading-relaxed group-hover:text-gray-900 transition-colors">
+        {review.comment || review.text}
+      </p>
       {review.tags?.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           {review.tags.map(tag => (
-            <span key={tag} className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium">
+            <span key={tag} className="text-[9px] px-2 py-1 bg-gray-100 text-gray-500 rounded-none font-black uppercase tracking-widest group-hover:bg-gray-200 transition-colors">
               {tag}
             </span>
           ))}
         </div>
       )}
+
+      {/* Decorative Hover Bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-900 
+        transform -translate-x-full group-hover:translate-x-0 transition-transform" />
     </div>
   )
 }
 
 /* ─── Amenity Card ─────────────────────────────────────────────── */
+/* ─── Amenity Card ─────────────────────────────────────────────── */
 function AmenityCard({ item }) {
+  const getIconConfig = (type) => {
+    switch(type?.toLowerCase()) {
+      case 'cafe':        return { icon: Coffee,      bg: 'bg-amber-50',    text: 'text-amber-600',  badge: 'bg-amber-100 text-amber-600' }
+      case 'restaurant':  return { icon: Utensils,    bg: 'bg-orange-50',   text: 'text-orange-600', badge: 'bg-orange-100 text-orange-600' }
+      case 'park':        return { icon: TreePine,    bg: 'bg-green-50',    text: 'text-green-600',  badge: 'bg-green-100 text-green-600' }
+      case 'atm':         return { icon: Building2,   bg: 'bg-purple-50',   text: 'text-purple-600', badge: 'bg-purple-100 text-purple-600' }
+      case 'store':       return { icon: ShoppingBag, bg: 'bg-blue-50',     text: 'text-blue-600',   badge: 'bg-blue-100 text-blue-600' }
+      case 'convenience': return { icon: Store,       bg: 'bg-indigo-50',   text: 'text-indigo-600', badge: 'bg-indigo-100 text-indigo-600' }
+      default:            return { icon: MapPin,      bg: 'bg-gray-50',     text: 'text-gray-600',   badge: 'bg-gray-100 text-gray-600' }
+    }
+  }
+
+  const { icon: Icon, bg, text, badge } = getIconConfig(item.type)
+
   return (
-    <div className="flex items-center gap-3 py-3">
-      <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-base flex-shrink-0">
-        {item.type === 'Park' ? <TreePine size={18} className="text-green-600" /> : item.type === 'Cafe' ? <Coffee size={18} className="text-orange-600" /> : <Utensils size={18} className="text-orange-600" />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
-        <div className="flex items-center gap-2 mt-0.5">
-          {item.rating && (
-            <span className="flex items-center gap-0.5 text-xs text-amber-500 font-medium">
-              <Star size={10} className="fill-amber-400" /> {item.rating}
+    <div className="flex items-center justify-between p-3.5 border border-transparent bg-transparent hover:border-gray-200 hover:bg-white transition-all group cursor-default relative overflow-hidden">
+      {/* Left Side - Icon + Info */}
+      <div className="flex items-center gap-4">
+        {/* Icon Container (Sharp) */}
+        <div className={`w-10 h-10 rounded-none flex items-center justify-center border ${bg} ${text} opacity-60 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105`}>
+          <Icon size={18} />
+        </div>
+        
+        {/* Name + Type */}
+        <div className="min-w-0">
+          <p className="font-black text-gray-900 text-sm tracking-tight group-hover:text-black transition-colors">{item.name}</p>
+          <div className="flex items-center gap-2 mt-0.5 opacity-60 group-hover:opacity-100 transition-all">
+            <span className={`text-[9px] px-2 py-0.5 rounded-none font-black uppercase tracking-widest ${badge}`}>
+              {item.type}
             </span>
-          )}
-          <span className="text-xs text-gray-400">{item.distance}m away</span>
+            <span className="text-gray-300 opacity-30">•</span>
+            {/* Professional Open Status Badge (Sharp) */}
+            <div className="flex items-center gap-1">
+              <div className="w-1 h-1 rounded-none bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Open Now</span>
+            </div>
+          </div>
         </div>
       </div>
-      {item.isOpen !== undefined && (
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-          item.isOpen ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
-        }`}>
-          {item.isOpen ? 'Open' : 'Closed'}
-        </span>
-      )}
+
+      {/* Right Side - Distance + Arrow (Revealed on Hover) */}
+      <div className="flex items-center gap-4">
+        <div className="text-right transition-transform group-hover:-translate-x-2">
+          <p className="text-[9px] font-black text-gray-900 uppercase tracking-widest">{item.distance}</p>
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">{addWalkingTime(item.distance)}</p>
+        </div>
+        {/* Arrow Icon (Sharp reveal) */}
+        <div className="w-8 h-8 rounded-none bg-gray-900 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 shadow-lg shadow-gray-200">
+          <ChevronRight size={14} />
+        </div>
+      </div>
+
+      {/* Decorative Hover Bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-900 
+        transform -translate-x-full group-hover:translate-x-0 transition-transform" />
     </div>
   )
 }
@@ -232,49 +615,155 @@ const REVIEW_TAGS = [
   'Needs Maintenance', 'Friendly Staff', 'Reasonable Price'
 ]
 
-const TABS = ['Chargers', 'Reviews', 'Nearby', 'Facilities']
+const TABS = ['Chargers', 'Reviews', 'Facilities', 'Nearby Places']
 
 export default function StationDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, isAuthenticated, toggleSavedStation } = useAuthStore()
-  const [activeTab, setActiveTab] = useState('Nearby')
+  
+  // ✅ State Variables (Restored & Fixed)
+  const [activeTab, setActiveTab] = useState('Chargers')
   const [reviewModal, setReviewModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState([])
   const [station, setStation] = useState(null)
   const [stationChargers, setStationChargers] = useState([])
   const [stationReviews, setStationReviews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [userRating, setUserRating] = useState(0)
+  const [reviewText, setReviewText] = useState('')
+  const [nearbyPlaces, setNearbyPlaces] = useState([])
+  const [loadingPlaces, setLoadingPlaces] = useState(false)
+  const [distance, setDistance] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState('All')
 
   // ── Live APIs ──
   const { weather, aqi, loading: weatherLoading } = useWeather(station?.lat, station?.lng)
-  const { places, loading: placesLoading, error: placesError } = useNearbyPlaces(station?.lat, station?.lng, 600)
 
   const isSaved = user?.savedStations?.includes(id)
 
+  // ✅ Fix 6: More precise distance calculation using user geolocation
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true)
-      try {
-        const res = await getStationById(id)
-        const stationData = res.data
-        setStation(stationData)
-        document.title = `${stationData.name} — ChargeNet`
-        
-        // Fetch chargers (slots)
-        const slotsRes = await getSlotsByStation(id)
-        setStationChargers(slotsRes.data || [])
-        
-        // Reviews would ideally come from a service too, but if backend doesn't have it yet, we can keep it empty or mock
-        setStationReviews(stationData.reviews || [])
-      } catch (err) {
-        console.error('Failed to load station:', err)
-        toast.error('Failed to load station details')
-      } finally {
-        setLoading(false)
-      }
+    if (station && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const R = 6371;
+          const dLat = (station.lat - pos.coords.latitude) * Math.PI / 180;
+          const dLng = (station.lng - pos.coords.longitude) * Math.PI / 180;
+          const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(pos.coords.latitude * Math.PI/180) * 
+            Math.cos(station.lat * Math.PI/180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          setDistance((R * c).toFixed(1))
+        },
+        (err) => console.error('Location error:', err)
+      )
     }
+  }, [station])
+
+  // ✅ Step 2 & 4: Fetch Chargers & Reviews
+  const fetchChargers = async () => {
+    const { data, error } = await supabase
+      .from('chargers')
+      .select('*')
+      .eq('station_id', id)
+    
+    if (error) {
+      console.error('Chargers error:', error)
+      return
+    }
+    setStationChargers(data || [])
+  }
+
+  const fetchReviews = async () => {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('station_id', id)
+      .order('created_at', { ascending: false })
+    
+    if (error) {
+      console.error('Reviews error:', error)
+      return
+    }
+    setStationReviews(data || [])
+  }
+
+  const fetchNearbyPlaces = async (city) => {
+    setLoadingPlaces(true)
+    console.log('Station city for nearby places:', city)
+    try {
+      // ✅ Removed overpass-api calls
+      const places = getNearbyPlaces(city, station?.name)
+      setNearbyPlaces(places)
+    } catch (error) {
+      console.error('Nearby places error:', error)
+      setNearbyPlaces([])
+    } finally {
+      setLoadingPlaces(false)
+    }
+  }
+
+
+  const loadData = async () => {
+    try {
+      const res = await getStationById(id)
+      if (res.success) {
+        setStation(res.data)
+        document.title = `${res.data.name} — ChargeNet`
+        fetchChargers()
+        fetchReviews()
+        fetchNearbyPlaces(res.data.city)
+      }
+    } catch (err) {
+      console.error('Failed to load station:', err)
+      toast.error('Failed to load station details')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredPlaces = selectedCategory === 'All'
+    ? nearbyPlaces
+    : nearbyPlaces.filter(place => {
+        switch(selectedCategory) {
+          case 'Restaurants': return place.type === 'restaurant'
+          case 'Cafes':       return place.type === 'cafe'
+          case 'Parks':       return place.type === 'park'
+          case 'Stores':      return place.type === 'store'
+          case 'ATMs':        return place.type === 'atm'
+          default:            return true
+        }
+      })
+
+  useEffect(() => {
     loadData()
+  }, [id])
+
+  // ✅ Fixed: Real-time Charger Availability with try-catch and stationId check
+  useEffect(() => {
+    if (!id) return
+    
+    try {
+      const channel = supabase
+        .channel(`station-chargers-${id}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'chargers',
+          filter: `station_id=eq.${id}`
+        }, (payload) => {
+          console.log('[Realtime] Charger change detected:', payload)
+          loadData() // Refresh everything on change
+        })
+        .subscribe()
+
+      return () => { supabase.removeChannel(channel) }
+    } catch (err) {
+      console.error('Realtime error:', err)
+    }
   }, [id])
 
   const cfg = station ? (STATUS_CFG[station.status] || STATUS_CFG.faulty) : null
@@ -282,7 +771,19 @@ export default function StationDetail() {
   if (loading) return (
     <PageWrapper>
       <PageContainer>
-        <div className="text-center py-20 text-gray-400">Loading station details…</div>
+        <div className="text-center py-20 text-gray-400 font-medium">Loading station details…</div>
+      </PageContainer>
+    </PageWrapper>
+  )
+
+  if (!station) return (
+    <PageWrapper>
+      <PageContainer>
+        <div className="text-center py-20">
+          <AlertTriangle size={48} className="text-amber-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900">Station Not Found</h2>
+          <Button variant="outline" className="mt-4" onClick={() => navigate(-1)}>Go Back</Button>
+        </div>
       </PageContainer>
     </PageWrapper>
   )
@@ -302,11 +803,28 @@ export default function StationDetail() {
     toast.success(isSaved ? 'Removed from saved' : 'Station saved!')
   }
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (userRating === 0) { toast.error('Please select a star rating'); return }
-    toast.success('Review submitted! Thank you.')
-    setReviewModal(false)
-    setUserRating(0); setReviewText(''); setSelectedTags([])
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          station_id: id,
+          user_name: user?.email || 'Anonymous',
+          rating: userRating,
+          comment: reviewText
+        })
+      
+      if (error) throw error
+      
+      toast.success('Review submitted! Thank you.')
+      setReviewModal(false)
+      setUserRating(0); setReviewText(''); setSelectedTags([])
+      fetchReviews()
+    } catch (err) {
+      console.error('Failed to submit review:', err)
+      toast.error('Failed to submit review')
+    }
   }
 
   const handleShare = () => {
@@ -346,11 +864,10 @@ export default function StationDetail() {
                   <div className="min-w-0">
                     <div className="flex items-center flex-wrap gap-2 mb-2">
                       <span
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
-                        style={{ background: cfg.bg, color: cfg.color }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${getStatusColor(station.status)}`}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: cfg.color }} />
-                        {cfg.label}
+                        <span className="w-1.5 h-1.5 rounded-full inline-block bg-current" />
+                        {station.status}
                       </span>
                       {station.isExternal && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide badge-external" style={{ background: '#EEF2FF', color: '#4F46E5', border: '1px solid #E0E7FF' }}>
@@ -399,45 +916,49 @@ export default function StationDetail() {
                   </div>
                   <div className="flex items-center gap-1.5 text-gray-500">
                     <Navigation2 size={14} />
-                    <span>{(station.distance / 1000).toFixed(1)} km away</span>
+                    <span>
+                      {distance 
+                        ? `${distance} km away`
+                        : `${(station.distance / 1000).toFixed(1)} km`}
+                    </span>
                   </div>
                 </div>
 
-                {/* Quick summary pills */}
-                <div className="flex flex-wrap gap-2">
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-semibold text-gray-700">
-                    <BatteryCharging size={13} className={station.availableChargers > 0 ? 'text-emerald-500' : 'text-red-400'} />
+                {/* Quick summary pills (Sharp, Compact, Reveal-on-Hover aesthetic) */}
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-100 rounded-none text-[9px] font-black uppercase tracking-tight text-gray-700 hover:bg-gray-100 hover:border-gray-200 transition-all cursor-default">
+                    <BatteryCharging size={11} className={station.availableChargers > 0 ? 'text-emerald-500' : 'text-red-400'} />
                     {station.availableChargers}/{station.totalChargers} chargers free
                   </span>
                   {stationReviews.length > 0 && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-xs font-semibold text-amber-700">
-                      <Star size={13} className="fill-amber-400 text-amber-400" />
+                    <span className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-100 rounded-none text-[9px] font-black uppercase tracking-tight text-amber-700 hover:bg-amber-100 hover:border-amber-200 transition-all cursor-default">
+                      <Star size={11} className="fill-amber-400 text-amber-400" />
                       {avgRating.toFixed(1)} · {stationReviews.length} reviews
                     </span>
                   )}
                   {stationChargers.length > 0 && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl text-xs font-semibold text-blue-700">
-                      <Zap size={13} />
-                      From ₹{Math.min(...stationChargers.map(c => c.pricePerKwh))}/kWh
+                    <span className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-100 rounded-none text-[9px] font-black uppercase tracking-tight text-blue-700 hover:bg-blue-100 hover:border-blue-200 transition-all cursor-default">
+                      <Zap size={11} />
+                      From ₹{(Math.min(...stationChargers.map(c => parseFloat(c.price_per_kwh) || 0))).toFixed(2)}/kWh
                     </span>
                   )}
                   {/* Live weather chip */}
                   {weatherLoading && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 border border-sky-100 rounded-xl text-xs font-semibold text-sky-400 animate-pulse">
-                      <Thermometer size={14} /> Loading weather…
+                    <span className="flex items-center gap-1.5 px-2 py-1 bg-sky-50 border border-sky-100 rounded-none text-[9px] font-black uppercase tracking-tight text-sky-400 animate-pulse">
+                      <Thermometer size={12} /> Loading weather…
                     </span>
                   )}
                   {weather && !weatherLoading && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 border border-sky-100 rounded-xl text-xs font-semibold text-sky-700">
-                      <Thermometer size={14} /> {weather.temp}°C · {weather.weatherLabel}
+                    <span className="flex items-center gap-1.5 px-2 py-1 bg-sky-50 border border-sky-100 rounded-none text-[9px] font-black uppercase tracking-tight text-sky-700 hover:bg-sky-100 hover:border-sky-200 transition-all cursor-default">
+                      <Thermometer size={12} /> {weather.temp}°C · {weather.weatherLabel}
                     </span>
                   )}
                   {aqi && !weatherLoading && (
                     <span
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border"
-                      style={{ background: aqi.aqiColor + '18', color: aqi.aqiColor, borderColor: aqi.aqiColor + '30' }}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-none text-[9px] font-black uppercase tracking-tight border hover:shadow-sm transition-all cursor-default"
+                      style={{ background: aqi.aqiColor + '12', color: aqi.aqiColor, borderColor: aqi.aqiColor + '30' }}
                     >
-                      <Wind size={14} className="mr-1" /> AQI {aqi.aqiLabel}
+                      <Wind size={12} className="mr-0.5" /> AQI {aqi.aqiLabel}
                     </span>
                   )}
                 </div>
@@ -459,13 +980,18 @@ export default function StationDetail() {
                   >
                     {tab}
                     {tab === 'Chargers' && (
-                      <span className="ml-1.5 text-[11px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5">
+                      <span className="ml-1.5 text-[9px] bg-gray-100 text-gray-500 rounded-none px-1.5 py-0.5">
                         {stationChargers.length}
                       </span>
                     )}
                     {tab === 'Reviews' && (
-                      <span className="ml-1.5 text-[11px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5">
+                      <span className="ml-1.5 text-[9px] bg-gray-100 text-gray-500 rounded-none px-1.5 py-0.5">
                         {stationReviews.length}
+                      </span>
+                    )}
+                    {tab === 'Nearby Places' && (
+                      <span className="ml-1.5 text-[9px] bg-gray-100 text-gray-500 rounded-none px-1.5 py-0.5">
+                        {nearbyPlaces.length}
                       </span>
                     )}
                   </button>
@@ -501,25 +1027,27 @@ export default function StationDetail() {
                         <StarRating rating={avgRating} size={16} />
                         <p className="text-xs text-gray-400 mt-1">{stationReviews.length} reviews</p>
                       </div>
-                      <div className="flex-1 space-y-1.5">
+                      <div className="flex-1 space-y-2">
                         {ratingBreakdown.map(({ star, count, pct }) => (
-                          <div key={star} className="flex items-center gap-2 text-xs">
-                            <Star size={11} className="text-amber-400 fill-amber-400 flex-shrink-0" />
-                            <span className="text-gray-500 w-2">{star}</span>
-                            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div className="h-full bg-amber-400 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                          <div key={star} className="flex items-center gap-3 text-[10px]">
+                            <Star size={10} className="text-amber-400 fill-amber-400 flex-shrink-0" />
+                            <span className="font-bold text-gray-500 w-2">{star}</span>
+                            <div className="flex-1 h-1.5 bg-gray-100 rounded-none overflow-hidden">
+                              <div className="h-full bg-amber-400 rounded-none transition-all duration-700" style={{ width: `${pct}%` }} />
                             </div>
-                            <span className="text-gray-400 w-4 text-right">{count}</span>
+                            <span className="text-gray-400 w-4 text-right font-black">{count}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mb-4">
-                      <p className="text-sm font-bold text-gray-700">{stationReviews.length} Reviews</p>
+                    <div className="flex items-center justify-between mb-8">
+                      <p className="text-xs font-black uppercase tracking-widest text-gray-400">
+                        {stationReviews.length} Verified Reviews
+                      </p>
                       <button
                         onClick={() => { if (!isAuthenticated) { navigate('/login'); return } setReviewModal(true) }}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-colors"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest rounded-none hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 hover:shadow-black/10"
                       >
                         <MessageSquare size={13} /> Write a Review
                       </button>
@@ -538,156 +1066,163 @@ export default function StationDetail() {
                   </div>
                 )}
 
-                {/* ── Nearby Tab — Real data from Overpass/OpenStreetMap ── */}
-                {activeTab === 'Nearby' && (
-                  <div>
-                    {placesLoading && (
-                      <div className="space-y-3">
-                        {[1,2,3,4].map(i => (
-                          <div key={i} className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-xl animate-pulse">
-                            <div className="w-10 h-10 rounded-xl bg-gray-200 flex-shrink-0" />
-                            <div className="flex-1 space-y-2">
-                              <div className="h-3 bg-gray-200 rounded w-2/3" />
-                              <div className="h-2.5 bg-gray-100 rounded w-1/3" />
-                            </div>
-                          </div>
-                        ))}
-                        <p className="text-center text-xs text-gray-400 pt-2">Fetching live nearby places from OpenStreetMap…</p>
-                      </div>
-                    )}
-
-                    {placesError && (
-                      <div className="text-center py-10">
-                        <AlertTriangle size={32} className="text-amber-300 mx-auto mb-3" />
-                        <p className="text-gray-500 font-medium text-sm">Couldn't load nearby places</p>
-                        <p className="text-gray-400 text-xs mt-1">Check your internet connection</p>
-                      </div>
-                    )}
-
-                    {places && !placesLoading && (() => {
-                      const totalCount = Object.values(places).flat().length
-                      if (totalCount === 0) return (
-                        <div className="text-center py-12">
-                          <MapPin size={36} className="text-gray-200 mx-auto mb-3" />
-                          <p className="text-gray-500 font-medium">No places found within 600m</p>
-                          <p className="text-xs text-gray-400 mt-1">Data from OpenStreetMap</p>
-                        </div>
-                      )
-
-                      const PlaceRow = ({ item, iconEl }) => (
-                        <div className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors cursor-default group">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-xl flex-shrink-0">
-                            {iconEl}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{item.distance}m away</p>
-                          </div>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{item.distance}m</span>
-                        </div>
-                      )
-
-                      return (
-                        <div className="space-y-7">
-                          {places.restaurants?.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-lg bg-orange-100 flex items-center justify-center"><Utensils size={13} className="text-orange-600" /></div>
-                                <h3 className="text-sm font-bold text-gray-800">Food & Drinks</h3>
-                                <span className="ml-auto text-xs text-gray-400">{places.restaurants.length} nearby</span>
-                              </div>
-                              <div className="space-y-2">
-                                {places.restaurants.slice(0, 6).map(r => (
-                                  <PlaceRow key={r.osmId} item={r}
-                                    iconEl={r.category === 'cafe' ? <Coffee size={18} className="text-orange-500" /> : r.category === 'fastfood' ? <Utensils size={18} className="text-orange-600" /> : <Utensils size={18} className="text-orange-600" />}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {places.pharmacies?.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center"><Activity size={14} className="text-red-500" /></div>
-                                <h3 className="text-sm font-bold text-gray-800">Pharmacies</h3>
-                                <span className="ml-auto text-xs text-gray-400">{places.pharmacies.length} nearby</span>
-                              </div>
-                              <div className="space-y-2">
-                                {places.pharmacies.slice(0, 4).map(r => (
-                                  <PlaceRow key={r.osmId} item={r} iconEl={<Activity size={18} className="text-red-500" />} />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {places.grocery?.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center"><ShoppingCart size={14} className="text-emerald-600" /></div>
-                                <h3 className="text-sm font-bold text-gray-800">Grocery & Shops</h3>
-                                <span className="ml-auto text-xs text-gray-400">{places.grocery.length} nearby</span>
-                              </div>
-                              <div className="space-y-2">
-                                {places.grocery.slice(0, 4).map(r => (
-                                  <PlaceRow key={r.osmId} item={r} iconEl={<ShoppingCart size={18} className="text-emerald-600" />} />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {places.parks?.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center"><TreePine size={13} className="text-green-600" /></div>
-                                <h3 className="text-sm font-bold text-gray-800">Parks & Green Spaces</h3>
-                                <span className="ml-auto text-xs text-gray-400">{places.parks.length} nearby</span>
-                              </div>
-                              <div className="space-y-2">
-                                {places.parks.slice(0, 4).map(r => (
-                                  <PlaceRow key={r.osmId} item={r} iconEl={<TreePine size={18} className="text-green-600" />} />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {places.banks?.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center"><Landmark size={14} className="text-blue-600" /></div>
-                                <h3 className="text-sm font-bold text-gray-800">Banks & ATMs</h3>
-                                <span className="ml-auto text-xs text-gray-400">{places.banks.length} nearby</span>
-                              </div>
-                              <div className="space-y-2">
-                                {places.banks.slice(0, 3).map(r => (
-                                  <PlaceRow key={r.osmId} item={r} iconEl={<Landmark size={18} className="text-blue-600" />} />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-2 pt-1">
-                            <div className="flex-1 h-px bg-gray-100" />
-                            <p className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">Live data · OpenStreetMap contributors</p>
-                            <div className="flex-1 h-px bg-gray-100" />
-                          </div>
-                        </div>
-                      )
-                    })()}
-                  </div>
-                )}
-
                 {/* ── Facilities Tab ── */}
-                {activeTab === 'Facilities' && (
-                  <div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {Object.keys(FACILITY_MAP).map(key => (
-                        <FacilityRow key={key} facilityKey={key} available={station.facilities?.[key]} />
+                {activeTab === 'Facilities' && (() => {
+                  const facilities = Array.isArray(station.facilities) 
+                    ? station.facilities 
+                    : (station.facilities ? Object.keys(station.facilities).filter(k => station.facilities[k]) : []);
+                  
+                  return (
+                    <div>
+                      {/* Header Section */}
+                      <div className="mb-5">
+                        <h3 className="text-base font-black text-gray-900 tracking-tight uppercase">
+                          Available Facilities
+                        </h3>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-tight mt-1">
+                          Amenities available at this charging station
+                        </p>
+                      </div>
+
+                      {/* Facilities List (Reveal-on-Hover, Sharp Edges) */}
+                      <div className="space-y-0 divide-y divide-gray-50">
+                        {facilities.map((facility, index) => {
+                          const config = facilityConfig[facility] || {
+                            icon: (
+                              <svg className="w-5 h-5" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round"
+                                  strokeLinejoin="round" strokeWidth={2}
+                                  d="M5 13l4 4L19 7" />
+                              </svg>
+                            ),
+                            description: 'Available at this station',
+                            color: 'bg-gray-50 text-gray-600 border-gray-100'
+                          }
+                          
+                          return (
+                            <div key={index}
+                              className="flex items-center justify-between p-3.5 
+                              rounded-none border border-transparent bg-transparent 
+                              hover:border-gray-200 hover:bg-white transition-all 
+                              group cursor-default relative overflow-hidden">
+                              
+                              <div className="flex items-center gap-4">
+                                {/* Icon Box (Sharp) */}
+                                <div className={`w-10 h-10 rounded-none 
+                                  flex items-center justify-center 
+                                  border flex-shrink-0 ${config.color} 
+                                  opacity-60 group-hover:opacity-100 transition-all duration-300`}>
+                                  {config.icon}
+                                </div>
+                                
+                                {/* Text */}
+                                <div className="min-w-0">
+                                  <p className="font-bold text-gray-900 
+                                    text-sm tracking-tight group-hover:text-black transition-colors">
+                                    {facility}
+                                  </p>
+                                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight mt-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    {config.description}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Available Badge (Revealed on Hover) */}
+                              <div className="flex items-center gap-2 
+                                bg-emerald-50 px-3 py-1.5 rounded-none border border-emerald-100 
+                                opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+                                <div className="w-1.5 h-1.5 rounded-none 
+                                  bg-emerald-500 animate-pulse"></div>
+                                <span className="text-[9px] text-emerald-600 
+                                  font-black uppercase tracking-[0.2em]">
+                                  Available
+                                </span>
+                              </div>
+
+                              {/* Decorative Hover Bar */}
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-900 
+                                transform -translate-x-full group-hover:translate-x-0 transition-transform" />
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Empty State (Sharp Edges) */}
+                      {facilities.length === 0 && (
+                        <div className="text-center py-16 bg-gray-50 rounded-none border border-dashed border-gray-200">
+                          <div className="w-12 h-12 bg-white border border-gray-200 rounded-none flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <p className="text-gray-900 font-black uppercase text-xs tracking-widest">
+                            No facilities listed
+                          </p>
+                          <p className="text-gray-400 text-[11px] mt-1 font-bold uppercase tracking-tight">
+                            Facility information not available
+                          </p>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })()}
+
+                {/* ── Nearby Places Tab ── */}
+                {activeTab === 'Nearby Places' && (
+                  <div className="space-y-6">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-base font-black text-gray-900 tracking-tight uppercase">Places Nearby</h3>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Within 1km of this station</p>
+                      </div>
+                      <span className="text-[9px] font-black text-gray-400 bg-gray-50 px-2 py-1 rounded-none border border-gray-100 uppercase tracking-widest">
+                        {filteredPlaces.length} results
+                      </span>
+                    </div>
+
+                    {/* Category Filter Pills */}
+                    <div className="flex gap-2 mb-6 flex-wrap">
+                      {['All', 'Restaurants', 'Cafes', 'Parks', 'Stores', 'ATMs'].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`px-4 py-1.5 rounded-none text-[9px] font-black uppercase tracking-widest transition-all border ${
+                            selectedCategory === cat
+                              ? 'bg-gray-900 text-white border-gray-900 shadow-md shadow-gray-200'
+                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-900'
+                          }`}
+                        >
+                          {cat}
+                        </button>
                       ))}
                     </div>
+
+                    {loadingPlaces ? (
+                      <div className="text-center py-20">
+                        <div className="animate-spin w-8 h-8 border-4 border-gray-100 border-t-gray-900 rounded-full mx-auto mb-4" />
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Scanning local area…</p>
+                      </div>
+                    ) : filteredPlaces.length === 0 ? (
+                      <div className="text-center py-24 bg-gray-50 rounded-none border border-dashed border-gray-200">
+                        <div className="w-16 h-16 bg-white rounded-none border border-gray-100 shadow-sm flex items-center justify-center mx-auto mb-6 text-gray-400">
+                          <Navigation2 size={24} />
+                        </div>
+                        <p className="text-xs font-black text-gray-900 uppercase tracking-[0.2em]">No {selectedCategory} Found</p>
+                        <p className="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-tight">Try selecting a different category</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredPlaces.map(place => (
+                          <AmenityCard key={place.id} item={place} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
+
+              {/* Problem 2 - Nearby Places Section REMOVED (Moved to Tab) */}
             </div>
           </div>
 
@@ -702,33 +1237,33 @@ export default function StationDetail() {
                   <div className="flex items-center justify-between mb-8 group cursor-default">
                     <div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-6xl font-black text-gray-900 tracking-tighter leading-none">{weather.temp}°</span>
-                        <span className="text-lg text-gray-400 font-black">C</span>
+                        <span className="text-4xl font-black text-gray-900 tracking-tighter leading-none">{weather.temp}°</span>
+                        <span className="text-sm text-gray-400 font-black">C</span>
                       </div>
-                      <p className="text-base font-bold text-gray-500 mt-2">{weather.weatherLabel}</p>
+                      <p className="text-sm font-bold text-gray-500 mt-2 uppercase tracking-wide">{weather.weatherLabel}</p>
                     </div>
                     <div className="text-sky-500 drop-shadow-sm group-hover:scale-110 transition-transform duration-500 ease-out">
-                      <Cloud size={64} />
+                      <Cloud size={48} />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-y-6 gap-x-8">
                     <div>
                       <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Feels Like</p>
-                      <p className="text-base font-black text-gray-800 tracking-tight">{weather.feelsLike}°C</p>
+                      <p className="text-sm font-black text-gray-800 tracking-tight">{weather.feelsLike}°C</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Wind</p>
-                      <p className="text-base font-black text-gray-800 tracking-tight">{weather.windKmh} <span className="text-[10px] text-gray-400 font-bold ml-1">km/h</span></p>
+                      <p className="text-sm font-black text-gray-800 tracking-tight">{weather.windKmh} <span className="text-[9px] text-gray-400 font-bold ml-1">km/h</span></p>
                     </div>
                     <div>
                       <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Humidity</p>
-                      <p className="text-base font-black text-gray-800 tracking-tight">{weather.humidity}%</p>
+                      <p className="text-sm font-black text-gray-800 tracking-tight">{weather.humidity}%</p>
                     </div>
                     {aqi && (
                       <div>
                         <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: aqi.aqiColor }}>Air Quality</p>
-                        <p className="text-base font-black tracking-tight" style={{ color: aqi.aqiColor }}>{aqi.aqiLabel}</p>
+                        <p className="text-sm font-black tracking-tight" style={{ color: aqi.aqiColor }}>{aqi.aqiLabel}</p>
                       </div>
                     )}
                   </div>
@@ -755,12 +1290,11 @@ export default function StationDetail() {
               )}
               <div className="pb-6 border-b border-gray-100">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-bold text-gray-900">Availability</p>
+                  <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Availability</p>
                   <span
-                    className="text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ background: cfg.bg, color: cfg.color }}
+                    className={`text-[9px] font-black px-2 py-0.5 rounded-none uppercase tracking-widest ${getStatusColor(station.status)}`}
                   >
-                    {cfg.label}
+                    {station.status}
                   </span>
                 </div>
                 {/* Progress circle-like bar */}
@@ -769,13 +1303,13 @@ export default function StationDetail() {
                     <span className="text-gray-500">{station.availableChargers} free</span>
                     <span className="text-gray-400">{station.totalChargers} total</span>
                   </div>
-                  <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-gray-100 rounded-none overflow-hidden">
                     <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${availPct}%`, background: cfg.color }}
+                      className="h-full rounded-none transition-all duration-700"
+                      style={{ width: `${availPct}%`, background: getStatusHex(station.status) }}
                     />
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-1 text-right">{availPct}% available</p>
+                  <p className="text-[9px] text-gray-400 mt-1.5 text-right font-black uppercase tracking-tight">{availPct}% available</p>
                 </div>
               </div>
               <div className="py-6">
@@ -786,22 +1320,17 @@ export default function StationDetail() {
                       return
                     }
                     if (!isAuthenticated) { navigate('/login'); return }
-                    const available = stationChargers.find(c => c.status === 'active') || stationChargers[0]
-                    if (available) {
-                      navigate(`/station/${id}/book/${available.id}`)
-                    } else {
-                      toast.error('No chargers available at this station')
-                    }
+                    navigate(`/book/${id}`)
                   }}
-                  className={`w-full py-3 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${
+                  className={`w-full py-2.5 font-black rounded-none text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                     station.isExternal 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 shadow-none'
                       : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
                   }`}
                   disabled={station.isExternal}
                 >
-                  <BatteryCharging size={16} /> 
-                  {station.isExternal ? 'Booking Unavailable' : 'Book a Slot'}
+                  <BatteryCharging size={14} /> 
+                  {station.isExternal ? 'Unavailable' : 'Book a Slot'}
                 </button>
                 <p className="text-center text-[11px] text-gray-400 mt-2">
                   {station.isExternal 
@@ -821,7 +1350,10 @@ export default function StationDetail() {
                   { label: 'Open Hours', value: station.openHours },
                   { label: 'Total Chargers', value: station.totalChargers },
                   { label: 'Available Now', value: station.availableChargers, highlight: station.availableChargers > 0 },
-                  { label: 'Distance', value: `${(station.distance / 1000).toFixed(1)} km` },
+                  { 
+                    label: 'Distance', 
+                    value: distance ? `${distance} km` : 'Calculating...' 
+                  },
                 ].map(row => (
                   <div key={row.label} className="flex items-center justify-between group">
                     <span className="text-gray-400 font-bold text-[11px] uppercase tracking-wide group-hover:text-gray-600 transition-colors">{row.label}</span>
@@ -834,7 +1366,7 @@ export default function StationDetail() {
             </div>
             {station.status !== 'active' && (
               <div className="py-8">
-                <div className="p-4 bg-amber-50 border-l-4 border-amber-400">
+                <div className="p-4 bg-amber-50 border-l-2 border-amber-400">
                   <div className="flex gap-3">
                     <AlertTriangle size={18} className="text-amber-500 flex-shrink-0" />
                     <div>

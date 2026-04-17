@@ -48,18 +48,23 @@ export default function Payment() {
       const res = await createPaymentOrder(bookingId, amount)
       const order = res.data || res
       
+      console.log('[Payment] Order created:', order)
+
       // 2. Initialize Razorpay
+      const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder'
+      
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: rzpKey,
         amount: order.amount,
         currency: order.currency,
         name: 'ChargeNet',
         description: `Booking for ${booking.station?.name || 'EV Station'}`,
         order_id: order.id,
         handler: async (response) => {
+          console.log('[Payment] Razorpay Success Response:', response)
           try {
-            // 3. Verify Payment with Backend
             await verifyPayment({
+              bookingId,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature
@@ -79,9 +84,21 @@ export default function Payment() {
         }
       }
       
+      console.log('[Payment] Initializing Razorpay with options:', { ...options, key: '***' + options.key.slice(-4) })
+
+      if (!window.Razorpay) {
+        throw new Error('Razorpay SDK not loaded. Please check your internet connection.')
+      }
+      
       const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', (resp) => {
+        console.error('[Payment] Razorpay Failed:', resp.error)
+        toast.error(`Payment failed: ${resp.error.description}`)
+      })
+      
       rzp.open()
     } catch (err) {
+      console.error('[Payment] Error:', err)
       toast.error(err.message || 'Payment initialization failed')
     } finally {
       setLoading(false)
