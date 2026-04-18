@@ -139,7 +139,7 @@ const BookingLanding = () => {
             <div
               key={station.id}
               className="group py-5 flex items-center justify-between hover:bg-gray-50 -mx-4 px-4 transition-all cursor-pointer"
-              onClick={() => navigate(`/station/${station.id}`)}
+              onClick={() => navigate(`/station/${station.slug}`)}
             >
               
               {/* Left - Station Info */}
@@ -187,7 +187,7 @@ const BookingLanding = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    navigate(`/station/${station.id}`)
+                    navigate(`/station/${station.slug}`)
                   }}
                   className="text-xs font-medium text-gray-400 border border-gray-200 px-4 py-2 group-hover:border-gray-900 group-hover:text-gray-900 transition-all whitespace-nowrap"
                 >

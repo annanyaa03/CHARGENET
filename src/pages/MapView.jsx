@@ -113,23 +113,18 @@ const facilityIcons = {
 
 const STATUS_TABS = ['all', 'active', 'busy', 'inactive', 'faulty']
 
+const Skeleton = ({ className }) => (
+  <div className={`animate-pulse bg-gray-100 ${className}`}></div>
+)
+
 const StationSkeleton = () => (
-  <div className="animate-pulse">
-    {[1, 2, 3, 4, 5, 6].map(i => (
-      <div key={i} className="border-b border-gray-100 p-4">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <div className="h-4 bg-gray-200 w-48 mb-2"></div>
-            <div className="h-3 bg-gray-100 w-32"></div>
-          </div>
-          <div className="h-6 bg-gray-200 w-16"></div>
-        </div>
-        <div className="flex gap-2">
-          <div className="h-3 bg-gray-100 w-20"></div>
-          <div className="h-3 bg-gray-100 w-16"></div>
-        </div>
-      </div>
-    ))}
+  <div className="py-5 border-b border-gray-100 px-4">
+    <Skeleton className="h-4 w-48 mb-2" />
+    <Skeleton className="h-3 w-32 mb-3" />
+    <div className="flex gap-2">
+      <Skeleton className="h-6 w-16" />
+      <Skeleton className="h-6 w-20" />
+    </div>
   </div>
 )
 
@@ -144,6 +139,7 @@ export default function MapView() {
   const [statusTab, setStatusTab] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [view, setView] = useState('list')
   const [mapCenter, setMapCenter] = useState([20.5937, 78.9629])
   const [mapZoom, setMapZoom] = useState(5)
   const [stations, setStations] = useState([])
@@ -288,10 +284,28 @@ export default function MapView() {
         .badge-external { background: #EEF2FF; color: #4F46E5; border: 1px solid #E0E7FF; }
       `}</style>
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative">
+        {/* Mobile Tab Switcher */}
+        <div className="flex md:hidden border-b border-gray-100 bg-white">
+          <button
+            onClick={() => setView('list')}
+            className={`flex-1 py-3 text-xs font-medium ${
+              view === 'list' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-400 hover:text-gray-600'
+            }`}>
+            List View
+          </button>
+          <button
+            onClick={() => setView('map')}
+            className={`flex-1 py-3 text-xs font-medium ${
+              view === 'map' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-400 hover:text-gray-600'
+            }`}>
+            Map View
+          </button>
+        </div>
+
         {/* ─── Sidebar ─── */}
         <div
-          className={`flex-shrink-0 bg-white border-r border-gray-100 flex flex-col transition-all duration-300 ease-in-out h-full z-20 hidden md:flex`}
+          className={`w-full md:w-[340px] flex-shrink-0 bg-white border-r border-gray-100 flex-col transition-all duration-300 ease-in-out h-full z-20 ${view === 'map' ? 'hidden md:flex' : 'flex'}`}
           style={{ width: sidebarCollapsed ? 0 : 340, minWidth: sidebarCollapsed ? 0 : 340, overflow: 'hidden' }}
         >
           {/* Header */}
@@ -381,7 +395,7 @@ export default function MapView() {
           {/* Station List */}
           <div className="flex-1 overflow-y-auto sidebar-scroll">
             {loading && stations.length === 0 ? (
-              <StationSkeleton />
+              Array(6).fill(0).map((_, i) => <StationSkeleton key={i} />)
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center px-6">
                 <MapPin size={32} className="text-gray-300 mb-3" />
@@ -456,7 +470,7 @@ export default function MapView() {
         </button>
 
         {/* ─── Map Area ─── */}
-        <div className="flex-1 relative">
+        <div className={`flex-1 relative ${view === 'list' ? 'hidden md:block' : 'block'}`}>
           <MapContainer
             center={[20.5937, 78.9629]}
             zoom={5}
@@ -642,7 +656,7 @@ export default function MapView() {
 
                   {/* CTA button */}
                   <button
-                    onClick={() => navigate(`/station/${selectedStation.id}`)}
+                    onClick={() => navigate(`/station/${selectedStation.slug}`)}
                     className="mt-3.5 w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-bold rounded-none flex items-center justify-center gap-2 transition-all hover:shadow-lg"
                   >
                     View Full Details

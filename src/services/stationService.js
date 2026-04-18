@@ -1,9 +1,9 @@
 import { supabase } from '../lib/supabase'
 
 // Map Supabase DB schema → frontend expectations
-const mapStation = (s) => ({
   ...s,
   id: s.id,
+  slug: s.slug || s.id,
   name: s.name || 'Unknown Station',
   city: s.city || '',
   address: s.address || '',
@@ -11,8 +11,10 @@ const mapStation = (s) => ({
   lng: Number(s.lng),
   totalChargers: (s.chargers?.length) || s.total_slots || 0,
   availableChargers: s.chargers ? s.chargers.filter(c => c.status === 'available').length : 0,
-  rating: (s.rating !== null && s.rating !== undefined) ? Number(s.rating) : 4.5,
-  totalReviews: s.total_reviews || (s.reviews?.length) || 0,
+  rating: (s.rating !== null && s.rating !== undefined) ? Number(s.rating) : 0,
+  reviewCount: s.review_count || 0,
+  totalReviews: s.review_count || (s.reviews?.length) || 0,
+  tags: s.station_tags?.map(t => t.tags?.name).filter(Boolean) || [],
   // Facilities is now a JSONB array ["WiFi", "Parking"]
   facilities: Array.isArray(s.facilities) ? s.facilities : (s.amenities || []),
   status: s.status === 'maintenance' ? 'faulty' : (s.status || 'active'),
@@ -79,12 +81,20 @@ export const getStations = async (filters = {}) => {
   }
 }
 
-export const getStationById = async (id) => {
-  const { data, error } = await supabase
+export const getStationById = async (idOrSlug) => {
+  const isUUID = /^[0-9a-f-]{36}$/i.test(idOrSlug)
+  
+  let query = supabase
     .from('stations')
-    .select('*, chargers(*), reviews(*)')
-    .eq('id', id)
-    .single()
+    .select('*, chargers(*), reviews(*), station_tags(tags(name))')
+
+  if (isUUID) {
+    query = query.eq('id', idOrSlug)
+  } else {
+    query = query.eq('slug', idOrSlug)
+  }
+
+  const { data, error } = await query.single()
 
   if (error) {
     console.error(`[Service] Failed to fetch station ${id}:`, error.message)

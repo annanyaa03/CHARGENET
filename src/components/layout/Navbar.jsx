@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../store/authStore';
 import {
   Zap,
   MapPin,
@@ -66,6 +67,8 @@ const prefetchStations = async () => {
 export function Navbar({ solid = false }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isScrolledState, setIsScrolledState] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { isAuthenticated, logout } = useAuthStore();
   const location = useLocation();
   const isScrolled = solid || isScrolledState;
   const navRef = useRef(null);
@@ -268,8 +271,57 @@ export function Navbar({ solid = false }) {
                 Get Started
               </Link>
             </div>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className={`md:hidden p-2 ml-4 ${isScrolled ? 'text-gray-900' : 'text-white'}`}>
+              <svg className="w-6 h-6" fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12"/>
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16"/>
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu dropdown */}
+        {menuOpen && (
+          <div className="md:hidden bg-white border-t border-gray-100 py-4 px-6 space-y-4 absolute top-full left-0 w-full shadow-lg">
+            <Link to="/map" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 hover:text-gray-900">
+              Find Stations
+            </Link>
+            <Link to="/booking" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 hover:text-gray-900">
+              Book a Slot
+            </Link>
+            <Link to="/pricing" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 hover:text-gray-900">
+              Pricing
+            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 hover:text-gray-900">
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setMenuOpen(false);
+                  }}
+                  className="block text-sm text-gray-400 hover:text-gray-600">
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-900">
+                Sign in
+              </Link>
+            )}
+          </div>
+        )}
       </nav>
     </div>
   );

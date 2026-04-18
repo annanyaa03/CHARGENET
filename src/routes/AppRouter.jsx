@@ -59,7 +59,7 @@ export function AppRouter() {
           {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/map" element={<MapViewPage />} />
-          <Route path="/station/:id" element={<StationDetail />} />
+          <Route path="/station/:slug" element={<StationDetail />} />
           <Route path="/learn" element={<LearnHub />} />
           <Route path="/learn/:guideId" element={<GuideDetail />} />
           <Route path="/login" element={<Login />} />

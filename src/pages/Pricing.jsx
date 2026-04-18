@@ -97,41 +97,47 @@ export default function Pricing() {
       <div className="bg-white min-h-screen pt-[72px] lg:pt-[80px]">
         {/* SECTION 1 - Hero */}
         <section className="bg-black text-white">
-          <div className="max-w-7xl mx-auto px-6 py-24 text-center">
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
-              Pricing Plans
+          <div className="max-w-7xl mx-auto px-6 py-20 text-center">
+            
+            {/* Small label */}
+            <p className="text-xs text-gray-600 uppercase tracking-widest font-normal mb-8">
+              Pricing
             </p>
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight tracking-tight">
-              Simple, transparent
-              <br />
-              pricing.
+            
+            {/* Heading - light weight */}
+            <h1 className="text-4xl font-normal text-white mb-4 tracking-tight leading-snug">
+              Simple, transparent pricing
             </h1>
-            <p className="text-gray-400 text-lg md:text-xl max-w-xl mx-auto mb-12 font-medium">
-              Choose the plan that fits your lifestyle. 
-              No hidden fees, no surprises.
+            
+            {/* Subtitle - smaller */}
+            <p className="text-sm text-gray-500 max-w-xs mx-auto mb-10 leading-relaxed font-normal">
+              No hidden fees, no surprises. 
+              Cancel anytime.
             </p>
 
-            {/* Monthly / Annual Toggle */}
-            <div className="inline-flex border border-gray-700 rounded-none overflow-hidden">
+            {/* Toggle - slim and minimal */}
+            <div className="inline-flex border border-gray-800">
               <button
                 onClick={() => setBilling('monthly')}
-                className={`px-8 py-3.5 text-sm font-bold transition-all ${
+                className={`px-6 py-2 text-xs tracking-wide transition-all ${
                   billing === 'monthly'
-                    ? 'bg-white text-black'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-white text-gray-900 font-medium'
+                    : 'text-gray-600 hover:text-gray-300'
                 }`}>
                 Monthly
               </button>
               <button
                 onClick={() => setBilling('annual')}
-                className={`px-8 py-3.5 text-sm font-bold transition-all flex items-center gap-3 ${
+                className={`px-6 py-2 text-xs tracking-wide transition-all flex items-center gap-2 ${
                   billing === 'annual'
-                    ? 'bg-white text-black'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-white text-gray-900 font-medium'
+                    : 'text-gray-600 hover:text-gray-300'
                 }`}>
                 Annual
-                <span className={`text-[10px] px-2 py-0.5 font-black uppercase tracking-widest ${
-                  billing === 'annual' ? 'bg-black text-white' : 'bg-white text-black'
+                <span className={`text-xs px-1.5 py-0.5 ${
+                  billing === 'annual'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-800 text-gray-500'
                 }`}>
                   -20%
                 </span>

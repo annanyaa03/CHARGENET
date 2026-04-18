@@ -92,6 +92,7 @@ export default function BookSlot() {
       return
     }
 
+    const toastId = toast.loading('Processing reservation...')
     setIsSubmitting(true)
     try {
       const { data, error } = await supabase
@@ -111,7 +112,7 @@ export default function BookSlot() {
 
       if (error) throw error
 
-      toast.success('Reservation Confirmed!')
+      toast.success('Reservation Confirmed!', { id: toastId })
       navigate('/booking-success', { 
         state: { 
           booking: data,
@@ -121,7 +122,7 @@ export default function BookSlot() {
       })
     } catch (err) {
       console.error('Booking error:', err)
-      toast.error('Booking failed. Please try again.')
+      toast.error('Booking failed. Please try again.', { id: toastId })
     } finally {
       setIsSubmitting(false)
     }
@@ -298,8 +299,8 @@ export default function BookSlot() {
               
               {/* Summary Card — top aligns with "Reserve." heading */}
               <div className="p-6 bg-gray-50 border border-gray-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 opacity-[0.07]">
-                  <Zap size={72} className="text-gray-900" />
+                <div className="absolute -top-6 -right-6 opacity-[0.03] pointer-events-none">
+                  <Zap size={140} className="text-gray-900" />
                 </div>
                 
                 <h3 className="text-[9px] font-black uppercase tracking-[0.5em] text-gray-900 mb-6 pb-4 border-b border-gray-200">Reservation Info</h3>
