@@ -7,9 +7,10 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SECRET_KEY;
 
 const isPlaceholder = (val) => {
   if (!val || val.trim() === '' || val.startsWith('ADD_YOUR')) return true;
-  // Supabase keys are JWTs and almost always start with 'ey'
-  // If it's a long string but doesn't start with 'ey', it's likely a placeholder or custom string
-  if (val.length > 20 && !val.startsWith('ey')) return true;
+  // URLs usually start with http
+  if (val.startsWith('http')) return false;
+  // Supabase keys are JWTs and almost always start with 'ey' or 'sb_' for newer formats
+  if (val.length > 20 && !val.startsWith('ey') && !val.startsWith('sb_')) return true;
   return false;
 };
 

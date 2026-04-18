@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { 
   ArrowLeft, Zap, Clock, Calendar, ShieldCheck, 
@@ -29,17 +29,7 @@ export default function BookSlot() {
   const [duration, setDuration] = useState(60)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    window.scrollTo(0, 0)
-    if (!id) {
-      toast.error('Station ID is required for booking')
-      navigate('/map')
-      return
-    }
-    fetchData()
-  }, [id])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       // Fetch station
@@ -72,7 +62,17 @@ export default function BookSlot() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    if (!id) {
+      toast.error('Station ID is required for booking')
+      navigate('/map')
+      return
+    }
+    fetchData()
+  }, [id, fetchData, navigate])
 
   const estimatedCost = (
     (selectedCharger?.price_per_kwh || 0) * 

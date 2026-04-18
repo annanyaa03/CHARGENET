@@ -109,7 +109,7 @@ export default function ApproveStations() {
                 <div className="text-center py-20">
                     <History size={40} className="text-border mx-auto mb-4" />
                     <p className="text-sm font-medium text-primary">No pending approvals</p>
-                    <p className="text-xs text-muted mt-1">You're all caught up!</p>
+                    <p className="text-xs text-muted mt-1">You&apos;re all caught up!</p>
                 </div>
            )}
         </div>

@@ -86,7 +86,7 @@ export default function ModerateReviews() {
                       </div>
                    </div>
                    <p className="text-sm text-primary leading-relaxed bg-background/50 p-3 rounded-lg border border-border italic mb-4">
-                      "{review.text}"
+                      &quot;{review.text}&quot;
                    </p>
                    <div className="flex flex-wrap gap-2 mb-4">
                       {review.tags.slice(0, 3).map(tag => (
@@ -125,7 +125,7 @@ export default function ModerateReviews() {
             </div>
             <div>
                 <p className="text-[11px] font-bold text-accent uppercase tracking-tight">Pro-tip</p>
-                <p className="text-xs text-accent leading-tight">Reviews with more than 3 reports are automatically hidden until moderated. Check the "Automated Logs" for details.</p>
+                <p className="text-xs text-accent leading-tight">Reviews with more than 3 reports are automatically hidden until moderated. Check the &quot;Automated Logs&quot; for details.</p>
             </div>
         </div>
       </PageContainer>

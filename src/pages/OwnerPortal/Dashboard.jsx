@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { LayoutDashboard, MapPin, Zap, MessageSquare, BarChart3, Plus, ArrowRight, TrendingUp, Users, DollarSign, Signal } from 'lucide-react'
+import { LayoutDashboard, MapPin, Zap, MessageSquare, BarChart3, Plus, ArrowRight, TrendingUp, Users, DollarSign, Signal, Star } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { PageWrapper, PageContainer } from '../../components/layout/PageWrapper'
 import { Button } from '../../components/common/Button'
@@ -43,7 +43,6 @@ export default function OwnerDashboard() {
   }
 
   const myStations = stations
-  const myChargers = []
   const myReviews = []
 
   const stats = [
@@ -52,6 +51,12 @@ export default function OwnerDashboard() {
     { label: 'Avg. Rating', value: '4.8', sub: '32 new reviews', icon: TrendingUp, color: 'text-warning' },
     { label: 'Utilization', value: '74%', sub: '+5% Peak hours', icon: BarChart3, color: 'text-primary' },
   ]
+
+  if (loading) return (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="text-sm font-medium text-gray-400 animate-pulse tracking-tight">Loading Dashboard...</div>
+    </div>
+  )
 
   return (
     <PageWrapper>
@@ -156,7 +161,7 @@ export default function OwnerDashboard() {
                     </div>
                     <div>
                       <p className="text-[11px] text-primary leading-tight"><span className="font-semibold">{r.reviewerName}</span> left a {r.rating}<Star size={10} className="inline-block ml-0.5 fill-amber-400 text-amber-400 mb-0.5" /> review</p>
-                      <p className="text-[10px] text-muted mt-0.5 mt-1 line-clamp-1 italic">"{r.text}"</p>
+                      <p className="text-[10px] text-muted mt-0.5 mt-1 line-clamp-1 italic">&quot;{r.text}&quot;</p>
                     </div>
                   </div>
                 ))}
@@ -180,7 +185,7 @@ export default function OwnerDashboard() {
                   <th className="px-6 py-3">Station Name</th>
                   <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">Chargers</th>
-                  <th className="px-6 py-3">Today's Revenue</th>
+                  <th className="px-6 py-3">Today&apos;s Revenue</th>
                   <th className="px-6 py-3">Utilization</th>
                   <th className="px-6 py-3 text-right">Action</th>
                 </tr>

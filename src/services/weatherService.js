@@ -44,7 +44,9 @@ function getFromCache(key) {
 function setCache(key, data) {
   try {
     sessionStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }))
-  } catch {}
+  } catch (err) {
+    // Session storage may be blocked; ignore
+  }
 }
 
 export async function fetchWeather(lat, lng) {

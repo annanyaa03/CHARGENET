@@ -29,8 +29,10 @@ function getSlotHint(slotIndex) {
   return null
 }
 
-const currentHour = new Date().getHours()
-const currentSlotIndex = currentHour * 2  // approximate current position in the grid
+function getCurrentSlotIndex() {
+  const currentHour = new Date().getHours()
+  return currentHour * 2
+}
 
 const SLOTS = Array.from({ length: 24 }, (_, i) => {
   const h = Math.floor(i / 2)
@@ -38,7 +40,7 @@ const SLOTS = Array.from({ length: 24 }, (_, i) => {
   const label = `${String(h).padStart(2, '0')}:${m}`
   const booked = [2, 3, 10, 11, 12, 20, 21, 22].includes(i)
   const hint = getSlotHint(i)
-  const isPast = i < currentSlotIndex
+  const isPast = i < getCurrentSlotIndex()
   return { id: i, label, booked, hint, isPast }
 })
 
@@ -128,6 +130,13 @@ export default function Booking() {
   const [station, setStation] = useState(null)
   const [charger, setCharger] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [selectedSlots, setSelectedSlots] = useState([])
+  const [dateStr, setDateStr] = useState(dates[0]?.date || '')
+  const [vehicle, setVehicle] = useState('Tata Nexon EV Max')
+  const [method, setMethod] = useState('upi')
+  const [processing, setProcessing] = useState(false)
+  const [success] = useState(false)
+  const [confId] = useState(() => 'CN-' + Math.random().toString(36).slice(2, 9).toUpperCase())
 
   useEffect(() => {
     const loadData = async () => {

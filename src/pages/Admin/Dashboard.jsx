@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { LayoutDashboard, Users, MapPin, MessageSquare, AlertCircle, TrendingUp, Shield, Activity, ListChecks, ArrowRight } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 import { PageWrapper, PageContainer } from '../../components/layout/PageWrapper'
 import { Button } from '../../components/common/Button'
 import { Badge } from '../../components/common/Badge'
 import { stations } from '../../mock/stations'
-import { reviews } from '../../mock/reviews'
+// import { reviews } from '../../mock/reviews'
 
 const GROWTH_DATA = [
   { month: 'Jan', users: 1200, stations: 8 },
@@ -16,9 +16,7 @@ const GROWTH_DATA = [
 ]
 
 export default function AdminDashboard() {
-  const navigate = useNavigate()
   const pendingStations = stations.filter(s => s.status === 'inactive').length
-  const flaggedReviews = reviews.slice(0, 3) // Mocking flagged
 
   useEffect(() => {
     document.title = 'Admin Dashboard — ChargeNet'

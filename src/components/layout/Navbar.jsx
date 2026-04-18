@@ -8,25 +8,23 @@ import {
   Plug,
   CalendarCheck,
   Map as MapIcon,
-  BatteryMedium,
   BookOpen,
   Lightbulb,
   Newspaper,
   Bell,
   ChevronDown,
-  Route
 } from 'lucide-react';
 
 const navData = {
   solutions: [
-    { icon: Route, label: 'For Individuals', subtitle: 'Home charging solutions', color: 'text-blue-600', bg: 'bg-blue-50', to: '/solutions/individuals' },
-    { icon: BatteryMedium, label: 'For Business', subtitle: 'Workplace & retail charging', color: 'text-teal-600', bg: 'bg-teal-50', to: '/solutions/business' },
-    { icon: Newspaper, label: 'Fleet Solutions', subtitle: 'Scaling your EV fleet', color: 'text-amber-600', bg: 'bg-amber-50', to: '/solutions/fleet' },
+    { label: 'For Individuals', subtitle: 'Personal charging solutions',    to: '/solutions/individuals' },
+    { label: 'For Business',    subtitle: 'Workplace and retail charging',  to: '/solutions/business' },
+    { label: 'Fleet Solutions', subtitle: 'Scale your EV fleet',            to: '/solutions/fleet' },
   ],
   resources: [
-    { icon: BookOpen, label: 'Charging Guide', subtitle: 'Everything you need to know', color: 'text-blue-600', bg: 'bg-blue-50', to: '/resources/guide' },
-    { icon: Lightbulb, label: 'Help Center', subtitle: 'Support & documentation', color: 'text-amber-600', bg: 'bg-amber-50', to: '/resources/help' },
-    { icon: Newspaper, label: 'Latest Blog', subtitle: 'Industry news & updates', color: 'text-teal-600', bg: 'bg-teal-50', to: '/resources/blog' },
+    { icon: BookOpen,  label: 'Charging Guide', subtitle: 'Everything you need to know',  color: 'text-blue-600',  bg: 'bg-blue-50',  to: '/resources/guide' },
+    { icon: Lightbulb, label: 'Help Center',    subtitle: 'Support & documentation',      color: 'text-amber-600', bg: 'bg-amber-50', to: '/resources/help' },
+    { icon: Newspaper, label: 'Latest Blog',    subtitle: 'Industry news & updates',      color: 'text-teal-600',  bg: 'bg-teal-50',  to: '/resources/blog' },
   ]
 };
 
@@ -130,34 +128,50 @@ export function Navbar({ solid = false }) {
         id={menuId(name)}
         role="menu"
         aria-labelledby={triggerId(name)}
-        className={`absolute top-full mt-3 w-80 bg-white rounded-none border border-gray-100 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 ${
+        className={`absolute top-full mt-3 w-72 bg-white border border-gray-200 shadow-sm py-1 z-50 ${
           alignRight ? 'right-0' : 'left-0'
         }`}
       >
         {items.map((item, index) => {
           if (item.divider) {
-            return <div key={index} className="h-px bg-gray-100 my-2 mx-4" role="separator" />;
+            return <div key={index} className="h-px bg-gray-100 my-1 mx-4" role="separator" />;
           }
           const Icon = item.icon;
+          if (Icon) {
+            // Icon-style items (Resources)
+            return (
+              <Link
+                key={index}
+                to={item.to || '#'}
+                role="menuitem"
+                className="flex items-start gap-3.5 px-5 py-3 hover:bg-gray-50 transition-all text-left group"
+                onClick={() => setActiveDropdown(null)}
+              >
+                <div className="mt-0.5 p-1.5 bg-gray-50 text-gray-400 group-hover:text-gray-700 group-hover:bg-gray-100 transition-colors">
+                  <Icon size={16} strokeWidth={2} />
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 text-sm leading-tight group-hover:text-gray-700 transition-colors">
+                    {item.label}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {item.subtitle}
+                  </div>
+                </div>
+              </Link>
+            );
+          }
+          // Text-only items (Solutions) — clean minimal style
           return (
             <Link
               key={index}
               to={item.to || '#'}
               role="menuitem"
-              className="flex items-start gap-3.5 px-4 py-3 hover:bg-gray-50 transition-all mx-2 rounded-none text-left group"
+              className="block px-5 py-3.5 hover:bg-gray-50 transition-all border-b border-gray-50 last:border-0"
               onClick={() => setActiveDropdown(null)}
             >
-              <div className="mt-0.5 p-1.5 rounded-none bg-gray-50 text-gray-400 group-hover:text-[#4A9EFF] group-hover:bg-[#4A9EFF]/5 transition-colors">
-                <Icon size={18} strokeWidth={2} />
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold text-gray-900 text-[14px] leading-tight group-hover:text-[#4A9EFF] transition-colors">
-                  {item.label}
-                </div>
-                <div className="text-[12px] text-gray-500 mt-0.5 font-medium">
-                  {item.subtitle}
-                </div>
-              </div>
+              <p className="text-sm font-medium text-gray-900 mb-0.5">{item.label}</p>
+              <p className="text-xs text-gray-400">{item.subtitle}</p>
             </Link>
           );
         })}

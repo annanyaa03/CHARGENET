@@ -60,6 +60,7 @@ const authenticate = async (req, res, next) => {
   next()
 }
 
+/* 
 // Optional auth (doesnt fail if no token)
 const optionalAuth = async (req, res, next) => {
   const token = req.headers.authorization
@@ -72,6 +73,7 @@ const optionalAuth = async (req, res, next) => {
   }
   next()
 }
+*/
 
 // =====================
 // STATIONS ROUTES
@@ -693,7 +695,8 @@ app.use((req, res) => {
 })
 
 // Global error handler
-app.use((err, req, res, next) => {
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
   console.error('Unhandled error:', err)
   return error(
     res, 

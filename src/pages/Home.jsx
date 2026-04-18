@@ -49,7 +49,6 @@ const CountUp = ({ end, suffix = "" }) => {
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCity, setActiveCity] = useState(null);
   const [activeFeature, setActiveFeature] = useState(0);
 
 
@@ -132,7 +131,6 @@ export default function Home() {
     },
   ];
 
-  const cities = ['Mumbai', 'Pune', 'Delhi', 'Bengaluru', 'Hyderabad', 'Chennai', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Chandigarh', 'Indore'];
 
   const testimonials = [
     { 
@@ -300,7 +298,7 @@ export default function Home() {
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#1D9E75] mb-4">Platform Capabilities</p>
                 <h2 className="text-4xl md:text-5xl font-bold text-[#051428] leading-[1.1] tracking-tight">
                   Everything you need,<br />
-                  <span style={{ color: features[activeFeature].color, transition: 'color 0.4s ease' }}>nothing you don't.</span>
+                  <span style={{ color: features[activeFeature].color, transition: 'color 0.4s ease' }}>nothing you don&apos;t.</span>
                 </h2>
               </div>
             </Reveal>
@@ -468,7 +466,7 @@ export default function Home() {
                       <div className="flex gap-1 mb-4">
                         {[1,2,3,4,5].map(s => <Star key={s} size={14} fill="#EAB308" className="text-[#EAB308]" />)}
                       </div>
-                      <p className="text-gray-600 text-lg font-medium leading-[1.6] group-hover:text-gray-900 transition-colors">"{t.quote}"</p>
+                      <p className="text-gray-600 text-lg font-medium leading-[1.6] group-hover:text-gray-900 transition-colors">&quot;{t.quote}&quot;</p>
                     </div>
                     <div className="flex items-center gap-4 mt-8">
                       <div className="w-11 h-11 rounded-none bg-gray-900 flex items-center justify-center text-xs text-white font-bold">

@@ -1,180 +1,405 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Building2, TrendingUp, Users, Zap, ArrowRight, BarChart3, CheckCircle2 } from 'lucide-react';
-import { PageWrapper } from '../../components/layout/PageWrapper';
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { Navbar } from '../../components/layout/Navbar'
+import { Footer } from '../../components/layout/Footer'
 
-const Reveal = ({ children, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
-  >
-    {children}
-  </motion.div>
-);
+const Business = () => {
+  const [activeUseCase, setActiveUseCase] = useState(0)
+  const [openFaq, setOpenFaq] = useState(null)
+  const [hoveredRow, setHoveredRow] = useState(null)
 
-export default function Business() {
-  const features = [
+  useEffect(() => {
+    document.title = 'For Business — ChargeNet'
+    window.scrollTo(0, 0)
+  }, [])
+
+  const useCases = [
     {
-      icon: TrendingUp,
-      title: "Revenue Generation",
-      desc: "Turn your parking lot into a high-margin profit center with dynamic pricing and integrated ad-revenue platforms."
+      title: 'Office & workplace',
+      description: 'Install chargers at your office campus. Employees charge during work hours. Manage billing and usage from one admin portal.',
+      stats: [
+        { value: '40%', label: 'Retention boost' },
+        { value: '1 day', label: 'To go live' },
+        { value: '₹0', label: 'Setup cost' }
+      ]
     },
     {
-      icon: Users,
-      title: "Premium Footfall",
-      desc: "EV owners are high-value demographic targets who spend 40% more time and capital at retail locations."
+      title: 'Retail & hospitality',
+      description: 'Attract EV driving customers by offering charging at your store, mall or hotel. Turn charging time into dwell time.',
+      stats: [
+        { value: '2.5x', label: 'Customer dwell' },
+        { value: '35%', label: 'Repeat visits' },
+        { value: '24/7', label: 'Uptime' }
+      ]
     },
     {
-      icon: Building2,
-      title: "Corporate ESG",
-      desc: "Accelerate your path to Net Zero. Boost employee satisfaction while hitting mandated corporate sustainability goals."
+      title: 'Residential complexes',
+      description: 'Provide charging for residents in apartments and gated communities. Individual billing per unit. Zero disputes.',
+      stats: [
+        { value: '100%', label: 'Individual billing' },
+        { value: '0', label: 'Admin overhead' },
+        { value: 'Auto', label: 'Invoices' }
+      ]
     },
     {
-      icon: BarChart3,
-      title: "Command Center",
-      desc: "Architected for scale. Manage 10 or 10,000 chargers from an intuitive, centralized telemetry dashboard."
+      title: 'Co-working spaces',
+      description: 'Add EV charging as a premium amenity. Members get access as part of membership or pay per use.',
+      stats: [
+        { value: '₹499', label: 'Member add-on' },
+        { value: '5 min', label: 'Onboarding' },
+        { value: 'All', label: 'EVs supported' }
+      ]
     }
-  ];
+  ]
+
+  const faqs = [
+    {
+      q: 'How long does setup take?',
+      a: 'Most businesses are live within 24 hours. Our team handles the technical setup. You just approve the configuration.'
+    },
+    {
+      q: 'Can employees pay for their own charging?',
+      a: 'Yes. You can set up split billing where the company pays a subsidy and employees cover the rest via UPI or wallet.'
+    },
+    {
+      q: 'Is there a minimum contract period?',
+      a: 'No. All business plans are month to month. Cancel anytime with 30 days notice. No lock-in.'
+    },
+    {
+      q: 'What if a charger goes offline?',
+      a: 'Our monitoring system detects issues in real-time. We notify you and dispatch a technician within 4 hours.'
+    }
+  ]
 
   return (
-    <PageWrapper>
-      <div className="bg-white min-h-screen text-[#051428] selection:bg-[#1D9E75] selection:text-white">
-        
-        {/* Header Section - Minimal Premium */}
-        <section className="pt-32 pb-24 px-6 relative overflow-hidden bg-[#FAFAF9] border-b border-gray-100">
-          <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.3]" />
+    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-gray-900 selection:text-white">
+      <Navbar solid />
+
+      {/* HERO - Left/Right Split */}
+      <section className="border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 pt-32 pb-0">
           
-          <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center text-center">
-            <Reveal>
-              <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-gray-200 shadow-sm rounded-full">
-                 <span className="w-1.5 h-1.5 bg-[#1D9E75] rounded-full animate-pulse" />
-                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#051428] pt-px">Enterprise Infrastructure</p>
-              </div>
-              
-              <h1 className="text-6xl md:text-8xl font-bold tracking-tighter leading-[0.95] mb-8" style={{ fontFamily: 'Fraunces, serif' }}>
-                Monetize your <br />
-                <span className="text-[#1D9E75]">real estate.</span>
+          {/* Breadcrumb */}
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] mb-8">
+            Solutions / Business
+          </p>
+
+          {/* Two Column Hero */}
+          <div className="grid grid-cols-2 gap-0 border-t border-gray-100">
+            
+            {/* Left - Heading */}
+            <div className="py-12 pr-16 border-r border-gray-100">
+              <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-gray-900 leading-[0.9] uppercase mb-8">
+                Power
+                <br />
+                your work
+                <br />
+                place.
               </h1>
-              
-              <p className="text-xl text-gray-500 leading-relaxed max-w-2xl mx-auto mb-12 font-light">
-                Deploy world-class EV charging at your retail, workplace, or residential complex. Join the network trusted by India's leading commercial developers.
+              <div className="flex items-center gap-3">
+                <Link to="/contact" className="h-14 px-10 bg-gray-900 text-white flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:bg-black transition-all">
+                  Talk to sales
+                </Link>
+                <Link to="/pricing" className="h-14 px-10 border border-gray-200 flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:border-gray-900 transition-all text-gray-900">
+                  View pricing
+                </Link>
+              </div>
+            </div>
+
+            {/* Right - Description + Stats */}
+            <div className="py-12 pl-16">
+              <p className="text-lg text-gray-500 leading-relaxed mb-12 max-w-sm">
+                Offer EV charging as a workplace benefit. Attract top talent, reduce carbon footprint and manage everything from one dashboard.
               </p>
               
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                 <button className="group relative px-10 py-5 bg-[#051428] text-white font-bold uppercase tracking-widest text-[11px] overflow-hidden rounded-none shadow-[0_8px_30px_rgb(5,20,40,0.2)] hover:shadow-[0_8px_30px_rgb(29,158,117,0.4)] transition-all duration-500">
-                    <div className="absolute inset-0 bg-[#1D9E75] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
-                    <span className="relative flex items-center gap-2">
-                       Become a Partner <ArrowRight size={16} />
-                    </span>
-                 </button>
-                 <div className="text-left flex items-center gap-4 border-l-2 border-[#1D9E75] pl-4">
-                    <div className="text-3xl font-bold font-serif leading-none">99.9%</div>
-                    <div className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">SLA Guaranteed<br/>Uptime</div>
-                 </div>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* Use Cases - Ultra Minimal Dividers */}
-        <section className="py-32 px-6 bg-white shrink-0">
-          <div className="max-w-7xl mx-auto">
-            <Reveal>
-              <div className="text-center mb-20">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-[#051428]">Engineered for every commercial sector.</h2>
-              </div>
-            </Reveal>
-            
-            <div className="grid lg:grid-cols-3 gap-0 border-t border-b border-gray-100">
-              {[
-                { title: "Retail & Transit", items: ["Attract luxury EV demographics", "Integrated POS loyalty rewards", "Custom ad-revenue on LCDs"] },
-                { title: "Commercial IT Parks", items: ["Individual employee billing API", "24/7 technical surveillance", "Modular power scalability"] },
-                { title: "Public Infrastructure", items: ["MoP guideline compliant", "Open-standard grid balancing", "Smart city data sharing"] }
-              ].map((box, i) => (
-                <Reveal key={i} delay={i * 0.1}>
-                  <div className={`p-10 lg:p-14 h-full bg-white hover:bg-[#FAFAF9]/50 transition-colors duration-500 ${i !== 2 ? 'lg:border-r border-b lg:border-b-0 border-gray-100' : ''}`}>
-                    <h4 className="text-xl font-bold mb-8 text-[#051428]">
-                      {box.title}
-                    </h4>
-                    <ul className="space-y-4">
-                      {box.items.map((li, j) => (
-                        <li key={j} className="text-gray-500 flex items-start gap-3 text-[15px]">
-                          <CheckCircle2 size={18} className="text-[#1D9E75] mt-0.5 shrink-0 opacity-80" />
-                          {li}
-                        </li>
-                      ))}
-                    </ul>
+              {/* Stats - 2x2 grid */}
+              <div className="grid grid-cols-2 gap-px bg-gray-100">
+                {[
+                  { value: '500+', label: 'Businesses enrolled' },
+                  { value: '10k+', label: 'Sessions per month' },
+                  { value: '99.9%', label: 'Uptime guaranteed' },
+                  { value: '24/7', label: 'Business support' }
+                ].map((stat, i) => (
+                  <div key={i} className="bg-white p-6">
+                    <p className="text-4xl font-bold text-gray-900 tracking-tighter mb-1">
+                      {stat.value}
+                    </p>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                      {stat.label}
+                    </p>
                   </div>
-                </Reveal>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Value Proposition - Cardless List Layout */}
-        <section className="py-24 px-6 bg-[#FAFAF9]">
-          <div className="max-w-4xl mx-auto">
-            <Reveal>
-               <div className="mb-12">
-                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#1D9E75] mb-3">Value Proposition</p>
-                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-[#051428] leading-tight">More than just a charger.</h2>
-               </div>
-            </Reveal>
+      {/* USE CASES - Tab style */}
+      <section className="py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12">
+            
+            <div className="col-span-3">
+              <p className="text-xs text-gray-400 uppercase tracking-widest sticky top-24">
+                Use cases
+              </p>
+            </div>
 
-            <div className="divide-y divide-gray-200 border-y border-gray-200">
-              {features.map((feature, i) => (
-                <Reveal key={feature.title} delay={i * 0.1}>
-                  <div className="py-8 group flex flex-col md:flex-row md:items-center gap-6 md:gap-12 hover:bg-white transition-colors px-6 -mx-6">
-                    <div className="w-14 h-14 bg-white border border-gray-200 shadow-sm flex items-center justify-center shrink-0 text-[#051428] group-hover:bg-[#1D9E75] group-hover:border-[#1D9E75] group-hover:text-white transition-all duration-500">
-                      <feature.icon size={22} className="transform group-hover:scale-110 transition-transform duration-500" />
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2 text-[#051428] tracking-tight group-hover:text-[#1D9E75] transition-colors">{feature.title}</h3>
-                      <p className="text-gray-500 text-[15px] leading-relaxed max-w-2xl">
-                        {feature.desc}
+            <div className="col-span-9">
+              
+              {/* Tab Navigation */}
+              <div className="flex border-b border-gray-100 mb-10">
+                {useCases.map((uc, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveUseCase(i)}
+                    className={`px-5 py-3 text-xs transition-all border-b-2 -mb-px ${
+                      activeUseCase === i
+                        ? 'border-gray-900 text-gray-900 font-medium'
+                        : 'border-transparent text-gray-400 hover:text-gray-600'
+                    }`}>
+                    {uc.title}
+                  </button>
+                ))}
+              </div>
+
+              {/* Active Use Case Content */}
+              <div className="grid grid-cols-2 gap-16">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 tracking-tight mb-4">
+                    {useCases[activeUseCase].title}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {useCases[activeUseCase].description}
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-0 border-l border-gray-100 pl-16 content-start">
+                  {useCases[activeUseCase].stats.map((stat, i) => (
+                    <div key={i} className={`${i !== 0 ? 'border-l border-gray-100 pl-4' : ''}`}>
+                      <p className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">
+                        {stat.value}
+                      </p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                        {stat.label}
                       </p>
                     </div>
-
-                    <div className="shrink-0 mt-2 md:mt-0 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-500 hidden md:block">
-                       <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#1D9E75] hover:bg-[#1D9E75] hover:text-white transition-colors">
-                         <ArrowRight size={16} />
-                       </button>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Stats Section - Typographic Focus */}
-        <section className="py-20 px-6 bg-white border-t border-gray-100">
-           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center divide-y md:divide-y-0 md:divide-x divide-gray-100">
-              <Reveal delay={0.1}>
-                 <div className="pt-6 md:pt-0 hover:scale-105 transition-transform duration-500">
-                    <div className="text-4xl lg:text-5xl font-bold font-serif mb-3 text-[#051428]">99<span className="text-[#1D9E75]">.8%</span></div>
-                    <div className="text-gray-400 uppercase tracking-[0.25em] font-bold text-[10px]">Verified Station Uptime</div>
-                 </div>
-              </Reveal>
-              <Reveal delay={0.2}>
-                 <div className="pt-6 md:pt-0 hover:scale-105 transition-transform duration-500">
-                    <div className="text-4xl lg:text-5xl font-bold font-serif mb-3 text-[#051428]">12<span className="text-2xl text-gray-300">min</span></div>
-                    <div className="text-gray-400 uppercase tracking-[0.25em] font-bold text-[10px]">Avg Technician Response</div>
-                 </div>
-              </Reveal>
-              <Reveal delay={0.3}>
-                 <div className="pt-6 md:pt-0 hover:scale-105 transition-transform duration-500">
-                    <div className="text-4xl lg:text-5xl font-bold font-serif mb-3 text-[#051428]">+35<span className="text-[#1D9E75]">%</span></div>
-                    <div className="text-gray-400 uppercase tracking-[0.25em] font-bold text-[10px]">Retail Footfall Increase</div>
-                 </div>
-              </Reveal>
-           </div>
-        </section>
-      </div>
-    </PageWrapper>
-  );
+      {/* PLATFORM - Hover rows */}
+      <section className="py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12">
+            
+            <div className="col-span-3">
+              <p className="text-xs text-gray-400 uppercase tracking-widest sticky top-24">
+                Platform
+              </p>
+            </div>
+
+            <div className="col-span-9">
+              <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-10">
+                One platform,
+                <br />
+                everything included.
+              </h2>
+
+              {/* Hover Rows */}
+              <div className="divide-y divide-gray-50">
+                {[
+                  {
+                    title: 'Business dashboard',
+                    description: 'Monitor all chargers, sessions and revenue from a single admin dashboard.'
+                  },
+                  {
+                    title: 'Employee management',
+                    description: 'Add employees, set charging limits and manage access permissions in seconds.'
+                  },
+                  {
+                    title: 'Automated billing',
+                    description: 'Automatic invoicing for each session. GST-compliant receipts generated instantly.'
+                  },
+                  {
+                    title: 'Usage analytics',
+                    description: 'Detailed reports on energy consumption, peak hours and cost per employee.'
+                  },
+                  {
+                    title: 'API access',
+                    description: 'Integrate ChargeNet with your existing HR or facility management systems.'
+                  },
+                  {
+                    title: 'Carbon reporting',
+                    description: 'Track and report your carbon offset for ESG compliance.'
+                  }
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    onMouseEnter={() => setHoveredRow(i)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                    className={`py-5 flex items-center justify-between transition-all cursor-default ${
+                      hoveredRow === i || hoveredRow === null ? 'opacity-100' : 'opacity-50'
+                    }`}>
+                    <p className={`text-sm transition-all ${
+                      hoveredRow === i ? 'text-gray-900 font-bold' : 'text-gray-600 font-medium'
+                    }`}>
+                      {item.title}
+                    </p>
+                    <p className={`text-xs text-gray-400 max-w-xs text-right transition-all leading-relaxed ${
+                      hoveredRow === i ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+                    }`}>
+                      {item.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section className="py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12">
+            
+            <div className="col-span-3">
+              <p className="text-xs text-gray-400 uppercase tracking-widest sticky top-24">
+                Pricing
+              </p>
+            </div>
+
+            <div className="col-span-9">
+              <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">
+                Simple business pricing
+              </h2>
+              <p className="text-sm text-gray-400 mb-10">
+                Volume discounts for 10+ chargers.
+              </p>
+
+              <div className="border border-gray-200">
+                <div className="grid grid-cols-4 border-b border-gray-200 bg-gray-50">
+                  <div className="px-5 py-3"></div>
+                  {['Starter', 'Growth', 'Enterprise'].map((h, i) => (
+                    <div key={i} className={`px-5 py-3 border-l border-gray-200 ${i === 2 ? 'bg-gray-900' : ''}`}>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest ${i === 2 ? 'text-white' : 'text-gray-500'}`}>
+                        {h}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {[
+                  { label: 'Monthly fee', values: ['₹4,999', '₹12,999', 'Custom'] },
+                  { label: 'Chargers', values: ['Up to 5', 'Up to 20', 'Unlimited'] },
+                  { label: 'Employees', values: ['25', '100', 'Unlimited'] },
+                  { label: 'Analytics', values: ['Basic', 'Advanced', 'Custom'] },
+                  { label: 'Support', values: ['Email', 'Priority', 'Dedicated'] },
+                  { label: 'API access', values: ['—', 'Included', 'Included'] }
+                ].map((row, i, arr) => (
+                  <div key={i} className={`grid grid-cols-4 hover:bg-gray-50 transition-all ${
+                    i !== arr.length - 1 ? 'border-b border-gray-100' : ''
+                  }`}>
+                    <div className="px-5 py-4">
+                      <p className="text-xs font-medium text-gray-500">
+                        {row.label}
+                      </p>
+                    </div>
+                    {row.values.map((v, j) => (
+                      <div key={j} className={`px-5 py-4 border-l border-gray-100 ${j === 2 ? 'bg-gray-50' : ''}`}>
+                        <p className={`text-xs font-bold ${j === 2 ? 'text-gray-900' : 'text-gray-500'}`}>
+                          {v}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex items-center gap-3">
+                <Link to="/contact" className="h-14 px-10 bg-gray-900 text-white flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:bg-black transition-all">
+                  Talk to sales
+                </Link>
+                <Link to="/pricing" className="h-14 px-10 border border-gray-200 text-gray-900 flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:border-gray-900 transition-all">
+                  Full pricing
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12">
+            
+            <div className="col-span-3">
+              <p className="text-xs text-gray-400 uppercase tracking-widest sticky top-24">
+                FAQ
+              </p>
+            </div>
+
+            <div className="col-span-9">
+              <div className="divide-y divide-gray-100">
+                {faqs.map((faq, i) => (
+                  <div key={i}>
+                    <button
+                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                      className="w-full flex items-center justify-between py-5 text-left">
+                      <span className={`text-sm font-medium ${openFaq === i ? 'text-gray-900' : 'text-gray-700'}`}>
+                        {faq.q}
+                      </span>
+                      <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 ml-4 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </button>
+                    {openFaq === i && (
+                      <p className="text-sm text-gray-400 leading-relaxed pb-5 max-w-lg">
+                        {faq.a}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-14">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12 items-center">
+            <div className="col-span-7">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-gray-900 leading-[0.9] uppercase mb-4">
+                Ready to power
+                <br />
+                your workplace?
+              </h2>
+              <p className="text-sm text-gray-400">
+                Our business team will get you set up in days, not months.
+              </p>
+            </div>
+            <div className="col-span-5 flex justify-end gap-3">
+              <Link to="/contact" className="h-14 px-10 bg-gray-900 text-white flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:bg-black transition-all">
+                Talk to sales
+              </Link>
+              <Link to="/pricing" className="h-14 px-10 border border-gray-200 text-gray-900 flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:border-gray-900 transition-all">
+                View pricing
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  )
 }
 
+export default Business

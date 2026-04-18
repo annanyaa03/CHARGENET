@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Plus, Search, Filter, Mail, User, Shield, Trash2, Edit, MoreVertical, Ban, CheckCircle } from 'lucide-react'
+import { Plus, Search, Filter, Mail, User, Shield, Trash2, Edit, MoreVertical, Ban, CheckCircle, MapPin } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../../components/layout/PageWrapper'
 import { Button } from '../../components/common/Button'
 import { Badge } from '../../components/common/Badge'

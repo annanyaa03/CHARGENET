@@ -33,7 +33,9 @@ function getFromCache(key) {
 function setCache(key, data) {
   try {
     sessionStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }))
-  } catch {}
+  } catch (err) {
+    // Session storage may be blocked in some browsers; ignore
+  }
 }
 
 function haversineDistance(lat1, lng1, lat2, lng2) {

@@ -112,4 +112,7 @@ app.listen(PORT, () => {
      ${process.env.SUPABASE_URL && !process.env.SUPABASE_URL.startsWith('ADD') ? '✅' : '⚠️ '} Supabase DB — ${process.env.SUPABASE_SECRET_KEY && !process.env.SUPABASE_SECRET_KEY.startsWith('ADD') ? 'Connected' : 'Limited (no secret key)'}
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
+  console.log('Server is listening and process should remain active.');
 });
+
+console.log('Backend script execution reached the end.');

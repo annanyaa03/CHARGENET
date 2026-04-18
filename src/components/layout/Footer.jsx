@@ -20,7 +20,7 @@ export function Footer() {
               <span className="text-xl font-bold tracking-tight text-white">ChargeNet</span>
             </Link>
             <p className="text-gray-400 text-[15px] leading-relaxed">
-              India's most trusted EV charging network, powering 5+ cities with 500+ stations. Charge your journey with confidence.
+              India&apos;s most trusted EV charging network, powering 5+ cities with 500+ stations. Charge your journey with confidence.
             </p>
             <div className="flex gap-4">
               <a href="#" className="w-9 h-9 rounded-none bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#1D9E75] hover:text-white transition-all">

@@ -5,6 +5,7 @@ import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { Button } from '../components/common/Button'
 import { formatINR } from '../utils/formatCurrency'
 import { createPaymentOrder, verifyPayment } from '../services/paymentService'
+import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 
 const PAYMENT_METHODS = [
@@ -21,7 +22,7 @@ export default function Payment() {
   const [method, setMethod] = useState('upi')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [confirmId] = useState('CN-' + Math.random().toString(36).slice(2, 9).toUpperCase())
+  const [confirmId] = useState(() => 'CN-' + Math.random().toString(36).slice(2, 9).toUpperCase())
 
   useEffect(() => { document.title = 'Payment — ChargeNet' }, [])
 

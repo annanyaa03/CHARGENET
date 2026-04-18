@@ -68,8 +68,8 @@ export default function GuideDetail() {
           </div>
           <h1 className="text-2xl font-semibold text-primary mb-2">Guide Completed!</h1>
           <p className="text-base text-muted mb-8">
-            You've successfully finished: <span className="font-medium text-primary">{guide.title}</span>.
-            You're now one step closer to becoming an EV expert.
+            You&apos;ve successfully finished: <span className="font-medium text-primary">{guide.title}</span>.
+            You&apos;re now one step closer to becoming an EV expert.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button variant="primary" onClick={() => navigate('/learn')}>Back to Learn Hub</Button>

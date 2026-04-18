@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 
 // Map Supabase DB schema → frontend expectations
+const mapStation = (s) => ({
   ...s,
   id: s.id,
   slug: s.slug || s.id,
@@ -97,7 +98,7 @@ export const getStationById = async (idOrSlug) => {
   const { data, error } = await query.single()
 
   if (error) {
-    console.error(`[Service] Failed to fetch station ${id}:`, error.message)
+    console.error(`[Service] Failed to fetch station ${idOrSlug}:`, error.message)
     throw error
   }
 

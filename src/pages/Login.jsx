@@ -214,7 +214,7 @@ export default function Login() {
           {/* Footer Link */}
           <motion.div variants={item} className="mt-16 text-center">
             <p className="text-xs text-muted">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link to="/register" className="text-primary font-bold hover:text-accent transition-colors underline underline-offset-4 decoration-border/60 hover:decoration-accent/40">
                 Join the Network
               </Link>

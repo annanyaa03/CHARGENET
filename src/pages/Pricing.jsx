@@ -6,7 +6,6 @@ export default function Pricing() {
   const navigate = useNavigate()
   const [billing, setBilling] = useState('monthly')
   const [openFaq, setOpenFaq] = useState(null)
-  const [selectedPlan, setSelectedPlan] = useState(null)
 
   useEffect(() => {
     document.title = 'Pricing — ChargeNet'
@@ -19,7 +18,6 @@ export default function Pricing() {
       return
     }
     // Show payment modal or navigate to checkout
-    setSelectedPlan(plan)
     // For now navigate to signup with plan info
     navigate('/signup', { 
       state: { 
@@ -93,62 +91,49 @@ export default function Pricing() {
   ]
 
   return (
-    <PageWrapper noPadding={true}>
-      <div className="bg-white min-h-screen pt-[72px] lg:pt-[80px]">
-        {/* SECTION 1 - Hero */}
-        <section className="bg-black text-white">
-          <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-            
-            {/* Small label */}
-            <p className="text-xs text-gray-600 uppercase tracking-widest font-normal mb-8">
-              Pricing
-            </p>
-            
-            {/* Heading - light weight */}
-            <h1 className="text-4xl font-normal text-white mb-4 tracking-tight leading-snug">
-              Simple, transparent pricing
-            </h1>
-            
-            {/* Subtitle - smaller */}
-            <p className="text-sm text-gray-500 max-w-xs mx-auto mb-10 leading-relaxed font-normal">
-              No hidden fees, no surprises. 
-              Cancel anytime.
-            </p>
-
-            {/* Toggle - slim and minimal */}
-            <div className="inline-flex border border-gray-800">
-              <button
-                onClick={() => setBilling('monthly')}
-                className={`px-6 py-2 text-xs tracking-wide transition-all ${
-                  billing === 'monthly'
-                    ? 'bg-white text-gray-900 font-medium'
-                    : 'text-gray-600 hover:text-gray-300'
-                }`}>
-                Monthly
-              </button>
-              <button
-                onClick={() => setBilling('annual')}
-                className={`px-6 py-2 text-xs tracking-wide transition-all flex items-center gap-2 ${
-                  billing === 'annual'
-                    ? 'bg-white text-gray-900 font-medium'
-                    : 'text-gray-600 hover:text-gray-300'
-                }`}>
-                Annual
-                <span className={`text-xs px-1.5 py-0.5 ${
-                  billing === 'annual'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-800 text-gray-500'
-                }`}>
-                  -20%
-                </span>
-              </button>
-            </div>
-          </div>
-        </section>
-
+    <PageWrapper>
+      <div className="bg-white min-h-screen">
         {/* SECTION 2 - Pricing Cards */}
-        <section className="py-24 bg-white">
+        <section className="py-16 bg-white">
           <div className="max-w-7xl mx-auto px-6">
+            
+            {/* Minimal Header & Toggle */}
+            <div className="flex flex-col items-center justify-center mb-16">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] mb-4">
+                Simple, transparent
+              </p>
+              <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-gray-900 leading-[0.9] uppercase mb-10">
+                Pricing.
+              </h1>
+
+              <div className="inline-flex border border-gray-200">
+                <button
+                  onClick={() => setBilling('monthly')}
+                  className={`px-6 py-2 text-xs tracking-wide transition-all ${
+                    billing === 'monthly'
+                      ? 'bg-gray-900 text-white font-medium'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}>
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBilling('annual')}
+                  className={`px-6 py-2 text-xs tracking-wide transition-all flex items-center gap-2 ${
+                    billing === 'annual'
+                      ? 'bg-gray-900 text-white font-medium'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}>
+                  Annual
+                  <span className={`text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${
+                    billing === 'annual'
+                      ? 'bg-white text-gray-900'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    -20%
+                  </span>
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-px bg-gray-200 border border-gray-200">
               {plans.map((plan, i) => (
                 <div key={i}

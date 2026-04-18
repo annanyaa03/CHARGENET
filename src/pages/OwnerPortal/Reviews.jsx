@@ -20,7 +20,7 @@ export default function OwnerReviews() {
     ? myReviews 
     : myReviews.filter(r => r.rating === parseInt(filterRating))
 
-  const handleReply = (id) => {
+  const handleReply = () => {
     if (!replyText.trim()) return
     toast.success('Reply posted successfully')
     setReplyId(null)
@@ -122,7 +122,7 @@ export default function OwnerReviews() {
                     />
                     <div className="flex justify-end gap-2">
                        <Button variant="ghost" size="sm" onClick={() => setReplyId(null)}>Cancel</Button>
-                       <Button variant="primary" size="sm" onClick={() => handleReply(review.id)}>Post Response</Button>
+                       <Button variant="primary" size="sm" onClick={() => handleReply()}>Post Response</Button>
                     </div>
                   </div>
                 )}

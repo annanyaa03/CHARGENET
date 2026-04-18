@@ -75,7 +75,7 @@ export function Textarea({ label, error, hint, className = '', id, rows = 4, ...
   )
 }
 
-export function Select({ label, error, hint, className = '', id, children, ...props }) {
+export function Select({ label, error, className = '', id, children, ...props }) {
   const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
   return (
     <div className={`flex flex-col gap-1 ${className}`}>

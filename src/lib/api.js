@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+// import { supabase } from './supabase'
 
 /**
  * DEPRECATED: Express Backend (localhost:5000) is no longer used.

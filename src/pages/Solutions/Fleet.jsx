@@ -1,172 +1,410 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { ShieldAlert, BarChart3, Globe, Zap, ArrowRight, ArrowDown, ActivitySquare } from 'lucide-react';
-import { PageWrapper } from '../../components/layout/PageWrapper';
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { Navbar } from '../../components/layout/Navbar'
+import { Footer } from '../../components/layout/Footer'
 
-const Reveal = ({ children, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.6, delay, ease: 'easeOut' }}
-  >
-    {children}
-  </motion.div>
-);
+const Fleet = () => {
+  const [activeFleet, setActiveFleet] = useState(0)
+  const [openFaq, setOpenFaq] = useState(null)
+  const [activeFeature, setActiveFeature] = useState(null)
 
-export default function Fleet() {
-  const features = [
+  useEffect(() => {
+    document.title = 'For Fleets — ChargeNet'
+    window.scrollTo(0, 0)
+  }, [])
+
+  const fleetTypes = [
     {
-      icon: ActivitySquare,
-      title: "Real-time Telemetry API",
-      desc: "Track every vehicle's state-of-charge, hardware health, and precise GPS location in real-time on a unified dashboard."
+      title: 'Last-mile delivery',
+      description: 'Manage charging schedules for delivery vans and two-wheelers. Optimize routes based on charge levels and nearby station availability.',
+      stats: [
+        { value: '60%', label: 'Cost vs petrol' },
+        { value: 'Auto', label: 'Route planning' },
+        { value: '24/7', label: 'Monitoring' }
+      ]
     },
     {
-      icon: ShieldAlert,
-      title: "Predictive AI Maintenance",
-      desc: "Receive automated alerts for charger anomalies and subtle vehicle battery degradation before critical failures occur."
+      title: 'Corporate cab fleets',
+      description: 'Keep your cab fleet charged and on the road. Automated scheduling ensures no vehicle is ever out of charge during peak hours.',
+      stats: [
+        { value: '98%', label: 'Fleet uptime' },
+        { value: '0', label: 'Manual scheduling' },
+        { value: 'Live', label: 'Driver tracking' }
+      ]
     },
     {
-      icon: Globe,
-      title: "Nationwide Roaming",
-      desc: "One central corporate account. Access thousands of certified, high-speed chargers across state highway corridors."
+      title: 'Government & municipal',
+      description: 'Manage charging for buses, garbage trucks and government vehicles. Full audit trail and compliance reporting included.',
+      stats: [
+        { value: '100%', label: 'Audit trail' },
+        { value: 'GST', label: 'Compliant' },
+        { value: 'Full', label: 'Compliance' }
+      ]
     },
     {
-      icon: BarChart3,
-      title: "Compliance Reporting",
-      desc: "Generate automated weekly reports on kWh consumption, exact CO2 savings, and granular fleet efficiency analytics."
+      title: 'Logistics & transport',
+      description: 'Long-haul EV trucks and logistics vehicles. Plan charging stops across routes with our corridor charging network.',
+      stats: [
+        { value: '80+', label: 'Stations' },
+        { value: 'Smart', label: 'Routing' },
+        { value: '30%', label: 'Cost saving' }
+      ]
     }
-  ];
+  ]
 
   return (
-    <PageWrapper>
-      <div className="bg-white min-h-screen text-[#051428] selection:bg-[#1D9E75] selection:text-white">
-        
-        {/* Enterprise Hero - Brutal Minimal */}
-        <section className="relative min-h-[85vh] flex items-center px-6 bg-[#FAFAF9] overflow-hidden border-b border-gray-100">
-          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 lg:gap-24 relative z-10 py-20">
-            <div className="flex flex-col justify-center">
-              <Reveal>
-                <div className="mb-6">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1D9E75]">Logistics & Fleet Sector</p>
-                </div>
-                
-                <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1] mb-6" style={{ fontFamily: 'Fraunces, serif' }}>
-                  Scale Without Friction.
-                </h1>
-                
-                <p className="max-w-md text-gray-500 text-[15px] mb-10 font-normal leading-relaxed">
-                  The most robust EV charging management platform engineered specifically for modern logistics and enterprise transport fleets.
+    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-gray-900 selection:text-white">
+      <Navbar solid />
+
+      {/* HERO - Full Width Editorial */}
+      <section className="border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 pt-32 pb-0">
+          
+          {/* Breadcrumb */}
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] mb-8">
+            Solutions / Fleet
+          </p>
+
+          {/* Full Width Heading */}
+          <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-gray-900 leading-[0.9] uppercase mb-0">
+            Scale your
+            <br />
+            fleet.
+          </h1>
+
+          {/* Description + CTA row */}
+          <div className="grid grid-cols-12 gap-12 border-t border-gray-100 mt-10 py-10">
+            <div className="col-span-5">
+              <p className="text-lg text-gray-500 leading-relaxed">
+                End-to-end charging infrastructure for your entire EV fleet. Monitor, manage and optimize every vehicle from one platform.
+              </p>
+            </div>
+            <div className="col-span-4 col-start-7 flex items-center gap-3">
+              <Link to="/contact" className="h-14 px-10 bg-gray-900 text-white flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:bg-black transition-all">
+                Request demo
+              </Link>
+              <Link to="/pricing" className="h-14 px-10 border border-gray-200 text-gray-900 flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:border-gray-900 transition-all">
+                View pricing
+              </Link>
+            </div>
+          </div>
+
+          {/* Stats - Full Width Row */}
+          <div className="grid grid-cols-4 divide-x divide-gray-100 border-t border-gray-100">
+            {[
+              { value: '200+', label: 'Fleets managed' },
+              { value: '5,000+', label: 'Vehicles on network' },
+              { value: '98%', label: 'Fleet uptime' },
+              { value: '30%', label: 'Average cost saving' }
+            ].map((stat, i) => (
+              <div key={i} className="py-6 px-8 first:pl-0">
+                <p className="text-4xl font-bold tracking-tighter mb-1 text-gray-900">
+                  {stat.value}
                 </p>
-                
-                <div className="flex items-center gap-6">
-                  <button className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#051428] hover:text-[#1D9E75] transition-colors border-b-2 border-[#051428] hover:border-[#1D9E75] pb-1">
-                     Contact Enterprise <ArrowRight size={14} />
-                  </button>
-                </div>
-              </Reveal>
-            </div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                  {stat.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FLEET TYPES - Number List Style */}
+      <section className="py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12">
             
-            <div className="flex flex-col justify-center relative">
-               <Reveal delay={0.2}>
-                 {/* Floating Control Panel - Stark */}
-                 <div className="relative bg-white p-10 lg:p-12 border border-gray-100 shadow-sm">
-                    <div className="space-y-2 mb-8">
-                       <div className="flex justify-between items-center text-[9px] font-bold tracking-[0.2em] uppercase text-gray-400">
-                          <span>Active Fleet Units</span>
-                          <span className="text-[#1D9E75]">Syncing</span>
-                       </div>
-                       <div className="text-5xl font-bold tracking-tight font-serif text-[#051428]">1,248</div>
+            <div className="col-span-3">
+              <p className="text-xs text-gray-400 uppercase tracking-widest sticky top-24">
+                Fleet types
+              </p>
+            </div>
+
+            <div className="col-span-9">
+              
+              {/* Fleet Type Number List */}
+              <div className="divide-y divide-gray-100">
+                {fleetTypes.map((ft, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setActiveFleet(activeFleet === i ? null : i)}
+                    className="py-6 cursor-pointer group">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-8">
+                        <span className={`text-xs font-mono mt-1 w-6 flex-shrink-0 ${activeFleet === i ? 'text-gray-900 font-bold' : 'text-gray-300 font-medium'}`}>
+                          0{i + 1}
+                        </span>
+                        <div>
+                          <p className={`text-lg transition-all ${
+                            activeFleet === i ? 'text-gray-900 font-bold' : 'text-gray-700 font-medium group-hover:text-gray-900'
+                          }`}>
+                            {ft.title}
+                          </p>
+                          {activeFleet === i && (
+                            <div className="mt-4 grid grid-cols-2 gap-8">
+                              <p className="text-sm text-gray-500 leading-relaxed">
+                                {ft.description}
+                              </p>
+                              <div className="flex gap-8">
+                                {ft.stats.map((stat, j) => (
+                                  <div key={j}>
+                                    <p className="text-2xl font-bold text-gray-900 mb-0.5 tracking-tight">
+                                      {stat.value}
+                                    </p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                      {stat.label}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <svg className={`w-4 h-4 text-gray-300 flex-shrink-0 mt-1 transition-transform ${
+                        activeFleet === i ? 'rotate-90 text-gray-900' : ''
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7"/>
+                      </svg>
                     </div>
-                    
-                    <div className="h-px bg-gray-100 w-full mb-8" />
-                    
-                    <div className="space-y-2 mb-8">
-                       <div className="uppercase text-[9px] font-bold tracking-[0.2em] text-gray-400">Total Grid Load</div>
-                       <div className="text-3xl font-bold tracking-tight text-[#051428]">4.2 <span className="text-xl text-gray-300">MW</span></div>
-                    </div>
-                    
-                    <div className="h-px bg-gray-100 w-full mb-8" />
-                    
-                    <div className="flex justify-between items-end">
-                       <div className="space-y-2">
-                          <div className="uppercase text-[9px] font-bold tracking-[0.2em] text-gray-400">CO2 Mitigated</div>
-                          <div className="text-xl font-bold text-[#1D9E75]">42,500 Tons</div>
-                       </div>
-                    </div>
-                 </div>
-               </Reveal>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Feature List - Cardless Horizontal Setup */}
-        <section className="py-24 px-6 bg-white">
-          <div className="max-w-4xl mx-auto">
-             <Reveal>
-               <div className="mb-16 border-l-2 border-[#1D9E75] pl-6">
-                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-gray-400 mb-2">Core Infrastructure</p>
-                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-[#051428] leading-tight">Engineered for control.</h2>
-               </div>
-             </Reveal>
-             
-             <div className="divide-y divide-gray-100 border-y border-gray-100">
-               {features.map((feature, i) => (
-                 <Reveal key={feature.title} delay={i * 0.1}>
-                    <div className="py-8 group flex flex-col md:flex-row gap-6 md:gap-8 hover:bg-[#FAFAF9]/50 transition-colors">
-                      <div className="w-10 h-10 flex items-center justify-center shrink-0 text-[#051428] group-hover:text-[#1D9E75] transition-colors">
-                        <feature.icon size={20} />
-                      </div>
-                      
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold mb-2 text-[#051428] group-hover:text-[#1D9E75] transition-colors">{feature.title}</h3>
-                        <p className="text-gray-500 text-[14px] leading-relaxed max-w-xl">
-                          {feature.desc}
-                        </p>
-                      </div>
+      {/* PLATFORM FEATURES - Two col hover */}
+      <section className="py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12">
+            
+            <div className="col-span-3">
+              <p className="text-xs text-gray-400 uppercase tracking-widest sticky top-24">
+                Platform
+              </p>
+            </div>
+
+            <div className="col-span-9">
+              <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-10">
+                Built for fleet
+                <br />
+                operators.
+              </h2>
+
+              <div className="grid grid-cols-2 gap-px bg-gray-100">
+                {[
+                  {
+                    title: 'Fleet dashboard',
+                    description: 'Live view of every vehicle charge level, location and charging status across your entire fleet.'
+                  },
+                  {
+                    title: 'Smart scheduling',
+                    description: 'AI-powered charging schedules based on route plans, shift timings and energy tariffs.'
+                  },
+                  {
+                    title: 'Driver app',
+                    description: 'Drivers get navigation to nearest available charger compatible with their vehicle.'
+                  },
+                  {
+                    title: 'Cost allocation',
+                    description: 'Automatically allocate charging costs to departments or cost centers.'
+                  },
+                  {
+                    title: 'Maintenance alerts',
+                    description: 'Get notified when a charger needs maintenance before it causes fleet downtime.'
+                  },
+                  {
+                    title: 'Energy optimization',
+                    description: 'Charge during off-peak hours to reduce costs. Integrate with solar and renewable sources.'
+                  }
+                ].map((f, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setActiveFeature(activeFeature === i ? null : i)}
+                    className={`bg-white p-6 cursor-pointer transition-all ${
+                      activeFeature === i ? 'bg-gray-50' : 'hover:bg-gray-50'
+                    }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className={`text-sm ${activeFeature === i ? 'font-bold text-gray-900' : 'font-medium text-gray-900'}`}>
+                        {f.title}
+                      </p>
+                      <svg className={`w-3.5 h-3.5 transition-all text-gray-300 ${
+                        activeFeature === i ? 'rotate-45 text-gray-900' : ''
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4"/>
+                      </svg>
                     </div>
-                 </Reveal>
-               ))}
-             </div>
+                    {activeFeature === i && (
+                      <p className="text-xs text-gray-400 leading-relaxed mt-1">
+                        {f.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Integration Section - Minimal Typography */}
-        <section className="py-24 px-6 bg-[#FAFAF9] border-t border-gray-100">
-           <div className="max-w-4xl mx-auto text-center">
-              <Reveal>
-                 <h2 className="text-2xl md:text-3xl font-bold mb-12 text-[#051428] max-w-2xl mx-auto tracking-tight">
-                    Deploy native integrations with your existing ERP.
-                 </h2>
-                 
-                 <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 mt-8">
-                    {['SAP', 'Oracle', 'AWS', 'Microsoft Azure', 'Geotab', 'Samsara'].map((tech) => (
-                      <span 
-                        key={tech} 
-                        className="text-xs font-bold tracking-widest text-gray-400 uppercase hover:text-[#051428] transition-colors cursor-default"
-                      >
-                        {tech}
+      {/* COMPARISON */}
+      <section className="py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12">
+            
+            <div className="col-span-3">
+              <p className="text-xs text-gray-400 uppercase tracking-widest sticky top-24">
+                Comparison
+              </p>
+            </div>
+
+            <div className="col-span-9">
+              <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-3">
+                EV fleet vs
+                <br />
+                traditional fuel.
+              </h2>
+              <p className="text-sm text-gray-400 mb-10">
+                The real numbers behind switching to electric.
+              </p>
+
+              <div className="border border-gray-200">
+                <div className="grid grid-cols-3 border-b border-gray-200 bg-gray-50">
+                  <div className="px-5 py-3"></div>
+                  <div className="px-5 py-3 border-l border-gray-200">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                      Traditional fuel
+                    </p>
+                  </div>
+                  <div className="px-5 py-3 border-l border-gray-200 bg-gray-900">
+                    <p className="text-[10px] font-bold text-white uppercase tracking-widest">
+                      ChargeNet EV
+                    </p>
+                  </div>
+                </div>
+                {[
+                  { label: 'Cost per km', fuel: '₹4-6/km', ev: '₹0.8-1.2/km' },
+                  { label: 'Maintenance', fuel: 'High', ev: '60% lower' },
+                  { label: 'Emissions', fuel: '120g CO2/km', ev: 'Zero direct' },
+                  { label: 'Scheduling', fuel: 'Pump queues', ev: 'Pre-scheduled' },
+                  { label: 'Cost tracking', fuel: 'Manual', ev: 'Automatic' },
+                  { label: 'Subsidy', fuel: 'None', ev: 'FAME II eligible' }
+                ].map((row, i, arr) => (
+                  <div key={i} className={`grid grid-cols-3 hover:bg-gray-50 transition-all ${
+                    i !== arr.length - 1 ? 'border-b border-gray-100' : ''
+                  }`}>
+                    <div className="px-5 py-4">
+                      <p className="text-xs font-medium text-gray-500">
+                        {row.label}
+                      </p>
+                    </div>
+                    <div className="px-5 py-4 border-l border-gray-100">
+                      <p className="text-xs font-bold text-gray-400">
+                        {row.fuel}
+                      </p>
+                    </div>
+                    <div className="px-5 py-4 border-l border-gray-100 bg-gray-50">
+                      <p className="text-xs font-bold text-gray-900">
+                        {row.ev}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12">
+            
+            <div className="col-span-3">
+              <p className="text-xs text-gray-400 uppercase tracking-widest sticky top-24">
+                FAQ
+              </p>
+            </div>
+
+            <div className="col-span-9">
+              <div className="divide-y divide-gray-100">
+                {[
+                  {
+                    q: 'How many vehicles can I manage?',
+                    a: 'There is no limit. Our platform scales from 5 vehicles to 5000+. Enterprise plans include dedicated infrastructure support.'
+                  },
+                  {
+                    q: 'Can drivers find chargers on their own?',
+                    a: 'Yes. Each driver gets the ChargeNet driver app with real-time charger availability and navigation built in.'
+                  },
+                  {
+                    q: 'How does billing work for fleets?',
+                    a: 'Each session is logged against the vehicle and driver. Monthly consolidated invoices are generated automatically with full GST compliance.'
+                  },
+                  {
+                    q: 'What vehicles are supported?',
+                    a: 'All EVs with CCS, CHAdeMO or Type 2 connectors. This includes most commercial EVs from Tata, Mahindra, BYD, Ashok Leyland and others.'
+                  }
+                ].map((faq, i) => (
+                  <div key={i}>
+                    <button
+                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                      className="w-full flex items-center justify-between py-5 text-left">
+                      <span className={`text-sm font-medium ${openFaq === i ? 'text-gray-900' : 'text-gray-700'}`}>
+                        {faq.q}
                       </span>
-                    ))}
-                 </div>
-              </Reveal>
-           </div>
-        </section>
+                      <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 ml-4 transition-transform ${
+                        openFaq === i ? 'rotate-180' : ''
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </button>
+                    {openFaq === i && (
+                      <p className="text-sm text-gray-400 leading-relaxed pb-5 max-w-lg">
+                        {faq.a}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        {/* Footer CTA - Stark B&W with Accent */}
-        <section className="py-24 px-6 bg-white border-t border-gray-100">
-           <div className="max-w-4xl mx-auto text-center">
-              <Reveal>
-                 <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-[#051428] tracking-tight">Start your zero-emission transition today.</h2>
-                 <p className="text-gray-500 text-[15px] font-normal leading-relaxed mb-10 max-w-xl mx-auto">Speak directly with our enterprise engineers to design a custom charging infrastructure protocol for your logistics operation.</p>
-                 
-                 <button className="px-10 h-14 bg-[#051428] text-white font-bold uppercase tracking-widest text-[10px] hover:bg-[#1D9E75] transition-colors rounded-none">
-                    Schedule Consultation
-                 </button>
-              </Reveal>
-           </div>
-        </section>
-      </div>
-    </PageWrapper>
-  );
+      {/* CTA */}
+      <section className="py-14">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12 items-center">
+            <div className="col-span-7">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-gray-900 leading-[0.9] uppercase mb-4">
+                Ready to electrify
+                <br />
+                your fleet?
+              </h2>
+              <p className="text-sm text-gray-400">
+                Our fleet team will design a custom charging solution for your needs.
+              </p>
+            </div>
+            <div className="col-span-5 flex justify-end gap-3">
+              <Link to="/contact" className="h-14 px-10 bg-gray-900 text-white flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:bg-black transition-all">
+                Request demo
+              </Link>
+              <Link to="/map" className="h-14 px-10 border border-gray-200 text-gray-900 flex items-center justify-center font-bold uppercase text-[10px] tracking-widest hover:border-gray-900 transition-all">
+                View network
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  )
 }
+
+export default Fleet

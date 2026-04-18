@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Star, Bookmark, BarChart3, Edit3, Download, Car, Mail } from 'lucide-react'
+import { User, Star, Bookmark, BarChart3, Edit3, Download, Car, Mail, Calendar } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
 import { Button } from '../components/common/Button'
 import { Badge } from '../components/common/Badge'
 import { useAuthStore } from '../store/authStore'
 import { stations } from '../mock/stations'
-import { reviews } from '../mock/reviews'
+// import { reviews } from '../mock/reviews'
 import { formatINR } from '../utils/formatCurrency'
-import { formatDate } from '../utils/formatTime'
-import { getProfile } from '../services/profileService'
+// import { formatDate } from '../utils/formatTime'
+// import { getProfile } from '../services/profileService'
 import { getMyBookings } from '../services/bookingService'
 import { getMySessions } from '../services/sessionService'
 import toast from 'react-hot-toast'
@@ -48,7 +48,7 @@ export default function Profile() {
     } else {
       loadUserData()
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, navigate])
 
   const loadUserData = async () => {
     setLoading(true)
@@ -73,6 +73,12 @@ export default function Profile() {
   const totalKwh = (totalSpend / 18).toFixed(0)
 
   if (!user) return null
+
+  if (loading) return (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="text-sm font-medium text-gray-400 animate-pulse tracking-tight">Syncing Profile...</div>
+    </div>
+  )
 
   return (
     <PageWrapper>

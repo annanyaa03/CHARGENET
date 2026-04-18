@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BookOpen, GraduationCap, ChevronRight, Clock, Tag } from 'lucide-react'
 import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
@@ -42,20 +42,17 @@ function GuideCard({ guide }) {
 }
 
 export default function LearnHub() {
+  const navigate = useNavigate()
   const [activeLevel, setActiveLevel] = useState('All')
-  const [filteredGuides, setFilteredGuides] = useState(guides)
+
+  const filteredGuides = useMemo(() => {
+    if (activeLevel === 'All') return guides
+    return guides.filter(g => g.level.toLowerCase() === activeLevel.toLowerCase())
+  }, [activeLevel])
 
   useEffect(() => {
     document.title = 'Learn EV Hub — ChargeNet'
   }, [])
-
-  useEffect(() => {
-    if (activeLevel === 'All') {
-      setFilteredGuides(guides)
-    } else {
-      setFilteredGuides(guides.filter(g => g.level.toLowerCase() === activeLevel.toLowerCase()))
-    }
-  }, [activeLevel])
 
   return (
     <PageWrapper>
@@ -69,7 +66,7 @@ export default function LearnHub() {
           </h1>
           <p className="text-base text-muted max-w-xl mx-auto mb-2">
             Everything from buying your first EV to managing a commercial charging station.
-            Simplified for India's growing EV ecosystem.
+            Simplified for India&apos;s growing EV ecosystem.
           </p>
         </PageContainer>
       </section>

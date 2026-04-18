@@ -29,7 +29,7 @@ export default function Register() {
       toast.success(`Welcome to ChargeNet, ${user.user_metadata?.full_name?.split(' ')[0] || 'User'}!`)
       if (user.role === 'owner') navigate('/owner/dashboard')
       else navigate('/')
-    } catch (err) {
+    } catch {
       toast.error('Registration failed. Please try again.')
     } finally {
       setLoading(false)

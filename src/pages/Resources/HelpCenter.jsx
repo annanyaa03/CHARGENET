@@ -131,7 +131,7 @@ export default function HelpCenter() {
               ))}
               {filtered.length === 0 && (
                 <div className="py-16 text-center text-gray-400 text-[15px]">
-                  No articles matching "<span className="text-[#051428] font-semibold">{query}</span>". Try a different term.
+                  No articles matching &quot;<span className="text-[#051428] font-semibold">{query}</span>&quot;. Try a different term.
                 </div>
               )}
             </div>
@@ -176,7 +176,7 @@ export default function HelpCenter() {
         <section className="py-16 px-6 bg-white border-t border-gray-100">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
             <div>
-              <h2 className="text-xl font-bold text-[#051428] mb-1">Can't find what you're looking for?</h2>
+              <h2 className="text-xl font-bold text-[#051428] mb-1">Can&apos;t find what you&apos;re looking for?</h2>
               <p className="text-gray-500 text-[14px]">Our support team typically responds within 2 hours.</p>
             </div>
             <button className="inline-flex items-center gap-2 px-8 h-12 bg-[#051428] text-white text-[11px] font-bold uppercase tracking-widest hover:bg-[#1D9E75] transition-colors rounded-none whitespace-nowrap">

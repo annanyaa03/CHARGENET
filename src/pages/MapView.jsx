@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
@@ -13,6 +13,9 @@ import { useMapStore } from '../store/mapStore'
 import { formatDistance } from '../utils/plugTypes'
 import { Navbar } from '../components/layout/Navbar'
 import { getStations } from '../services/stationService'
+
+const defaultCenter = [20.5937, 78.9629]
+const defaultZoom = 5
 
 // Fix Leaflet default icons
 delete L.Icon.Default.prototype._getIconUrl
@@ -96,7 +99,7 @@ function StarRating({ rating }) {
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map(s => (
         <Star key={s} size={11}
-          className={s <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-200'} />
+          className={s <= Math.round(rating) ? 'text-gray-700 fill-gray-700' : 'text-gray-400'} />
       ))}
     </div>
   )
@@ -140,13 +143,43 @@ export default function MapView() {
   const [showFilters, setShowFilters] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [view, setView] = useState('list')
-  const [mapCenter, setMapCenter] = useState([20.5937, 78.9629])
-  const [mapZoom, setMapZoom] = useState(5)
+  const [mapCenter, setMapCenter] = useState(defaultCenter)
+  const [mapZoom, setMapZoom] = useState(defaultZoom)
   const [stations, setStations] = useState([])
-  const [filtered, setFiltered] = useState([])
   const [loading, setLoading] = useState(true)
+  const [userLocation, setUserLocation] = useState(null)
 
-  const fetchStations = async (latArg, lngArg, zoomArg) => {
+  const calculateDistance = (lat1, lng1, lat2, lng2) => {
+    if (!lat1 || !lng1 || !lat2 || !lng2) return null
+    
+    const R = 6371
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLng = (lng2 - lng1) * Math.PI / 180
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    return (R * c).toFixed(1)
+  }
+
+  const filtered = useMemo(() => {
+    let result = [...stations]
+    if (statusTab !== 'all') result = result.filter(s => s.status === statusTab)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.city.toLowerCase().includes(q) ||
+        s.address.toLowerCase().includes(q)
+      )
+    }
+    if (filters.availability === 'available') result = result.filter(s => s.availableChargers > 0)
+    return result
+  }, [stations, statusTab, searchQuery, filters])
+
+  const fetchStations = useCallback(async (latArg, lngArg, zoomArg) => {
     // Step 1: Load from cache INSTANTLY
     const cached = localStorage.getItem('chargenet_stations')
     if (cached) {
@@ -157,15 +190,11 @@ export default function MapView() {
         if (!isOld) {
           // Use fresh cached data immediately
           setStations(data)
-          setFiltered(data)
           setLoading(false)
-          // Still fetch in background if not initial load or something? 
-          // For now, let's follow the requirement to return if fresh.
           return 
         } else {
           // Show stale cache while fetching fresh data
           setStations(data)
-          setFiltered(data)
         }
       } catch (e) {
         console.error('Cache parse error:', e)
@@ -191,7 +220,6 @@ export default function MapView() {
       
       const data = res.data || []
       setStations(data)
-      setFiltered(data)
       
       // Save to cache
       localStorage.setItem('chargenet_stations', JSON.stringify({
@@ -203,7 +231,7 @@ export default function MapView() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [mapCenter, mapZoom, stations.length])
 
   // Initial Geolocation
   useEffect(() => {
@@ -214,15 +242,23 @@ export default function MapView() {
         (pos) => {
           const { latitude, longitude } = pos.coords
           setMapCenter([latitude, longitude])
-          setMapZoom(5) // Keep zoomed out as requested
-          fetchStations(latitude, longitude, 5)
+          setMapZoom(defaultZoom) // Keep zoomed out as requested
+          setUserLocation({ lat: latitude, lng: longitude })
+          fetchStations(latitude, longitude, defaultZoom)
         },
-        () => fetchStations(20.5937, 78.9629, 5) // Fallback to India center
+        (err) => {
+          console.log('Location denied:', err)
+          setMapCenter(defaultCenter)
+          setUserLocation({ lat: defaultCenter[0], lng: defaultCenter[1] })
+          fetchStations(defaultCenter[0], defaultCenter[1], defaultZoom) // Fallback to India center
+        }
       )
     } else {
-      fetchStations(20.5937, 78.9629, 5)
+      setMapCenter(defaultCenter)
+      setUserLocation({ lat: defaultCenter[0], lng: defaultCenter[1] })
+      fetchStations(defaultCenter[0], defaultCenter[1], defaultZoom)
     }
-  }, [clearSelectedStation])
+  }, [clearSelectedStation, fetchStations])
 
   // Debounced map-move fetch
   useEffect(() => {
@@ -231,22 +267,8 @@ export default function MapView() {
       fetchStations()
     }, 1000)
     return () => clearTimeout(timer)
-  }, [mapCenter, mapZoom])
+  }, [mapCenter, mapZoom, fetchStations])
 
-  useEffect(() => {
-    let result = [...stations]
-    if (statusTab !== 'all') result = result.filter(s => s.status === statusTab)
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter(s =>
-        s.name.toLowerCase().includes(q) ||
-        s.city.toLowerCase().includes(q) ||
-        s.address.toLowerCase().includes(q)
-      )
-    }
-    if (filters.availability === 'available') result = result.filter(s => s.availableChargers > 0)
-    setFiltered(result)
-  }, [filters, statusTab, searchQuery, stations])
 
   const handleSelectStation = (station) => {
     setSelectedStation(station)
@@ -406,22 +428,21 @@ export default function MapView() {
               filtered.map(station => {
                 const cfg = STATUS_CONFIG[station.status] || STATUS_CONFIG.faulty
                 const isSelected = selectedStation?.id === station.id
+                const distance = userLocation ? calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng) : null;
+                const distanceText = distance ? `${distance} km` : 'Calculating...';
                 return (
                   <button
                     key={station.id}
                     onClick={() => handleSelectStation(station)}
-                    className={`w-full text-left px-5 py-4 border-b border-gray-50 transition-all duration-150 last:border-0 group ${
-                      isSelected ? 'bg-emerald-50/60 relative' : 'hover:bg-gray-50/80'
-                    }`}
+                    className={`w-full text-left py-4 px-4 border-b border-gray-50 transition-all duration-150 last:border-0 hover:bg-gray-50/80 cursor-pointer ${isSelected ? 'bg-gray-50' : ''}`}
                   >
-                    {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className={`text-sm font-semibold truncate transition-colors ${isSelected ? 'text-emerald-700' : 'text-gray-800 group-hover:text-gray-900'}`}>
+                        <p className="text-sm font-semibold truncate transition-colors text-gray-800">
                           {station.name}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-gray-400 truncate">{station.city} · {formatDistance(station.distance)}</p>
+                          <p className="text-xs text-gray-400 truncate">{station.city} · {distanceText}</p>
                           {station.isExternal && (
                             <span className="px-1.5 py-0.5 rounded-none text-[9px] font-bold uppercase tracking-wider badge-external">
                               Public
@@ -429,10 +450,7 @@ export default function MapView() {
                           )}
                         </div>
                       </div>
-                      <span
-                        className="flex-shrink-0 mt-0.5 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wide"
-                        style={{ background: cfg.bg, color: cfg.color }}
-                      >
+                      <span className="text-xs border border-gray-200 text-gray-500 px-2.5 py-1 uppercase tracking-wider bg-white">
                         {cfg.label}
                       </span>
                     </div>
@@ -442,7 +460,9 @@ export default function MapView() {
                         <StarRating rating={station.rating} />
                         <span className="text-xs text-gray-500 font-medium">{station.rating}</span>
                         <span className="text-gray-300">·</span>
-                        <span className="text-xs text-gray-400">{station.totalReviews} reviews</span>
+                        <span className="text-xs text-gray-400">
+                          {station.totalReviews || 0} {station.totalReviews === 1 ? 'review' : 'reviews'}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 text-xs">
                         <BatteryCharging size={12} className={station.availableChargers > 0 ? 'text-emerald-500' : 'text-gray-300'} />
@@ -472,8 +492,8 @@ export default function MapView() {
         {/* ─── Map Area ─── */}
         <div className={`flex-1 relative ${view === 'list' ? 'hidden md:block' : 'block'}`}>
           <MapContainer
-            center={[20.5937, 78.9629]}
-            zoom={5}
+            center={defaultCenter}
+            zoom={defaultZoom}
             className="w-full h-full"
             zoomControl={false}
           >
@@ -500,21 +520,23 @@ export default function MapView() {
                 key={station.id}
                 position={[station.lat, station.lng]}
                 icon={createStationIcon(station.status, selectedStation?.id === station.id)}
-                eventHandlers={{ click: () => handleSelectStation(station) }}
+                eventHandlers={{
+                  click: () => handleSelectStation(station)
+                }}
               >
                 <Popup className="custom-popup" closeButton={false}>
-                  <div className="px-1 py-0.5 min-w-[160px]">
-                    <p className="font-semibold text-gray-800 text-sm leading-tight">{station.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{station.city}</p>
-                    <div className="flex items-center gap-1 mt-1.5">
-                      <span
-                        className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                        style={{ background: STATUS_CONFIG[station.status]?.bg, color: STATUS_CONFIG[station.status]?.color }}
-                      >
-                        {STATUS_CONFIG[station.status]?.label}
-                      </span>
-                      <span className="text-xs text-gray-500">{station.availableChargers}/{station.totalChargers} free</span>
-                    </div>
+                  <div className="p-2">
+                    <p className="font-medium text-sm mb-1">{station.name}</p>
+                    <p className="text-xs text-gray-500 mb-2">{station.city}</p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/station/${station.slug || station.id}`);
+                      }}
+                      className="text-xs bg-gray-900 text-white px-3 py-1.5 hover:bg-black transition-all w-full"
+                    >
+                      View station
+                    </button>
                   </div>
                 </Popup>
               </Marker>
@@ -559,7 +581,7 @@ export default function MapView() {
               className="w-9 h-9 bg-white border border-gray-200 rounded-none shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
             >−</button>
             <button
-              onClick={() => { setMapCenter([20.5937, 78.9629]); setMapZoom(5); clearSelectedStation() }}
+              onClick={() => { setMapCenter(defaultCenter); setMapZoom(defaultZoom); clearSelectedStation() }}
               className="w-9 h-9 bg-white border border-gray-200 rounded-none shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center transition-all hover:shadow-lg"
               title="Reset view"
             >
@@ -589,11 +611,8 @@ export default function MapView() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 mb-1.5">
-                         <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wide"
-                          style={{ background: cfg.bg, color: cfg.color }}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-none inline-block" style={{ background: cfg.color }} />
+                         <span className="text-xs border border-gray-200 text-gray-500 px-2.5 py-1 uppercase tracking-wider bg-white inline-flex items-center">
+                          <span className="w-1.5 h-1.5 rounded-none inline-block bg-gray-400 mr-1" />
                           {cfg.label}
                         </span>
                         {selectedStation.isExternal && (
@@ -622,7 +641,7 @@ export default function MapView() {
                     <div className="bg-gray-50 rounded-none p-2.5 text-center">
                       <div className="flex items-center justify-center gap-0.5">
                         <span className="text-base font-bold text-gray-900">{selectedStation.rating}</span>
-                        <Star size={11} className="text-amber-400 fill-amber-400 mb-0.5" />
+                        <Star size={11} className="text-gray-700 fill-gray-700 mb-0.5" />
                       </div>
                       <p className="text-[10px] text-gray-500 font-medium mt-0.5">{selectedStation.totalReviews} Reviews</p>
                     </div>

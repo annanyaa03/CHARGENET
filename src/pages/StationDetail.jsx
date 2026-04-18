@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   MapPin, Star, Clock, Zap, Wifi, Droplets, ParkingSquare, Shield,
@@ -13,12 +13,12 @@ import { Button } from '../components/common/Button'
 import { Badge, PlugBadge } from '../components/common/Badge'
 import { Navbar } from '../components/layout/Navbar'
 import { getStationById } from '../services/stationService'
-import { getSlotsByStation } from '../services/slotService'
+// import { getSlotsByStation } from '../services/slotService'
 import { useAuthStore } from '../store/authStore'
-import { formatRelativeTime, formatDate } from '../utils/formatTime'
-import { formatINR } from '../utils/formatCurrency'
+// import { formatRelativeTime, formatDate } from '../utils/formatTime'
+// import { formatINR } from '../utils/formatCurrency'
 import { useWeather } from '../hooks/useWeather'
-import { submitReview as submitReviewService } from '../services/reviewService'
+// import { submitReview as submitReviewService } from '../services/reviewService'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -65,12 +65,14 @@ const STATUS_CFG = {
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
+/* 
 const getStatusColor = (status) => {
   const s = status?.toLowerCase()
   if (s === 'available') return 'text-gray-600 border border-gray-200 bg-gray-50'
   if (s === 'occupied' || s === 'maintenance') return 'text-gray-400 border border-gray-100 bg-gray-50'
   return 'text-gray-400 border border-gray-100 bg-gray-50'
 }
+*/
 
 /* ─── Amenity Card ─────────────────────────────────────────────── */
 function AmenityCard({ item }) {
@@ -140,11 +142,11 @@ const StationDetail = () => {
   const [userRating, setUserRating] = useState(0)
   const [userComment, setUserComment] = useState('')
   const [nearbyPlaces, setNearbyPlaces] = useState([])
-  const [loadingPlaces, setLoadingPlaces] = useState(false)
+  // const [loadingPlaces, setLoadingPlaces] = useState(false)
   const [distance, setDistance] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('All')
 
-  const { weather, aqi, loading: weatherLoading } = useWeather(station?.lat, station?.lng)
+  const { weather, aqi /*, loading: weatherLoading */ } = useWeather(station?.lat, station?.lng)
   const isSaved = user?.savedStations?.includes(station?.id)
 
   useEffect(() => {
@@ -167,22 +169,22 @@ const StationDetail = () => {
     }
   }, [station])
 
-  const fetchChargers = async (stationId) => {
+  const fetchChargers = useCallback(async (stationId) => {
     try {
       const { data, error } = await supabase.from('chargers').select('*').eq('station_id', stationId)
       if (!error) setChargers(data || [])
     } catch (err) { console.error(err) }
-  }
+  }, [])
 
-  const fetchReviews = async (stationId) => {
+  const fetchReviews = useCallback(async (stationId) => {
     try {
       const { data, error } = await supabase.from('reviews').select('*').eq('station_id', stationId).order('created_at', { ascending: false })
       if (!error) setReviews(data || [])
     } catch (err) { console.error(err) }
-  }
+  }, [])
 
-  const fetchNearbyPlacesData = async (city) => {
-    setLoadingPlaces(true)
+  const fetchNearbyPlacesData = useCallback(async (city) => {
+    // setLoadingPlaces(true)
     try {
       // Mocked nearby places for now as per previous logic
       const getNearbyPlaces = (stationCity) => [
@@ -193,10 +195,10 @@ const StationDetail = () => {
       ]
       setNearbyPlaces(getNearbyPlaces(city))
     } catch (error) { console.error(error) }
-    finally { setLoadingPlaces(false) }
-  }
+    // finally { setLoadingPlaces(false) }
+  }, [])
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const res = await getStationById(slug)
       if (res.success) {
@@ -212,11 +214,11 @@ const StationDetail = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [slug, fetchChargers, fetchReviews, fetchNearbyPlacesData])
 
   useEffect(() => {
     loadData()
-  }, [slug])
+  }, [loadData])
 
   useEffect(() => {
     if (!station?.id) return
@@ -225,7 +227,7 @@ const StationDetail = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chargers', filter: `station_id=eq.${station.id}` }, () => loadData())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [station?.id])
+  }, [station?.id, loadData])
 
   if (loading) return (
     <div className="min-h-screen bg-white flex items-center justify-center">
@@ -248,8 +250,8 @@ const StationDetail = () => {
   const aqiLevel = aqi?.aqiLabel || 'Good'
 
   const availableCount = chargers.filter(c => c.status === 'available').length
-  const availablePct = chargers.length > 0 ? (availableCount / chargers.length) * 100 : 0
-  const occupiedPct = chargers.length > 0 ? Math.round((chargers.filter(c => c.status === 'occupied').length / chargers.length) * 100) : 0
+  // const availablePct = chargers.length > 0 ? (availableCount / chargers.length) * 100 : 0
+  // const occupiedPct = chargers.length > 0 ? Math.round((chargers.filter(c => c.status === 'occupied').length / chargers.length) * 100) : 0
 
   const submitReview = async () => {
     if (!isAuthenticated) return navigate('/login')
