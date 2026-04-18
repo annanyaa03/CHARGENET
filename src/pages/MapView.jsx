@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
@@ -82,6 +82,15 @@ function MapController({ center, zoom, onMoveEnd }) {
   return null
 }
 
+function MapEvents({ onMapClick }) {
+  useMapEvents({
+    click: (e) => {
+      onMapClick(e.latlng)
+    },
+  })
+  return null
+}
+
 function StarRating({ rating }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -104,6 +113,26 @@ const facilityIcons = {
 
 const STATUS_TABS = ['all', 'active', 'busy', 'inactive', 'faulty']
 
+const StationSkeleton = () => (
+  <div className="animate-pulse">
+    {[1, 2, 3, 4, 5, 6].map(i => (
+      <div key={i} className="border-b border-gray-100 p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <div className="h-4 bg-gray-200 w-48 mb-2"></div>
+            <div className="h-3 bg-gray-100 w-32"></div>
+          </div>
+          <div className="h-6 bg-gray-200 w-16"></div>
+        </div>
+        <div className="flex gap-2">
+          <div className="h-3 bg-gray-100 w-20"></div>
+          <div className="h-3 bg-gray-100 w-16"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
 export default function MapView() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -122,7 +151,33 @@ export default function MapView() {
   const [loading, setLoading] = useState(true)
 
   const fetchStations = async (latArg, lngArg, zoomArg) => {
-    setLoading(true)
+    // Step 1: Load from cache INSTANTLY
+    const cached = localStorage.getItem('chargenet_stations')
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached)
+        const isOld = Date.now() - timestamp > 5 * 60 * 1000 // 5 minutes
+        
+        if (!isOld) {
+          // Use fresh cached data immediately
+          setStations(data)
+          setFiltered(data)
+          setLoading(false)
+          // Still fetch in background if not initial load or something? 
+          // For now, let's follow the requirement to return if fresh.
+          return 
+        } else {
+          // Show stale cache while fetching fresh data
+          setStations(data)
+          setFiltered(data)
+        }
+      } catch (e) {
+        console.error('Cache parse error:', e)
+      }
+    }
+
+    if (stations.length === 0) setLoading(true)
+    
     try {
       const targetLat = latArg ?? mapCenter[0]
       const targetLng = lngArg ?? mapCenter[1]
@@ -138,13 +193,15 @@ export default function MapView() {
         radius: targetZoom >= 6 ? Math.min(1000, radius) : null 
       })
       
-      console.log('[MapView] getStations Response:', res)
-      
       const data = res.data || []
       setStations(data)
       setFiltered(data)
       
-      console.log(`[MapView] Stations State Updated: ${data.length} records`)
+      // Save to cache
+      localStorage.setItem('chargenet_stations', JSON.stringify({
+        data: data,
+        timestamp: Date.now()
+      }))
     } catch (err) {
       console.error('Failed to fetch stations:', err)
     } finally {
@@ -161,8 +218,8 @@ export default function MapView() {
         (pos) => {
           const { latitude, longitude } = pos.coords
           setMapCenter([latitude, longitude])
-          setMapZoom(12)
-          fetchStations(latitude, longitude, 12)
+          setMapZoom(5) // Keep zoomed out as requested
+          fetchStations(latitude, longitude, 5)
         },
         () => fetchStations(20.5937, 78.9629, 5) // Fallback to India center
       )
@@ -323,7 +380,9 @@ export default function MapView() {
 
           {/* Station List */}
           <div className="flex-1 overflow-y-auto sidebar-scroll">
-            {filtered.length === 0 ? (
+            {loading && stations.length === 0 ? (
+              <StationSkeleton />
+            ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center px-6">
                 <MapPin size={32} className="text-gray-300 mb-3" />
                 <p className="text-sm font-semibold text-gray-700">No stations found</p>
@@ -416,6 +475,12 @@ export default function MapView() {
                 setMapZoom(newZoom)
               }} 
             />
+            <MapEvents 
+              onMapClick={(latlng) => {
+                setMapCenter([latlng.lat, latlng.lng])
+                setMapZoom((prev) => Math.min(prev + 2, 14)) // Zoom in slightly on click
+              }} 
+            />
             {filtered.map(station => (
               <Marker
                 key={station.id}
@@ -441,6 +506,16 @@ export default function MapView() {
               </Marker>
             ))}
           </MapContainer>
+
+          {/* Map Loading Overlay */}
+          {loading && (
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-[1001] flex items-center justify-center transition-all">
+              <div className="bg-white p-5 shadow-2xl border border-gray-100 flex flex-col items-center">
+                <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p className="text-xs font-bold text-gray-800 uppercase tracking-widest">Updating Stations...</p>
+              </div>
+            </div>
+          )}
 
           {/* Legend Card */}
           <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-100 rounded-none p-3.5 z-[1000] shadow-lg">

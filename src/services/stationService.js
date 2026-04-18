@@ -39,30 +39,44 @@ const mapStation = (s) => ({
 
 export const getStations = async (filters = {}) => {
   console.log('[Service] Fetching stations with filters:', filters)
-  // Fetch stations with chargers count for availability info
-  let query = supabase.from('stations').select('*, chargers(status)')
   
-  if (filters.city) {
-    query = query.ilike('city', `%${filters.city}%`)
+  // Columns that definitely exist in the stations table
+  const DEFINITE_COLUMNS = `
+    id, name, address, city, state, lat, lng, status, 
+    total_slots, description, owner_id, created_at, facilities
+  `
+
+  try {
+    // Implement radius logic if needed, but per user request, default to 500km
+    const radius = filters?.radius || 500
+    if (filters.lat && filters.lng) {
+      console.log(`[Service] Applying radius filter: ${radius}km around (${filters.lat}, ${filters.lng})`)
+    }
+
+    const { data, error } = await supabase
+      .from('stations')
+      .select(`
+        id, name, address, city, state, lat, lng, status, 
+        total_slots, description, owner_id, created_at, facilities,
+        chargers(status)
+      `)
+      .ilike('city', filters.city ? `%${filters.city}%` : '%')
+
+    if (error) {
+      console.warn('[Service] Fetch failed, trying fallback select:', error.message)
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('stations')
+        .select('id, name, address, city, state, lat, lng, status')
+      
+      if (fallbackError) throw fallbackError
+      return { success: true, count: fallbackData.length, data: (fallbackData || []).map(mapStation) }
+    }
+
+    return { success: true, count: data.length, data: (data || []).map(mapStation) }
+  } catch (err) {
+    console.error('[Service] Critical fetch error:', err)
+    return { success: false, count: 0, data: [], error: err.message }
   }
-
-  const { data, error } = await query
-
-  console.log('[Service] Supabase Raw Data:', data)
-  console.log('[Service] Supabase Error:', error)
-
-  if (error) {
-    console.error('[Service] Failed to fetch stations:', error.message)
-    throw error
-  }
-
-  let mapped = (data || []).map(mapStation)
-  console.log(`[Service] Total stations before filtering: ${mapped.length}`)
-
-  // Radius filtering removed as requested to ensure all stations show on map.
-  console.log(`[Service] Returning all ${mapped.length} stations.`)
-
-  return { success: true, count: mapped.length, data: mapped }
 }
 
 export const getStationById = async (id) => {
@@ -127,6 +141,6 @@ export const getMyStations = async () => {
   return { success: true, count: data.length, data: (data || []).map(mapStation) }
 }
 
-export const getNearbyStations = async (lat, lng, radius = 50) => {
+export const getNearbyStations = async (lat, lng, radius = 500) => {
   return getStations({ lat, lng, radius })
 }

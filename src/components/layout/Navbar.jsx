@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import {
   Zap,
   MapPin,
@@ -28,11 +29,49 @@ const navData = {
   ]
 };
 
+// Prefetch function for stations
+const prefetchStations = async () => {
+  try {
+    const cached = localStorage.getItem('chargenet_stations');
+    if (cached) {
+      const { timestamp } = JSON.parse(cached);
+      const isOld = Date.now() - timestamp > 5 * 60 * 1000;
+      if (!isOld) return; // Already cached and fresh
+    }
+
+    const { data } = await supabase
+      .from('stations')
+      .select(`
+        id, name, address, city, state, lat, lng, status, 
+        rating, total_reviews, facilities, open_hours, 
+        price_per_kwh, connector_types, total_slots,
+        chargers(status)
+      `);
+    
+    if (data) {
+      localStorage.setItem(
+        'chargenet_stations',
+        JSON.stringify({
+          data,
+          timestamp: Date.now()
+        })
+      );
+      console.log('[Navbar] Stations prefetched successfully');
+    }
+  } catch (err) {
+    console.error('[Navbar] Prefetch error:', err);
+  }
+};
+
 export function Navbar({ solid = false }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isScrolledState, setIsScrolledState] = useState(false);
+  const location = useLocation();
   const isScrolled = solid || isScrolledState;
   const navRef = useRef(null);
+
+  const isActive = (path) => location.pathname === path;
+  const isPartiallyActive = (path) => location.pathname.startsWith(path);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -150,27 +189,43 @@ export function Navbar({ solid = false }) {
             <div className="hidden md:flex items-center gap-8 text-sm">
               <Link 
                 to="/map" 
-                className={`font-medium transition-colors ${
-                  isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white hover:text-white/80'
+                onMouseEnter={prefetchStations}
+                className={`font-medium transition-all relative py-1 ${
+                  isActive('/map')
+                    ? isScrolled ? 'text-emerald-600' : 'text-white'
+                    : isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white/70 hover:text-white'
                 }`}
               >
                 Find Stations
+                {isActive('/map') && (
+                  <span className={`absolute bottom-0 left-0 right-0 h-0.5 ${isScrolled ? 'bg-emerald-500' : 'bg-white'} rounded-full`}></span>
+                )}
               </Link>
               <Link 
                 to="/booking" 
-                className={`font-medium transition-colors ${
-                  isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white hover:text-white/80'
+                className={`font-medium transition-all relative py-1 ${
+                  isPartiallyActive('/booking')
+                    ? isScrolled ? 'text-emerald-600' : 'text-white'
+                    : isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white/70 hover:text-white'
                 }`}
               >
                 Book a Slot
+                {isPartiallyActive('/booking') && (
+                  <span className={`absolute bottom-0 left-0 right-0 h-0.5 ${isScrolled ? 'bg-emerald-500' : 'bg-white'} rounded-full`}></span>
+                )}
               </Link>
               <Link 
                 to="/pricing" 
-                className={`font-medium transition-colors ${
-                  isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white hover:text-white/80'
+                className={`font-medium transition-all relative py-1 ${
+                  isActive('/pricing')
+                    ? isScrolled ? 'text-emerald-600' : 'text-white'
+                    : isScrolled ? 'text-gray-700 hover:text-gray-900' : 'text-white/70 hover:text-white'
                 }`}
               >
                 Pricing
+                {isActive('/pricing') && (
+                  <span className={`absolute bottom-0 left-0 right-0 h-0.5 ${isScrolled ? 'bg-emerald-500' : 'bg-white'} rounded-full`}></span>
+                )}
               </Link>
             </div>
           </div>
