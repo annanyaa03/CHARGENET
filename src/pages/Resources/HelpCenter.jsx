@@ -1,191 +1,284 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, ChevronRight, MessageCircle, FileText, CreditCard, MapPin, User, Shield, ArrowRight } from 'lucide-react';
-import { PageWrapper } from '../../components/layout/PageWrapper';
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Navbar } from '../../components/layout/Navbar'
 
-const Reveal = ({ children, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.6, delay, ease: 'easeOut' }}
-  >
-    {children}
-  </motion.div>
-);
+const HelpCenter = () => {
+  const [search, setSearch] = useState('')
+  const [activeCategory, setActiveCategory] = useState('All')
 
-const categories = [
-  {
-    icon: MapPin,
-    title: 'Finding Stations',
-    count: 12,
-    articles: ['How to find a nearby station', 'Filter by connector type', 'Reading real-time availability', 'Station ratings and reviews'],
-  },
-  {
-    icon: CreditCard,
-    title: 'Payments & Billing',
-    count: 9,
-    articles: ['Supported payment methods', 'Understanding your invoice', 'Requesting a refund', 'Idle fee policy'],
-  },
-  {
-    icon: FileText,
-    title: 'Bookings',
-    count: 7,
-    articles: ['How to book a slot', 'Modifying a booking', 'Cancellation policy', 'Virtual queue system'],
-  },
-  {
-    icon: User,
-    title: 'Account & Profile',
-    count: 8,
-    articles: ['Creating an account', 'Updating your vehicle info', 'Notification preferences', 'Deleting your account'],
-  },
-  {
-    icon: Shield,
-    title: 'Safety & Reliability',
-    count: 6,
-    articles: ['What to do if a charger fails', 'Reporting a hazard', 'Charger certification standards', 'Emergency contact'],
-  },
-  {
-    icon: MessageCircle,
-    title: 'Contact Support',
-    count: 4,
-    articles: ['Chat with an agent', 'Email support hours', 'Phone support', 'Escalation process'],
-  },
-];
+  const categories = [
+    'All',
+    'Account',
+    'Bookings',
+    'Payments',
+    'Charging',
+    'Technical'
+  ]
 
-const faqs = [
-  { q: 'How do I get a refund for a failed charging session?', a: 'Refunds are processed automatically for failed sessions within 24 hours. If yours hasn\'t been credited, go to Billing > Sessions and tap "Request Refund" on the relevant entry.' },
-  { q: 'Can I use ChargeNet without creating an account?', a: 'Yes. Guest sessions are supported at most stations using the QR code on the charger. Tap "Guest Checkout" in the app. Note: session history won\'t be saved.' },
-  { q: 'Why is my car not charging even though it\'s plugged in?', a: 'Check that the connector is fully seated. If the station shows a fault code, use "Report Issue" in the app. Try a neighbouring charger if available.' },
-  { q: 'How do I add a second vehicle to my account?', a: 'Go to Profile > My Vehicles > Add Vehicle. You can switch between vehicles when booking to ensure the correct connector type is shown.' },
-];
+  const articles = [
+    {
+      category: 'Account',
+      title: 'How to create an account',
+      description: 'Step by step guide to signing up and setting up your ChargeNet profile.',
+      time: '2 min read',
+      url: 'https://support.google.com/accounts/answer/27441'
+    },
+    {
+      category: 'Account',
+      title: 'Reset your password',
+      description: 'Instructions for resetting your password if you have been locked out.',
+      time: '1 min read',
+      url: 'https://support.google.com/accounts/answer/41078'
+    },
+    {
+      category: 'Bookings',
+      title: 'How to book a charging slot',
+      description: 'Find a station, select a charger and confirm your booking in under a minute.',
+      time: '2 min read',
+      url: 'https://www.plugshare.com/learn'
+    },
+    {
+      category: 'Bookings',
+      title: 'Cancelling or modifying a booking',
+      description: 'Learn how to cancel or reschedule your booking before your session starts.',
+      time: '2 min read',
+      url: 'https://www.plugshare.com/learn'
+    },
+    {
+      category: 'Payments',
+      title: 'Accepted payment methods',
+      description: 'UPI, cards, wallets and more. Everything you can use to pay on ChargeNet.',
+      time: '1 min read',
+      url: 'https://razorpay.com/payment-gateway/upi-payment-gateway/'
+    },
+    {
+      category: 'Payments',
+      title: 'Getting a GST receipt',
+      description: 'How to download your GST-compliant receipt for any charging session.',
+      time: '1 min read',
+      url: 'https://cleartax.in/s/gst-invoice'
+    },
+    {
+      category: 'Charging',
+      title: 'Understanding charger types',
+      description: 'CCS, CHAdeMO and Type 2 explained. Find out which one your car needs.',
+      time: '3 min read',
+      url: 'https://www.virta.global/blog/ev-charging-basics-ccs-chademo-type-2'
+    },
+    {
+      category: 'Charging',
+      title: 'What to do if a charger is faulty',
+      description: 'Steps to take if you arrive and the charger is not working properly.',
+      time: '2 min read',
+      url: 'https://www.plugshare.com/learn'
+    },
+    {
+      category: 'Technical',
+      title: 'App not loading stations',
+      description: 'Troubleshooting steps if the map or station list is not loading.',
+      time: '2 min read',
+      url: 'https://support.google.com/chrome/answer/2898890'
+    },
+    {
+      category: 'Technical',
+      title: 'Location permission issues',
+      description: 'How to enable location access so ChargeNet can find stations near you.',
+      time: '1 min read',
+      url: 'https://support.google.com/chrome/answer/142065'
+    }
+  ]
 
-export default function HelpCenter() {
-  const [query, setQuery] = useState('');
-  const [expandedFaq, setExpandedFaq] = useState(null);
-
-  const filtered = categories.filter(c =>
-    query === '' || c.title.toLowerCase().includes(query.toLowerCase()) ||
-    c.articles.some(a => a.toLowerCase().includes(query.toLowerCase()))
-  );
+  const filtered = articles.filter(a => {
+    const matchesCategory = activeCategory === 'All' || a.category === activeCategory
+    const matchesSearch = 
+      a.title.toLowerCase().includes(search.toLowerCase()) ||
+      a.description.toLowerCase().includes(search.toLowerCase())
+    return matchesCategory && matchesSearch
+  })
 
   return (
-    <PageWrapper>
-      <div className="bg-white min-h-screen text-[#051428] selection:bg-[#1D9E75] selection:text-white">
+    <div className="min-h-screen bg-white">
+      <Navbar solid={true} />
 
-        {/* Hero + Search */}
-        <section className="border-b border-gray-100 px-6 py-24 bg-[#FAFAF9]">
-          <div className="max-w-3xl mx-auto text-center">
-            <Reveal>
-              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#1D9E75] mb-4">Resources</p>
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-[#051428] leading-[1.05] mb-4">
-                Help Center.
-              </h1>
-              <p className="text-gray-500 text-lg mb-10 max-w-md mx-auto">
-                Find answers, documentation, and support for the ChargeNet platform.
-              </p>
-              <div className="relative max-w-lg mx-auto">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  placeholder="Search articles…"
-                  className="w-full h-14 pl-11 pr-4 bg-white border border-gray-200 text-[#051428] text-[15px] placeholder-gray-300 focus:outline-none focus:border-[#1D9E75] transition-colors"
-                />
-              </div>
-            </Reveal>
-          </div>
-        </section>
+      {/* HERO - Search centered */}
+      <section className="border-b border-gray-100 bg-gray-50 pt-24 pb-16">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] mb-6">
+            Resources / Help Center
+          </p>
+          
+          <h1 className="text-4xl font-normal text-gray-900 tracking-tight mb-8">
+            How can we help?
+          </h1>
 
-        {/* Categories */}
-        <section className="py-20 px-6">
-          <div className="max-w-5xl mx-auto">
-            <Reveal>
-              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-gray-400 mb-12">Browse by Topic</p>
-            </Reveal>
-
-            <div className="divide-y divide-gray-100 border-y border-gray-100">
-              {filtered.map((cat, i) => (
-                <Reveal key={cat.title} delay={i * 0.05}>
-                  <div className="py-8 group">
-                    <div className="flex items-center gap-6 mb-4">
-                      <div className="w-10 h-10 flex items-center justify-center text-[#051428] group-hover:text-[#1D9E75] transition-colors shrink-0">
-                        <cat.icon size={20} />
-                      </div>
-                      <div className="flex-1">
-                        <h2 className="text-lg font-bold text-[#051428] group-hover:text-[#1D9E75] transition-colors">{cat.title}</h2>
-                        <p className="text-gray-400 text-[12px]">{cat.count} articles</p>
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 group-hover:text-[#1D9E75] group-hover:translate-x-1 transition-all" />
-                    </div>
-                    <div className="pl-16 flex flex-wrap gap-x-6 gap-y-2">
-                      {cat.articles.map((art, j) => (
-                        <button key={j} className="text-gray-500 text-[13px] hover:text-[#1D9E75] hover:underline underline-offset-2 transition-colors text-left">
-                          {art}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-              {filtered.length === 0 && (
-                <div className="py-16 text-center text-gray-400 text-[15px]">
-                  No articles matching &quot;<span className="text-[#051428] font-semibold">{query}</span>&quot;. Try a different term.
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="py-20 px-6 bg-[#FAFAF9] border-t border-gray-100">
-          <div className="max-w-3xl mx-auto">
-            <Reveal>
-              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-gray-400 mb-4">Common Questions</p>
-              <h2 className="text-3xl font-bold text-[#051428] tracking-tight mb-12">Frequently asked.</h2>
-            </Reveal>
-
-            <div className="border-y border-gray-100 divide-y divide-gray-100">
-              {faqs.map((faq, i) => (
-                <Reveal key={i} delay={i * 0.05}>
-                  <div>
-                    <button
-                      onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
-                      className="w-full flex items-center justify-between py-5 text-left group"
-                    >
-                      <span className="text-[15px] font-semibold text-[#051428] group-hover:text-[#1D9E75] transition-colors pr-8">{faq.q}</span>
-                      <ChevronRight size={16} className={`shrink-0 text-gray-400 transition-transform duration-300 ${expandedFaq === i ? 'rotate-90 text-[#1D9E75]' : ''}`} />
-                    </button>
-                    <motion.div
-                      initial={false}
-                      animate={{ height: expandedFaq === i ? 'auto' : 0, opacity: expandedFaq === i ? 1 : 0 }}
-                      transition={{ duration: 0.3, ease: 'easeOut' }}
-                      className="overflow-hidden"
-                    >
-                      <p className="text-gray-500 text-[14px] leading-relaxed pb-5 pr-8">{faq.a}</p>
-                    </motion.div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Contact strip */}
-        <section className="py-16 px-6 bg-white border-t border-gray-100">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
-            <div>
-              <h2 className="text-xl font-bold text-[#051428] mb-1">Can&apos;t find what you&apos;re looking for?</h2>
-              <p className="text-gray-500 text-[14px]">Our support team typically responds within 2 hours.</p>
-            </div>
-            <button className="inline-flex items-center gap-2 px-8 h-12 bg-[#051428] text-white text-[11px] font-bold uppercase tracking-widest hover:bg-[#1D9E75] transition-colors rounded-none whitespace-nowrap">
-              Contact Support <ArrowRight size={14} />
+          {/* Search */}
+          <div className="max-w-xl mx-auto flex gap-0">
+            <input
+              type="text"
+              placeholder="Search for help..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setSearch('')
+              }}
+              className="flex-1 border border-gray-200 px-5 py-3.5 text-sm focus:outline-none focus:border-gray-400 bg-white"
+            />
+            <button className="bg-gray-900 text-white px-6 py-3.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-all">
+              Search
             </button>
           </div>
-        </section>
 
-      </div>
-    </PageWrapper>
-  );
+          {/* Quick links */}
+          <div className="flex items-center justify-center gap-6 mt-6">
+            <span className="text-xs text-gray-400">Popular:</span>
+            {['Book a slot', 'Payment methods', 'Charger types', 'Cancel booking'].map((link, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setSearch(link)
+                  setActiveCategory('All')
+                }}
+                className="text-xs text-gray-500 hover:text-gray-900 transition-all underline underline-offset-2">
+                {link}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ARTICLES */}
+      <section className="py-14">
+        <div className="max-w-7xl mx-auto px-6">
+          
+          {/* Category Filter */}
+          <div className="flex items-center gap-2 mb-10 border-b border-gray-100 pb-6">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-2 text-xs transition-all ${
+                  activeCategory === cat
+                    ? 'bg-gray-900 text-white'
+                    : 'border border-gray-200 text-gray-500 hover:border-gray-400'
+                }`}>
+                {cat}
+              </button>
+            ))}
+            <span className="ml-auto text-xs text-gray-400">
+              {filtered.length} articles
+            </span>
+          </div>
+
+          {/* Article Grid */}
+          {filtered.length === 0 ? (
+            <div className="py-16 text-center">
+              <p className="text-sm text-gray-400 mb-2">
+                No articles found for "{search}"
+              </p>
+              <p className="text-xs text-gray-300 mb-4">
+                Try a different search term or browse by category above.
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => {
+                    setSearch('')
+                    setActiveCategory('All')
+                  }}
+                  className="text-xs border border-gray-200 px-4 py-2 text-gray-500 hover:border-gray-400 transition-all">
+                  Clear search
+                </button>
+                <a
+                  href="mailto:support@chargenet.in"
+                  className="text-xs border border-gray-200 px-4 py-2 text-gray-500 hover:border-gray-400 transition-all">
+                  Email support
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {filtered.map((article, i) => (
+                <a
+                  key={i}
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-5 flex items-start justify-between group cursor-pointer hover:bg-gray-50 -mx-4 px-4 transition-all block">
+                  <div className="flex items-start gap-8">
+                    <span className="text-xs text-gray-300 w-20 flex-shrink-0 mt-0.5 uppercase tracking-wider">
+                      {article.category}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 mb-1 group-hover:underline underline-offset-2 leading-snug">
+                        {article.title}
+                      </p>
+                      <p className="text-xs text-gray-400 leading-relaxed max-w-lg">
+                        {article.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 flex-shrink-0 ml-8">
+                    <span className="text-xs text-gray-300">{article.time}</span>
+                    <svg className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-all flex-shrink-0 ml-8 mt-1"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* CONTACT SUPPORT */}
+      <section className="py-14 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-3 gap-px bg-gray-100">
+            {[
+              {
+                title: 'Email support',
+                description: 'Get a response within 4 hours on weekdays.',
+                action: 'support@chargenet.in',
+                link: 'mailto:support@chargenet.in'
+              },
+              {
+                title: 'Live chat',
+                description: 'Chat with our team instantly during business hours.',
+                action: 'Start chat on WhatsApp',
+                link: 'https://wa.me/919999999999'
+              },
+              {
+                title: 'Community forum',
+                description: 'Ask questions and get answers from other ChargeNet users.',
+                action: 'Visit EV community',
+                link: 'https://www.team-bhp.com/forum/electric-vehicles/'
+              }
+            ].map((item, i) => (
+              <div key={i} className="bg-white p-8">
+                <p className="text-sm font-medium text-gray-900 mb-2">
+                  {item.title}
+                </p>
+                <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                  {item.description}
+                </p>
+                <a 
+                  href={item.link}
+                  target={item.link.startsWith('mailto') ? '_self' : '_blank'}
+                  rel="noopener noreferrer"
+                  className="text-xs text-gray-900 underline underline-offset-2 hover:text-gray-600 transition-all flex items-center gap-1.5">
+                  {item.action}
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  )
 }
+
+export default HelpCenter

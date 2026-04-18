@@ -50,6 +50,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFeature, setActiveFeature] = useState(0);
+  const [activeStep, setActiveStep] = useState(null);
 
 
   const stats = [
@@ -256,30 +257,163 @@ export default function Home() {
 
         {/* ─── How It Works ─── */}
         <section className="py-24 bg-white relative overflow-hidden">
+          {/* Subtle background grid */}
+          <div className="absolute inset-0 opacity-[0.02]" style={{
+            backgroundImage: 'linear-gradient(#051428 1px, transparent 1px), linear-gradient(90deg, #051428 1px, transparent 1px)',
+            backgroundSize: '40px 40px'
+          }} />
+
           <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-            <div className="text-center mb-16 space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold text-[#051428]">Experience effortless charging</h2>
-              <p className="text-gray-500 max-w-xl mx-auto">Three simple steps to power up and get back on the road.</p>
+            <Reveal>
+              <div className="text-center mb-20 space-y-4">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#1D9E75]">How It Works</p>
+                <h2 className="text-3xl md:text-4xl font-bold text-[#051428]">Experience effortless charging</h2>
+                <p className="text-gray-500 max-w-xl mx-auto">Three simple steps to power up and get back on the road.</p>
+              </div>
+            </Reveal>
+
+            <div className="grid md:grid-cols-3 gap-6 md:gap-8 relative">
+              {/* Connecting line (desktop) */}
+              <div className="hidden md:block absolute top-[72px] left-[calc(16.67%+40px)] right-[calc(16.67%+40px)] h-px bg-gray-200 z-0">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-[#1D9E75] to-[#1D9E75]/30 origin-left"
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </div>
+
+              {steps.map((step, i) => {
+                const isHovered = activeStep === i
+                const Icon = step.icon
+                const stepLinks = [
+                  { label: 'Find Stations', to: '/map' },
+                  { label: 'Book a Slot', to: '/booking' },
+                  { label: 'View Details', to: '/map' },
+                ]
+                return (
+                  <Reveal key={step.title} delay={i * 0.15}>
+                    <motion.div
+                      className="relative text-center cursor-pointer select-none"
+                      onHoverStart={() => setActiveStep(i)}
+                      onHoverEnd={() => setActiveStep(null)}
+                      onClick={() => setActiveStep(isHovered ? null : i)}
+                    >
+                      {/* Card */}
+                      <motion.div
+                        className="relative bg-white rounded-none border border-gray-100 p-8 pb-6 overflow-hidden"
+                        animate={{
+                          y: isHovered ? -6 : 0,
+                          boxShadow: isHovered
+                            ? '0 24px 60px rgba(29,158,117,0.12), 0 8px 24px rgba(0,0,0,0.06)'
+                            : '0 1px 4px rgba(0,0,0,0.04)'
+                        }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        {/* Top color bar that fills on hover */}
+                        <motion.div
+                          className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#1D9E75] to-[#1D9E75]/40 origin-left"
+                          animate={{ scaleX: isHovered ? 1 : 0 }}
+                          transition={{ duration: 0.3, ease: 'easeOut' }}
+                        />
+
+                        {/* Ghost step number */}
+                        <div className="text-[96px] font-black leading-none absolute right-3 top-3 select-none pointer-events-none z-0 transition-all duration-500"
+                          style={{ color: isHovered ? 'rgba(29,158,117,0.07)' : 'rgba(5,20,40,0.05)' }}
+                        >
+                          {step.number}
+                        </div>
+
+                        {/* Icon circle */}
+                        <div className="mb-6 relative z-10">
+                          <motion.div
+                            className="w-[72px] h-[72px] rounded-none mx-auto flex items-center justify-center relative"
+                            animate={{
+                              background: isHovered ? 'rgba(29,158,117,0.12)' : 'rgba(29,158,117,0.07)',
+                              scale: isHovered ? 1.08 : 1,
+                            }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            {/* Pulsing ring on hover */}
+                            {isHovered && (
+                              <motion.div
+                                className="absolute inset-0 rounded-none"
+                                style={{ border: '2px solid rgba(29,158,117,0.3)' }}
+                                animate={{ scale: [1, 1.4], opacity: [0.6, 0] }}
+                                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+                              />
+                            )}
+                            <motion.div
+                              animate={{ color: isHovered ? '#1D9E75' : '#1D9E75CC' }}
+                            >
+                              <Icon size={32} />
+                            </motion.div>
+                          </motion.div>
+                        </div>
+
+                        {/* Step number dot */}
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <motion.span
+                            className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-none"
+                            animate={{
+                              background: isHovered ? 'rgba(29,158,117,0.1)' : 'transparent',
+                              color: isHovered ? '#1D9E75' : '#9CA3AF',
+                            }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            Step {step.number}
+                          </motion.span>
+                        </div>
+
+                        <h3 className="text-xl font-bold text-[#051428] mb-3 relative z-10">{step.title}</h3>
+
+                        <p className="text-gray-500 leading-relaxed text-sm relative z-10">
+                          {step.desc}
+                        </p>
+
+                        {/* CTA link — expands on hover */}
+                        <motion.div
+                          className="overflow-hidden"
+                          animate={{ height: isHovered ? 'auto' : 0, opacity: isHovered ? 1 : 0, marginTop: isHovered ? 16 : 0 }}
+                          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          <button
+                            onClick={(e) => { e.stopPropagation(); window.location.href = stepLinks[i].to }}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1D9E75] hover:gap-3 transition-all duration-200"
+                          >
+                            {stepLinks[i].label}
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        </motion.div>
+                      </motion.div>
+
+                      {/* Bottom connector dot */}
+                      <motion.div
+                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#1D9E75] hidden md:block"
+                        animate={{ scale: isHovered ? 2 : 1, opacity: isHovered ? 1 : 0.3 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </motion.div>
+                  </Reveal>
+                )
+              })}
             </div>
 
-            <div className="grid md:grid-cols-3 gap-12">
-              {steps.map((step, i) => (
-                <Reveal key={step.title} delay={i * 0.2}>
-                  <div className="group relative text-center">
-                    <div className="mb-6 relative">
-                      <div className="text-[120px] font-black text-gray-100 absolute left-1/2 -translate-x-1/2 -top-10 z-0 select-none">
-                        {step.number}
-                      </div>
-                      <div className="w-20 h-20 rounded-none bg-[#1D9E75]/10 flex items-center justify-center text-[#1D9E75] mx-auto relative z-10 transition-transform group-hover:scale-110 duration-300 shadow-xl shadow-[#1D9E75]/5">
-                        <step.icon size={36} />
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold text-[#051428] mb-3">{step.title}</h3>
-                    <p className="text-gray-500 leading-relaxed px-4">{step.desc}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
+            {/* Bottom nudge */}
+            <Reveal delay={0.5}>
+              <div className="text-center mt-16">
+                <button
+                  onClick={() => navigate('/map')}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#1D9E75] border border-[#1D9E75]/30 px-6 py-3 rounded-none hover:bg-[#1D9E75]/5 transition-all duration-200 hover:border-[#1D9E75]/60"
+                >
+                  Start finding stations
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </Reveal>
           </div>
         </section>
 

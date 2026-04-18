@@ -53,7 +53,12 @@ function PageLoader() {
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public */}
@@ -65,7 +70,7 @@ export function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/resources/guide" element={<ChargingGuide />} />
+          <Route path="/resources/charging-guide" element={<ChargingGuide />} />
           <Route path="/resources/help" element={<HelpCenter />} />
           <Route path="/resources/blog" element={<Blog />} />
           {/* Booking Flow */}

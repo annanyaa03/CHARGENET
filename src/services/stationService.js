@@ -45,7 +45,7 @@ export const getStations = async (filters = {}) => {
   
   // Columns that definitely exist in the stations table
   const DEFINITE_COLUMNS = `
-    id, name, address, city, state, lat, lng, status, 
+    id, name, address, city, state, lat, lng, status, slug, rating, review_count, 
     total_slots, description, owner_id, created_at, facilities
   `
 
@@ -59,7 +59,7 @@ export const getStations = async (filters = {}) => {
     const { data, error } = await supabase
       .from('stations')
       .select(`
-        id, name, address, city, state, lat, lng, status, 
+        id, name, address, city, state, lat, lng, status, slug, rating, review_count, 
         total_slots, description, owner_id, created_at, facilities,
         chargers(status)
       `)
@@ -69,7 +69,7 @@ export const getStations = async (filters = {}) => {
       console.warn('[Service] Fetch failed, trying fallback select:', error.message)
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('stations')
-        .select('id, name, address, city, state, lat, lng, status')
+        .select('id, name, address, city, state, lat, lng, status, slug')
       
       if (fallbackError) throw fallbackError
       return { success: true, count: fallbackData.length, data: (fallbackData || []).map(mapStation) }
@@ -89,13 +89,23 @@ export const getStationById = async (idOrSlug) => {
     .from('stations')
     .select('*, chargers(*), reviews(*), station_tags(tags(name))')
 
+  let response;
   if (isUUID) {
-    query = query.eq('id', idOrSlug)
+    response = await query.eq('id', idOrSlug).single()
   } else {
-    query = query.eq('slug', idOrSlug)
+    response = await query.eq('slug', idOrSlug).single()
   }
 
-  const { data, error } = await query.single()
+  // Fallback to fetch by ID if slug not found
+  if ((response.error || !response.data) && !isUUID) {
+    response = await supabase
+      .from('stations')
+      .select('*, chargers(*), reviews(*), station_tags(tags(name))')
+      .eq('id', idOrSlug)
+      .single()
+  }
+
+  const { data, error } = response
 
   if (error) {
     console.error(`[Service] Failed to fetch station ${idOrSlug}:`, error.message)

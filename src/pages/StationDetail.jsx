@@ -462,7 +462,7 @@ const StationDetail = () => {
                         </p>
                         {charger.status === 'available' ? (
                           <button
-                            onClick={() => navigate(`/book/${station.slug}`)}
+                            onClick={() => navigate(`/book/${station.id}`)}
                             className="text-xs text-gray-700 border border-gray-300 px-5 py-2 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
                             Book Slot
                           </button>
@@ -583,7 +583,7 @@ const StationDetail = () => {
 
               {/* FIX 5 - Book Button */}
               <button
-                onClick={() => navigate(`/book/${station.slug}`)}
+                onClick={() => navigate(`/book/${station.id}`)}
                 className="w-full bg-gray-900 text-white py-3.5 text-xs tracking-widest uppercase hover:bg-black transition-all mb-1.5">
                 Book a Charging Slot
               </button>
@@ -680,7 +680,7 @@ const StationDetail = () => {
           <div className="max-w-3xl mx-auto px-6 text-center">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4 tracking-tight">Ready to power up?</h2>
               <p className="text-gray-500 mb-8 text-[15px]">Secure your terminal at {station.name} in just a few clicks.</p>
-              <button onClick={() => navigate(`/book/${station.slug}`)} className="bg-gray-900 text-white px-10 py-4 text-xs font-medium hover:bg-black transition-all">Start Booking Session</button>
+              <button onClick={() => navigate(`/book/${station.id}`)} className="bg-gray-900 text-white px-10 py-4 text-xs font-medium hover:bg-black transition-all">Start Booking Session</button>
           </div>
       </section>
     </div>

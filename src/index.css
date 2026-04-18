@@ -109,6 +109,22 @@
     color: #1C1917 !important;
   }
 
+  .custom-popup .leaflet-popup-content-wrapper {
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+  }
+
+  .custom-popup .leaflet-popup-content {
+    margin: 0;
+    width: auto !important;
+  }
+
+  .custom-popup .leaflet-popup-tip-container {
+    display: none;
+  }
+
   .leaflet-control-zoom {
     border: 1px solid #E7E5E4 !important;
     border-radius: 8px !important;
@@ -1361,4 +1377,47 @@
       display: none;
     }
   }
+}
+
+/* -- Premium Map Animations -- */
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1); 
+  }
+  50% { 
+    transform: scale(1.2); 
+  }
+}
+
+@keyframes ripple {
+  0% { 
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0.4;
+  }
+  100% { 
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+.leaflet-tile {
+  transition: opacity 0.2s ease !important;
+}
+
+.leaflet-container {
+  font-family: inherit !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+
+.leaflet-popup-tip {
+  display: none !important;
 }

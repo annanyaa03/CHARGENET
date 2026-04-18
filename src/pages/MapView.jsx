@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
@@ -32,45 +32,78 @@ const STATUS_CONFIG = {
   faulty:   { color: '#6B7280', bg: '#F3F4F6', label: 'Faulty',    ring: '#D1D5DB' },
 }
 
-function createStationIcon(status, selected = false) {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.faulty
-  const size = selected ? 20 : 14
-  const pulse = selected ? `
-    <div style="
-      position:absolute;top:50%;left:50%;
-      transform:translate(-50%,-50%);
-      width:${size + 16}px;height:${size + 16}px;
-      border-radius:0;
-      background:${cfg.color}33;
-      animation:ping 1.4s cubic-bezier(0,0,.2,1) infinite;
-    "></div>` : ''
+const createMarkerIcon = (isSelected) => {
   return L.divIcon({
+    className: 'custom-marker',
     html: `
-      <div style="position:relative;width:${size}px;height:${size}px;">
-        ${pulse}
+      <div style="
+        width: ${isSelected ? '16px' : '12px'};
+        height: ${isSelected ? '16px' : '12px'};
+        background: ${isSelected ? '#111' : '#374151'};
+        border: 2px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+        ${isSelected ? `
+          animation: pulse 1.5s ease infinite;
+        ` : ''}
+      "></div>
+      ${isSelected ? `
         <div style="
-          position:absolute;top:50%;left:50%;
-          transform:translate(-50%,-50%);
-          width:${size}px;height:${size}px;
-          background:${cfg.color};
-          border-radius:50% 50% 50% 0;
-          transform:translate(-50%,-50%) rotate(-45deg);
-          border:2.0px solid white;
-          box-shadow:0 4px 12px ${cfg.color}66;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 32px;
+          height: 32px;
+          border: 2px solid #111;
+          border-radius: 50%;
+          animation: ripple 1.5s ease infinite;
+          opacity: 0.4;
         "></div>
-      </div>`,
-    className: '',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size],
+      ` : ''}
+    `,
+    iconSize: [isSelected ? 16 : 12, isSelected ? 16 : 12],
+    iconAnchor: [isSelected ? 8 : 6, isSelected ? 8 : 6]
   })
 }
 
-function MapController({ center, zoom, onMoveEnd }) {
+function MapResetControl({ onReset }) {
   const map = useMap()
+  return (
+    <div className="absolute top-4 right-4 z-[1000]">
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          map.flyTo([20.5937, 78.9629], 5, { animate: true, duration: 1.5 })
+          if (onReset) onReset()
+        }}
+        className="bg-white border border-gray-200 px-3 py-2 text-xs text-gray-600 hover:border-gray-400 hover:text-gray-900 transition-all shadow-sm flex items-center gap-1.5"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+        </svg>
+        All India
+      </button>
+    </div>
+  )
+}
+
+function MapController({ center, zoom, onMoveEnd, station }) {
+  const map = useMap()
+  const prevStation = useRef(null)
   
   useEffect(() => {
-    if (center) map.setView(center, zoom, { animate: true })
-  }, [center, zoom, map])
+    if (station) {
+      if (prevStation.current?.id === station.id) return
+      prevStation.current = station
+      
+      map.flyTo([station.lat, station.lng], 15, { animate: true, duration: 1.2, easeLinearity: 0.25 })
+    } else if (center) {
+      map.setView(center, zoom, { animate: true })
+      prevStation.current = null
+    }
+  }, [center, zoom, map, station])
 
   useEffect(() => {
     const handleMove = () => {
@@ -85,14 +118,7 @@ function MapController({ center, zoom, onMoveEnd }) {
   return null
 }
 
-function MapEvents({ onMapClick }) {
-  useMapEvents({
-    click: (e) => {
-      onMapClick(e.latlng)
-    },
-  })
-  return null
-}
+// Intentionally removed: map click used to zoom + interfere with card visibility
 
 function StarRating({ rating }) {
   return (
@@ -148,6 +174,44 @@ export default function MapView() {
   const [stations, setStations] = useState([])
   const [loading, setLoading] = useState(true)
   const [userLocation, setUserLocation] = useState(null)
+  const [isFlying, setIsFlying] = useState(false)
+  const [cardTop, setCardTop] = useState(16)
+  const listRef = useRef(null)
+  const stationRefs = useRef({})
+  const mapContainerRef = useRef(null)
+
+  const updateCardPosition = useCallback(() => {
+    if (selectedStation?.id && stationRefs.current[selectedStation.id] && mapContainerRef.current) {
+      const itemNode = stationRefs.current[selectedStation.id]
+      if (!itemNode.isConnected) return
+
+      const itemRect = itemNode.getBoundingClientRect()
+      const mapRect = mapContainerRef.current.getBoundingClientRect()
+      
+      let newTop = itemRect.top - mapRect.top
+      
+      const minTop = 16
+      const maxTop = Math.max(16, mapRect.height - 380)
+      
+      if (newTop < minTop) newTop = minTop
+      if (newTop > maxTop) newTop = maxTop
+      
+      setCardTop(newTop)
+    }
+  }, [selectedStation])
+
+  useEffect(() => {
+    const listEl = listRef.current
+    if (listEl) {
+      listEl.addEventListener('scroll', updateCardPosition)
+      window.addEventListener('resize', updateCardPosition)
+      updateCardPosition()
+      return () => {
+        listEl.removeEventListener('scroll', updateCardPosition)
+        window.removeEventListener('resize', updateCardPosition)
+      }
+    }
+  }, [updateCardPosition, selectedStation])
 
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
     if (!lat1 || !lng1 || !lat2 || !lng2) return null
@@ -241,10 +305,9 @@ export default function MapView() {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords
-          setMapCenter([latitude, longitude])
-          setMapZoom(defaultZoom) // Keep zoomed out as requested
+          // DO NOT CHANGE MAP CENTER so it stays in India!
           setUserLocation({ lat: latitude, lng: longitude })
-          fetchStations(latitude, longitude, defaultZoom)
+          fetchStations(defaultCenter[0], defaultCenter[1], defaultZoom)
         },
         (err) => {
           console.log('Location denied:', err)
@@ -270,10 +333,29 @@ export default function MapView() {
   }, [mapCenter, mapZoom, fetchStations])
 
 
-  const handleSelectStation = (station) => {
+  const handleStationClick = (station) => {
     setSelectedStation(station)
-    setMapCenter([station.lat, station.lng])
-    setMapZoom(13)
+    setIsFlying(true)
+    setTimeout(() => setIsFlying(false), 1400)
+    
+    if (window.innerWidth < 768) {
+      setView('map')
+    }
+    
+    // Scroll to station in list
+    if (stationRefs.current[station.id]) {
+      stationRefs.current[station.id].scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'nearest'
+      })
+    }
+    
+    // Ensure position updates immediately after click
+    requestAnimationFrame(() => updateCardPosition())
+  }
+
+  const handleMarkerClick = (station) => {
+    handleStationClick(station)
   }
 
   const counts = {
@@ -415,7 +497,7 @@ export default function MapView() {
           )}
 
           {/* Station List */}
-          <div className="flex-1 overflow-y-auto sidebar-scroll">
+          <div className="flex-1 overflow-y-auto sidebar-scroll" ref={listRef}>
             {loading && stations.length === 0 ? (
               Array(6).fill(0).map((_, i) => <StationSkeleton key={i} />)
             ) : filtered.length === 0 ? (
@@ -425,56 +507,54 @@ export default function MapView() {
                 <p className="text-xs text-gray-400 mt-1">Try adjusting your filters or search query</p>
               </div>
             ) : (
-              filtered.map(station => {
-                const cfg = STATUS_CONFIG[station.status] || STATUS_CONFIG.faulty
-                const isSelected = selectedStation?.id === station.id
-                const distance = userLocation ? calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng) : null;
-                const distanceText = distance ? `${distance} km` : 'Calculating...';
-                return (
-                  <button
-                    key={station.id}
-                    onClick={() => handleSelectStation(station)}
-                    className={`w-full text-left py-4 px-4 border-b border-gray-50 transition-all duration-150 last:border-0 hover:bg-gray-50/80 cursor-pointer ${isSelected ? 'bg-gray-50' : ''}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold truncate transition-colors text-gray-800">
-                          {station.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-gray-400 truncate">{station.city} · {distanceText}</p>
-                          {station.isExternal && (
-                            <span className="px-1.5 py-0.5 rounded-none text-[9px] font-bold uppercase tracking-wider badge-external">
-                              Public
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <span className="text-xs border border-gray-200 text-gray-500 px-2.5 py-1 uppercase tracking-wider bg-white">
-                        {cfg.label}
+              filtered.map(station => (
+                <div
+                  key={station.id}
+                  ref={el => stationRefs.current[station.id] = el}
+                  onClick={() => handleStationClick(station)}
+                  className={`px-5 py-4 cursor-pointer border-b border-gray-50 transition-all duration-150 active:bg-gray-100 ${
+                    selectedStation?.id === station.id
+                      ? 'bg-gray-50 border-l-2 border-l-gray-900 pl-4'
+                      : 'hover:bg-gray-50 border-l-2 border-l-transparent hover:pl-5'
+                  }`}>
+                  
+                  {/* Top row */}
+                  <div className="flex items-start justify-between mb-1">
+                    <p className={`text-sm leading-snug pr-4 transition-all ${
+                      selectedStation?.id === station.id
+                        ? 'font-semibold text-gray-900'
+                        : 'font-medium text-gray-900'
+                    }`}>
+                      {station.name}
+                    </p>
+                    <span className="text-xs border border-gray-200 text-gray-400 px-2 py-0.5 flex-shrink-0 uppercase tracking-wider">
+                      {station.status}
+                    </span>
+                  </div>
+
+                  {/* City + Distance */}
+                  <p className="text-xs text-gray-400 mb-2">
+                    {station.city} · {userLocation ? calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng) : '...'} km
+                  </p>
+
+                  {/* Bottom row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(star => (
+                        <svg key={star} className={`w-3 h-3 ${star <= Math.round(station.rating || 0) ? 'text-gray-600' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                      ))}
+                      <span className="text-xs text-gray-400 ml-1">
+                        {station.totalReviews || 0} reviews
                       </span>
                     </div>
-
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-1.5">
-                        <StarRating rating={station.rating} />
-                        <span className="text-xs text-gray-500 font-medium">{station.rating}</span>
-                        <span className="text-gray-300">·</span>
-                        <span className="text-xs text-gray-400">
-                          {station.totalReviews || 0} {station.totalReviews === 1 ? 'review' : 'reviews'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs">
-                        <BatteryCharging size={12} className={station.availableChargers > 0 ? 'text-emerald-500' : 'text-gray-300'} />
-                        <span className={`font-semibold ${station.availableChargers > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
-                          {station.availableChargers}/{station.totalChargers}
-                        </span>
-                        <span className="text-gray-400">free</span>
-                      </div>
-                    </div>
-                  </button>
-                )
-              })
+                    <span className="text-xs text-gray-500">
+                      {station.available_slots ?? station.total_slots ?? 2}/{station.total_slots ?? 3} free
+                    </span>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
@@ -490,13 +570,22 @@ export default function MapView() {
         </button>
 
         {/* ─── Map Area ─── */}
-        <div className={`flex-1 relative ${view === 'list' ? 'hidden md:block' : 'block'}`}>
+        <div ref={mapContainerRef} className={`flex-1 relative ${view === 'list' ? 'hidden md:block' : 'block'}`}>
+          {isFlying && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white border border-gray-200 px-4 py-2 flex items-center gap-2 shadow-sm pointer-events-none rounded-xl">
+              <div className="w-3 h-3 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div>
+              <span className="text-xs font-semibold text-gray-700">Navigating to station...</span>
+            </div>
+          )}
+
           <MapContainer
             center={defaultCenter}
             zoom={defaultZoom}
             className="w-full h-full"
             zoomControl={false}
           >
+            <ZoomControl position="bottomright" />
+            <MapResetControl onReset={() => clearSelectedStation()} />
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -504,39 +593,70 @@ export default function MapView() {
             <MapController 
               center={mapCenter} 
               zoom={mapZoom} 
+              station={selectedStation}
               onMoveEnd={(newCenter, newZoom) => {
                 setMapCenter(newCenter)
                 setMapZoom(newZoom)
               }} 
             />
-            <MapEvents 
-              onMapClick={(latlng) => {
-                setMapCenter([latlng.lat, latlng.lng])
-                setMapZoom((prev) => Math.min(prev + 2, 14)) // Zoom in slightly on click
-              }} 
-            />
+
             {filtered.map(station => (
               <Marker
                 key={station.id}
                 position={[station.lat, station.lng]}
-                icon={createStationIcon(station.status, selectedStation?.id === station.id)}
+                icon={createMarkerIcon(selectedStation?.id === station.id)}
                 eventHandlers={{
-                  click: () => handleSelectStation(station)
+                  click: () => handleMarkerClick(station)
                 }}
               >
-                <Popup className="custom-popup" closeButton={false}>
-                  <div className="p-2">
-                    <p className="font-medium text-sm mb-1">{station.name}</p>
-                    <p className="text-xs text-gray-500 mb-2">{station.city}</p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/station/${station.slug || station.id}`);
-                      }}
-                      className="text-xs bg-gray-900 text-white px-3 py-1.5 hover:bg-black transition-all w-full"
-                    >
-                      View station
-                    </button>
+                <Popup closeButton={false} className="custom-popup">
+                  <div className="bg-white w-64 shadow-lg border border-gray-200">
+                    <div className="p-4 border-b border-gray-100">
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="text-sm font-semibold text-gray-900 leading-snug pr-2">
+                          {station.name}
+                        </p>
+                        <span className="text-xs border border-gray-200 text-gray-500 px-2 py-0.5 flex-shrink-0 uppercase tracking-wider">
+                          {station.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        {station.address}, {station.city}
+                      </p>
+                    </div>
+                    <div className="p-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-400">Available</span>
+                        <span className="text-xs font-medium text-gray-900">
+                          {station.available_slots ?? station.total_slots ?? 2}/{station.total_slots ?? 3} free
+                        </span>
+                      </div>
+                      <div className="flex gap-1">
+                        {Array(station.total_slots ?? 3).fill(0).map((_, i) => (
+                          <div key={i} className={`h-1 flex-1 ${i < (station.available_slots ?? station.total_slots ?? 2) ? 'bg-gray-900' : 'bg-gray-200'}`}></div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex gap-0.5">
+                          {[1,2,3,4,5].map(star => (
+                            <svg key={star} className={`w-3 h-3 ${star <= Math.round(station.rating || 0) ? 'text-gray-700' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400">{(station.rating || 0).toFixed(1)}</span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {userLocation ? calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng) : '...'} km away
+                      </span>
+                    </div>
+                    <div className="p-3">
+                      <button onClick={(e) => { e.stopPropagation(); navigate(`/station/${station.slug || station.id}`); }} className="w-full bg-gray-900 text-white py-2.5 text-xs font-medium uppercase tracking-widest hover:bg-black transition-all">
+                        Show More Details
+                      </button>
+                    </div>
                   </div>
                 </Popup>
               </Marker>
@@ -553,43 +673,26 @@ export default function MapView() {
             </div>
           )}
 
-          {/* Legend Card */}
-          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-100 rounded-none p-3.5 z-[1000] shadow-lg">
-            <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2.5">Station Status</p>
-            {Object.entries(STATUS_CONFIG).map(([status, cfg]) => (
-              <div key={status} className="flex items-center gap-2 mb-1.5 last:mb-0">
-                <div className="w-2.5 h-2.5 rounded-none flex-shrink-0" style={{ background: cfg.color }} />
-                <span className="text-xs text-gray-600 font-medium">{cfg.label}</span>
-                <span className="ml-auto text-xs text-gray-400 font-semibold">{counts[status]}</span>
+          {/* Legend Card — hidden when detail card is open to avoid overlap */}
+          {!selectedStation && (
+            <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-100 rounded-none p-3.5 z-[1000] shadow-lg">
+              <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2.5">Station Status</p>
+              {Object.entries(STATUS_CONFIG).map(([status, cfg]) => (
+                <div key={status} className="flex items-center gap-2 mb-1.5 last:mb-0">
+                  <div className="w-2.5 h-2.5 rounded-none flex-shrink-0" style={{ background: cfg.color }} />
+                  <span className="text-xs text-gray-600 font-medium">{cfg.label}</span>
+                  <span className="ml-auto text-xs text-gray-400 font-semibold">{counts[status]}</span>
+                </div>
+              ))}
+              <div className="h-px bg-gray-100 my-2" />
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-none bg-gray-900" />
+                <span className="text-[11px] text-gray-500">Total: {stations.length}</span>
               </div>
-            ))}
-            <div className="h-px bg-gray-100 my-2" />
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-none bg-gray-900" />
-              <span className="text-[11px] text-gray-500">Total: {stations.length}</span>
             </div>
-          </div>
+          )}
 
-          {/* Zoom Controls */}
-          <div className="absolute bottom-8 right-4 flex flex-col gap-1.5 z-[1000]">
-            <button
-              onClick={() => setMapZoom(z => Math.min(z + 1, 18))}
-              className="w-9 h-9 bg-white border border-gray-200 rounded-none shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
-            >+</button>
-            <button
-              onClick={() => setMapZoom(z => Math.max(z - 1, 3))}
-              className="w-9 h-9 bg-white border border-gray-200 rounded-none shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center text-lg font-light transition-all hover:shadow-lg"
-            >−</button>
-            <button
-              onClick={() => { setMapCenter(defaultCenter); setMapZoom(defaultZoom); clearSelectedStation() }}
-              className="w-9 h-9 bg-white border border-gray-200 rounded-none shadow-md text-gray-700 hover:bg-gray-50 flex items-center justify-center transition-all hover:shadow-lg"
-              title="Reset view"
-            >
-              <Navigation2 size={15} />
-            </button>
-          </div>
-
-          {/* ─── Station Detail Panel ─── */}
+          {/* ─── Station Detail Card — floats over map, bottom-left of map area ─── */}
           {selectedStation && (() => {
             const cfg = STATUS_CONFIG[selectedStation.status] || STATUS_CONFIG.faulty
             const facilities = Object.entries(selectedStation.facilities || {})
@@ -598,10 +701,19 @@ export default function MapView() {
               .filter(Boolean)
             return (
               <div
-                className="absolute bottom-4 left-4 bg-white rounded-none shadow-2xl z-[1000] border border-gray-100 overflow-hidden"
-                style={{ width: 340, animation: 'slideUp 0.25s ease' }}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-none shadow-2xl border border-gray-200 overflow-hidden"
+                style={{
+                  width: 360,
+                  zIndex: 1002,
+                  animation: 'cardSlideUp 0.25s cubic-bezier(0,0,0.2,1)'
+                }}
               >
-                <style>{`@keyframes slideUp { from { transform: translateY(20px); opacity:0 } to { transform: translateY(0); opacity:1 } }`}</style>
+                <style>{`
+                  @keyframes cardSlideUp {
+                    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+                    to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+                  }
+                `}</style>
 
                 {/* Top color bar */}
                 <div className="h-1 w-full" style={{ background: cfg.color }} />
@@ -611,8 +723,8 @@ export default function MapView() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 mb-1.5">
-                         <span className="text-xs border border-gray-200 text-gray-500 px-2.5 py-1 uppercase tracking-wider bg-white inline-flex items-center">
-                          <span className="w-1.5 h-1.5 rounded-none inline-block bg-gray-400 mr-1" />
+                        <span className="text-xs border border-gray-200 text-gray-500 px-2.5 py-1 uppercase tracking-wider bg-white inline-flex items-center">
+                          <span className="w-1.5 h-1.5 rounded-none inline-block mr-1" style={{ background: cfg.color }} />
                           {cfg.label}
                         </span>
                         {selectedStation.isExternal && (
@@ -622,7 +734,7 @@ export default function MapView() {
                         )}
                       </div>
                       <p className="text-base font-bold text-gray-900 leading-tight">{selectedStation.name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 truncate">{selectedStation.address}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">{selectedStation.address}, {selectedStation.city}</p>
                     </div>
                     <button
                       onClick={clearSelectedStation}
@@ -635,28 +747,36 @@ export default function MapView() {
                   {/* Stats row */}
                   <div className="grid grid-cols-3 gap-2 mt-3">
                     <div className="bg-gray-50 rounded-none p-2.5 text-center">
-                      <p className="text-base font-bold text-gray-900">{selectedStation.availableChargers}/{selectedStation.totalChargers}</p>
+                      <p className="text-base font-bold text-gray-900">
+                        {selectedStation.available_slots ?? selectedStation.total_slots ?? 2}/{selectedStation.total_slots ?? 3}
+                      </p>
                       <p className="text-[10px] text-gray-500 font-medium mt-0.5">Chargers Free</p>
                     </div>
                     <div className="bg-gray-50 rounded-none p-2.5 text-center">
                       <div className="flex items-center justify-center gap-0.5">
-                        <span className="text-base font-bold text-gray-900">{selectedStation.rating}</span>
+                        <span className="text-base font-bold text-gray-900">{(selectedStation.rating || 0).toFixed(1)}</span>
                         <Star size={11} className="text-gray-700 fill-gray-700 mb-0.5" />
                       </div>
-                      <p className="text-[10px] text-gray-500 font-medium mt-0.5">{selectedStation.totalReviews} Reviews</p>
+                      <p className="text-[10px] text-gray-500 font-medium mt-0.5">{selectedStation.totalReviews || 0} Reviews</p>
                     </div>
                     <div className="bg-gray-50 rounded-none p-2.5 text-center">
-                      <p className="text-base font-bold text-gray-900">{formatDistance(selectedStation.distance)}</p>
+                      <p className="text-base font-bold text-gray-900">
+                        {userLocation
+                          ? `${calculateDistance(userLocation.lat, userLocation.lng, selectedStation.lat, selectedStation.lng)} km`
+                          : '—'}
+                      </p>
                       <p className="text-[10px] text-gray-500 font-medium mt-0.5">Away</p>
                     </div>
                   </div>
 
                   {/* Hours */}
-                  <div className="flex items-center gap-2 mt-3 text-xs text-gray-600">
-                    <Clock size={13} className="text-gray-400 flex-shrink-0" />
-                    <span className="font-medium">Open:</span>
-                    <span>{selectedStation.openHours}</span>
-                  </div>
+                  {selectedStation.openHours && (
+                    <div className="flex items-center gap-2 mt-3 text-xs text-gray-600">
+                      <Clock size={13} className="text-gray-400 flex-shrink-0" />
+                      <span className="font-medium">Open:</span>
+                      <span>{selectedStation.openHours}</span>
+                    </div>
+                  )}
 
                   {/* Facilities */}
                   {facilities.length > 0 && (
@@ -675,10 +795,10 @@ export default function MapView() {
 
                   {/* CTA button */}
                   <button
-                    onClick={() => navigate(`/station/${selectedStation.slug}`)}
+                    onClick={() => navigate(`/station/${selectedStation.slug || selectedStation.id}`)}
                     className="mt-3.5 w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-bold rounded-none flex items-center justify-center gap-2 transition-all hover:shadow-lg"
                   >
-                    View Full Details
+                    Show More Details
                     <ChevronRight size={16} />
                   </button>
                 </div>

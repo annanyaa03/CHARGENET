@@ -1,202 +1,214 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, Clock } from 'lucide-react';
-import { PageWrapper } from '../../components/layout/PageWrapper';
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Navbar } from '../../components/layout/Navbar'
 
-const Reveal = ({ children, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.6, delay, ease: 'easeOut' }}
-  >
-    {children}
-  </motion.div>
-);
+const Blog = () => {
+  const [activeTag, setActiveTag] = useState('All')
+  const [subscribed, setSubscribed] = useState(false)
+  const [email, setEmail] = useState('')
 
-const tags = ['All', 'Industry', 'Policy', 'Technology', 'ChargeNet News', 'Sustainability'];
+  const handleSubscribe = () => {
+    if (!email) return
+    setSubscribed(true)
+    setEmail('')
+    setTimeout(() => setSubscribed(false), 3000)
+  }
 
-const posts = [
-  {
-    tag: 'Industry',
-    date: 'April 8, 2026',
-    readTime: '5 min read',
-    title: 'India\'s EV Charging Infrastructure to Triple by 2028',
-    excerpt: 'The Ministry of Heavy Industries has confirmed ₹3,500 crore in new FAME-III subsidies targeting dense urban and highway charging corridors across 14 states.',
-    featured: true,
-  },
-  {
-    tag: 'Technology',
-    date: 'April 4, 2026',
-    readTime: '4 min read',
-    title: 'V2G Technology: Why Bidirectional Charging Changes Everything',
-    excerpt: 'Vehicle-to-Grid (V2G) is moving from pilot to commercial deployment. We break down how your parked EV becomes a grid asset and what that means for your electricity bill.',
-    featured: false,
-  },
-  {
-    tag: 'ChargeNet News',
-    date: 'March 28, 2026',
-    readTime: '3 min read',
-    title: 'ChargeNet Expands to 12 New Cities in Q1 2026',
-    excerpt: 'We\'ve deployed 840 new charging points across Pune, Hyderabad, Ahmedabad, and nine more cities — bringing our live network to over 22,000 certified stations.',
-    featured: false,
-  },
-  {
-    tag: 'Policy',
-    date: 'March 20, 2026',
-    readTime: '6 min read',
-    title: 'Understanding India\'s New EV Charging Infrastructure Standards',
-    excerpt: 'BIS has released updated specifications for public charging equipment, mandating IP55 protection and Type 2/CCS2 connectors. Here\'s what operators need to know.',
-    featured: false,
-  },
-  {
-    tag: 'Sustainability',
-    date: 'March 14, 2026',
-    readTime: '4 min read',
-    title: 'How the ChargeNet Fleet Programme Is Cutting Corporate Emissions',
-    excerpt: 'In 2025, fleet operators using ChargeNet collectively avoided 68,000 tonnes of CO2 equivalent. We look at the data behind the numbers.',
-    featured: false,
-  },
-  {
-    tag: 'Technology',
-    date: 'March 6, 2026',
-    readTime: '5 min read',
-    title: 'OCPP 2.0.1: The Protocol Update That Matters for EV Operators',
-    excerpt: 'The Open Charge Point Protocol 2.0.1 brings improved security, smart charging profiles, and better diagnostics. Here\'s what changes for station operators this quarter.',
-    featured: false,
-  },
-];
+  const tags = [
+    'All',
+    'Industry',
+    'Tips',
+    'Product',
+    'Policy'
+  ]
 
-export default function Blog() {
-  const [activeTag, setActiveTag] = useState('All');
+  const posts = [
+    {
+      tag: 'Industry',
+      title: 'India\'s EV market is growing faster than anyone predicted',
+      description: 'EV sales in India crossed 1.5 million units in 2024. Here is what is driving the surge and what it means for charging infrastructure.',
+      date: 'Dec 2024',
+      readTime: '5 min read',
+      featured: true,
+      url: 'https://economictimes.indiatimes.com/industry/renewables/electric-vehicles/ev-sales-india'
+    },
+    {
+      tag: 'Tips',
+      title: 'How to extend your EV battery life by 40%',
+      description: 'Simple charging habits that most EV owners overlook. Based on data from 10,000+ ChargeNet sessions.',
+      date: 'Nov 2024',
+      readTime: '4 min read',
+      featured: false,
+      url: 'https://www.moneycontrol.com/news/technology/how-to-extend-ev-battery-life'
+    },
+    {
+      tag: 'Product',
+      title: 'Introducing real-time charger availability on ChargeNet',
+      description: 'We rebuilt our availability system from scratch. Every charger now updates in under one second.',
+      date: 'Nov 2024',
+      readTime: '3 min read',
+      featured: false,
+      url: 'https://inc42.com/buzz/ev-charging-real-time-availability'
+    },
+    {
+      tag: 'Policy',
+      title: 'FAME III subsidies and what they mean for EV buyers',
+      description: 'A breakdown of the government\'s latest EV incentive scheme and how to take advantage of it before March 2025.',
+      date: 'Oct 2024',
+      readTime: '6 min read',
+      featured: false,
+      url: 'https://economictimes.indiatimes.com/industry/renewables/electric-vehicles/fame-iii-ev-subsidies-india'
+    },
+    {
+      tag: 'Tips',
+      title: 'The best time to charge your EV in Indian cities',
+      description: 'We analyzed millions of charging sessions to find out when stations are least busy and rates are lowest.',
+      date: 'Oct 2024',
+      readTime: '3 min read',
+      featured: false,
+      url: 'https://www.livemint.com/auto-news/ev-charging-best-time-india'
+    },
+    {
+      tag: 'Industry',
+      title: 'Highway charging corridors: Where India stands in 2025',
+      description: 'A look at the progress of EV charging corridors on national highways and what gaps remain.',
+      date: 'Sep 2024',
+      readTime: '7 min read',
+      featured: false,
+      url: 'https://www.thehindu.com/sci-tech/energy-and-environment/ev-highway-charging-corridors-india'
+    }
+  ]
 
-  const featured = posts.find(p => p.featured);
-  const filtered = posts.filter(p => !p.featured && (activeTag === 'All' || p.tag === activeTag));
+  const filtered = activeTag === 'All'
+    ? posts
+    : posts.filter(p => p.tag === activeTag)
 
   return (
-    <PageWrapper>
-      <div className="bg-white min-h-screen text-[#051428] selection:bg-[#1D9E75] selection:text-white">
+    <div className="min-h-screen bg-white">
+      <Navbar solid={true} />
 
-        {/* Hero */}
-        <section className="border-b border-gray-100 px-6 py-24 bg-[#FAFAF9]">
-          <div className="max-w-4xl mx-auto">
-            <Reveal>
-              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#1D9E75] mb-4">Resources</p>
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-[#051428] leading-[1.05] mb-4">
-                Latest Blog.
-              </h1>
-              <p className="text-gray-500 text-lg max-w-xl">
-                Industry news, policy updates, and technology insights from the ChargeNet team.
+      {/* HERO */}
+      <section className="border-b border-gray-100 pt-32 pb-14">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] mb-8">
+                Resources / Blog
               </p>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* Featured Post */}
-        {featured && (
-          <section className="px-6 py-16 border-b border-gray-100">
-            <div className="max-w-5xl mx-auto">
-              <Reveal>
-                <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-gray-400 mb-8">Featured</p>
-                <div className="group cursor-pointer">
-                  <div className="flex flex-col md:flex-row md:items-start gap-8">
-                    <div className="shrink-0">
-                      <span className="inline-block px-3 py-1 bg-[#1D9E75]/10 text-[#1D9E75] text-[10px] font-bold uppercase tracking-widest mb-4">{featured.tag}</span>
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-3xl md:text-4xl font-bold text-[#051428] leading-tight mb-4 group-hover:text-[#1D9E75] transition-colors tracking-tight">
-                        {featured.title}
-                      </h2>
-                      <p className="text-gray-500 text-[15px] leading-relaxed mb-6 max-w-2xl">{featured.excerpt}</p>
-                      <div className="flex items-center gap-6 text-[12px] text-gray-400">
-                        <span>{featured.date}</span>
-                        <span className="flex items-center gap-1.5"><Clock size={12} /> {featured.readTime}</span>
-                        <button className="flex items-center gap-1.5 text-[#051428] font-bold hover:text-[#1D9E75] transition-colors ml-auto">
-                          Read Article <ArrowRight size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
+              <h1 className="text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9] uppercase text-gray-900">
+                INDUSTRY NEWS
+                <br />
+                AND UPDATES.
+              </h1>
             </div>
-          </section>
-        )}
+            <p className="text-lg text-gray-500 max-w-xs md:text-right leading-relaxed mb-2">
+              Insights on EV charging, battery technology and India's electric future.
+            </p>
+          </div>
+        </div>
+      </section>
 
-        {/* Tag Filter */}
-        <section className="px-6 py-8 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <div className="max-w-5xl mx-auto flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {tags.map(tag => (
+
+
+      {/* ALL POSTS */}
+      <section className="py-14">
+        <div className="max-w-7xl mx-auto px-6">
+          
+          {/* Tag Filter */}
+          <div className="flex items-center gap-2 mb-10">
+            {tags.map((tag) => (
               <button
                 key={tag}
                 onClick={() => setActiveTag(tag)}
-                className={`shrink-0 px-4 py-2 text-[11px] font-bold uppercase tracking-widest transition-colors border ${
-                  activeTag === tag
-                    ? 'bg-[#051428] text-white border-[#051428]'
-                    : 'bg-white text-gray-400 border-gray-200 hover:border-[#051428] hover:text-[#051428]'
-                }`}
-              >
+                className={`px-4 py-2 text-xs transition-all ${
+                activeTag === tag
+                  ? 'bg-gray-900 text-white'
+                  : 'border border-gray-200 text-gray-500 hover:border-gray-400'
+              }`}>
                 {tag}
               </button>
             ))}
           </div>
-        </section>
 
-        {/* Post List */}
-        <section className="py-16 px-6">
-          <div className="max-w-5xl mx-auto divide-y divide-gray-100 border-y border-gray-100">
+          {/* Posts List */}
+          <div className="divide-y divide-gray-100">
             {filtered.map((post, i) => (
-              <Reveal key={i} delay={i * 0.05}>
-                <div className="py-10 group flex flex-col md:flex-row gap-6 md:gap-12 cursor-pointer hover:bg-[#FAFAF9] transition-colors px-4 -mx-4">
-                  <div className="shrink-0 md:pt-1">
-                    <span className="inline-block px-2.5 py-1 bg-gray-100 text-gray-500 text-[9px] font-bold uppercase tracking-widest group-hover:bg-[#1D9E75]/10 group-hover:text-[#1D9E75] transition-colors">
-                      {post.tag}
-                    </span>
+              <a
+                key={i}
+                href={post.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-5 flex items-start justify-between group cursor-pointer hover:bg-gray-50 -mx-4 px-4 transition-all block">
+                
+                <div className="flex items-start gap-8">
+                  {/* Date */}
+                  <div className="w-20 flex-shrink-0">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider">
+                      {post.date}
+                    </p>
                   </div>
 
+                  {/* Content */}
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-[#051428] mb-3 leading-tight group-hover:text-[#1D9E75] transition-colors tracking-tight">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-xs text-gray-400 uppercase tracking-wider">
+                        {post.tag}
+                      </span>
+                      <span className="text-gray-200 text-xs">·</span>
+                      <span className="text-xs text-gray-400">{post.readTime}</span>
+                    </div>
+                    <h3 className="text-sm font-medium text-gray-900 mb-1.5 group-hover:underline underline-offset-2 leading-snug max-w-xl">
                       {post.title}
                     </h3>
-                    <p className="text-gray-500 text-[14px] leading-relaxed mb-4 max-w-2xl">{post.excerpt}</p>
-                    <div className="flex items-center gap-4 text-[11px] text-gray-400">
-                      <span>{post.date}</span>
-                      <span className="flex items-center gap-1"><Clock size={11} /> {post.readTime}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex">
-                    <div className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-[#1D9E75]">
-                      <ArrowRight size={14} />
-                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed max-w-lg">
+                      {post.description}
+                    </p>
                   </div>
                 </div>
-              </Reveal>
+
+                <svg className="w-4 h-4 text-gray-300 flex-shrink-0 ml-8 mt-1 group-hover:text-gray-600 transition-all"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Newsletter CTA */}
-        <section className="py-20 px-6 bg-[#FAFAF9] border-t border-gray-100">
-          <div className="max-w-3xl mx-auto text-center">
-            <Reveal>
-              <h2 className="text-2xl font-bold text-[#051428] mb-3 tracking-tight">Stay current with EV infrastructure.</h2>
-              <p className="text-gray-500 text-[15px] mb-8">New articles every week. No spam, unsubscribe anytime.</p>
-              <div className="flex flex-col sm:flex-row gap-0 max-w-md mx-auto">
+      {/* NEWSLETTER */}
+      <section className="py-14 border-t border-gray-100 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-12 gap-12 items-center">
+            <div className="col-span-5">
+              <h2 className="text-2xl font-normal text-gray-900 tracking-tight mb-2">
+                Stay in the loop.
+              </h2>
+              <p className="text-sm text-gray-400">
+                Get the latest EV news and ChargeNet updates in your inbox.
+              </p>
+            </div>
+            <div className="col-span-7">
+              <div className="flex gap-0">
                 <input
                   type="email"
-                  placeholder="your@email.com"
-                  className="flex-1 h-12 px-4 bg-white border border-gray-200 border-r-0 text-[15px] text-[#051428] placeholder-gray-300 focus:outline-none focus:border-[#1D9E75] transition-colors"
+                  placeholder="Your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1 border border-gray-200 px-5 py-3 text-sm focus:outline-none focus:border-gray-400 bg-white"
                 />
-                <button className="h-12 px-6 bg-[#051428] text-white text-[11px] font-bold uppercase tracking-widest hover:bg-[#1D9E75] transition-colors rounded-none whitespace-nowrap border border-[#051428]">
-                  Subscribe
+                <button 
+                  onClick={handleSubscribe}
+                  className="bg-gray-900 text-white px-6 py-3 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-all min-w-32">
+                  {subscribed ? 'Subscribed!' : 'Subscribe'}
                 </button>
               </div>
-            </Reveal>
+            </div>
           </div>
-        </section>
-
-      </div>
-    </PageWrapper>
-  );
+        </div>
+      </section>
+    </div>
+  )
 }
+
+export default Blog

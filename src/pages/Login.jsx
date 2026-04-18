@@ -1,233 +1,238 @@
-import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, Zap, Mail, Lock, ArrowRight, Shield, Fingerprint, Sparkles, ChevronRight } from 'lucide-react'
-import { useAuthStore } from '../store/authStore'
-import { Navbar } from '../components/layout/Navbar'
-import toast from 'react-hot-toast'
+import { useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 
-/* ─── Demo Data ────────────────────────────────────────────────── */
-
-const DEMO_ACCOUNTS = [
-  { label: 'Driver', email: 'driver@chargenet.in' },
-  { label: 'Owner', email: 'owner@chargenet.in' },
-  { label: 'Admin', email: 'admin@chargenet.in' },
-]
-
-/* ─── Main Component ────────────────────────────────────────────── */
-
-export default function Login() {
-  const navigate = useNavigate()
-  const login = useAuthStore(s => s.login)
-  const [showPassword, setShowPassword] = useState(false)
+const Login = () => {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [focusedField, setFocusedField] = useState(null)
+  const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm()
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  React.useEffect(() => {
-    document.title = 'Sign In — ChargeNet'
-    window.scrollTo(0, 0)
-  }, [])
-
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    
+    if (!email || !password) {
+      setError('Please fill in all fields')
+      return
+    }
+    
     setLoading(true)
     try {
-      const user = await login(data.email, data.password)
-      toast.success(`Welcome back, ${user.user_metadata?.full_name?.split(' ')[0] || 'User'}!`)
-      if (user.role === 'owner') navigate('/owner/dashboard')
-      else if (user.role === 'admin') navigate('/admin/dashboard')
-      else navigate('/')
+      const { data, error: authError } = 
+        await supabase.auth.signInWithPassword({
+          email,
+          password
+        })
+      
+      if (authError) throw authError
+      
+      const from = location.state?.from?.pathname || '/dashboard'
+      navigate(from, { replace: true })
     } catch (err) {
-      toast.error(err.message)
+      setError(
+        err.message === 'Invalid login credentials'
+          ? 'Incorrect email or password'
+          : err.message || 'Something went wrong'
+      )
     } finally {
       setLoading(false)
     }
   }
 
-  const fillDemo = (email) => {
-    setValue('email', email)
-    setValue('password', 'password123')
-    toast.success('Demo credentials filled')
-  }
-
-  // Animations
-  const container = {
-    hidden: { opacity: 0 },
-    show: { 
-      opacity: 1, 
-      transition: { staggerChildren: 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] } 
-    }
-  }
-
-  const item = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
-  }
-
   return (
-    <div className="min-h-screen bg-[#FAFAF9] flex flex-col font-sans selection:bg-accent/10">
-      <Navbar solid />
+    <div className="min-h-screen bg-white flex">
+      
+      {/* LEFT PANEL - Dark */}
+      <div className="hidden lg:flex w-1/2 bg-gray-950 flex-col justify-between p-12">
+        
+        {/* Logo */}
+        <Link to="/" className="text-white text-sm font-semibold tracking-widest uppercase">
+          ChargeNet
+        </Link>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-32 pb-20 sm:pt-40">
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="w-full max-w-[400px]"
-        >
-          {/* Brand & Identity */}
-          <motion.div variants={item} className="flex flex-col items-center mb-8">
-            <Link to="/" className="group flex flex-col items-center gap-4">
-              <motion.div 
-                whileHover={{ rotate: 10, scale: 1.05 }}
-                className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/10 transition-colors group-hover:bg-primary/90"
-              >
-                <Zap size={24} className="text-white fill-white" />
-              </motion.div>
-              <div className="text-center">
-                <h2 className="heading-premium text-3xl mb-1">ChargeNet</h2>
-                <p className="label-premium !text-muted/40 !tracking-[0.4em]">Intelligent EV Network</p>
-              </div>
+        {/* Center content */}
+        <div>
+          <p className="text-xs text-gray-600 uppercase tracking-widest mb-6">
+            Welcome back
+          </p>
+          <h2 className="text-4xl font-normal text-white leading-snug tracking-tight mb-6">
+            India's largest
+            <br />
+            EV charging
+            <br />
+            network.
+          </h2>
+          <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
+            Access 80+ charging stations, 
+            book slots and track your 
+            sessions from one dashboard.
+          </p>
+        </div>
+
+        {/* Bottom stats */}
+        <div className="grid grid-cols-3 border-t border-gray-800 pt-8">
+          {[
+            { value: '80+', label: 'Stations' },
+            { value: '24/7', label: 'Available' },
+            { value: '₹8', label: 'Per kWh' }
+          ].map((stat, i) => (
+            <div key={i} className={`${i !== 0 ? 'border-l border-gray-800 pl-6' : ''}`}>
+              <p className="text-xl font-normal text-white mb-0.5">
+                {stat.value}
+              </p>
+              <p className="text-xs text-gray-600">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* RIGHT PANEL - Form */}
+      <div className="flex-1 flex flex-col justify-center px-8 lg:px-16 py-12">
+        
+        {/* Mobile logo */}
+        <div className="lg:hidden mb-10">
+          <Link to="/" className="text-gray-900 text-sm font-semibold tracking-widest uppercase">
+            ChargeNet
+          </Link>
+        </div>
+
+        {/* Header */}
+        <div className="mb-10 max-w-sm">
+          <h1 className="text-2xl font-normal text-gray-900 tracking-tight mb-2">
+            Sign in
+          </h1>
+          <p className="text-sm text-gray-400">
+            No account?{' '}
+            <Link to="/register" className="text-gray-900 hover:underline underline-offset-2">
+              Create one free
             </Link>
-          </motion.div>
+          </p>
+        </div>
 
-          {/* Header */}
-          <motion.div variants={item} className="mb-8 text-center">
-            <h1 className="heading-premium text-2xl text-primary">Welcome Back</h1>
-            <p className="label-premium !text-[9px] !text-muted/30 mt-2">Sign in to manage your charging experience</p>
-          </motion.div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            <motion.div variants={item} className="space-y-6">
-              
-              {/* Email Field */}
-              <div className="relative group">
-                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'email' ? '!text-accent' : '!text-muted/30'}`}>
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail size={16} className={`absolute left-0 top-1/2 -translate-y-1/2 transition-colors ${focusedField === 'email' ? 'text-accent' : 'text-muted/40'}`} />
-                  <input
-                    type="email"
-                    {...register('email', { required: 'Email is required' })}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="name@example.com"
-                    className="w-full bg-transparent border-b border-border/60 py-4 pl-8 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
-                  />
-                  <motion.div 
-                    initial={false}
-                    animate={{ scaleX: focusedField === 'email' ? 1 : 0 }}
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent origin-left"
-                  />
-                </div>
-                {errors.email && <p className="text-[10px] font-bold text-danger mt-1 uppercase tracking-widest">{errors.email.message}</p>}
-              </div>
-
-              {/* Password Field */}
-              <div className="relative group">
-                <label className={`absolute left-0 -top-6 label-premium !text-[9px] transition-all ${focusedField === 'password' ? '!text-accent' : '!text-muted/30'}`}>
-                  Access Password
-                </label>
-                <div className="flex justify-between items-center mb-1">
-                  <button type="button" className="absolute right-0 -top-6 label-premium !text-[9px] !text-muted/40 hover:!text-primary transition-all">
-                    Forgot Password?
-                  </button>
-                </div>
-                <div className="relative">
-                  <Lock size={16} className={`absolute left-0 top-1/2 -translate-y-1/2 transition-colors ${focusedField === 'password' ? 'text-accent' : 'text-muted/40'}`} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password', { required: 'Password is required' })}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="••••••••"
-                    className="w-full bg-transparent border-b border-border/60 py-4 pl-8 pr-10 text-sm outline-none transition-all placeholder:text-muted/20 focus:border-accent"
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 text-muted/40 hover:text-muted transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                  {/* Animated line under input */}
-                  <motion.div 
-                    initial={false}
-                    animate={{ scaleX: focusedField === 'password' ? 1 : 0 }}
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent origin-left"
-                  />
-                </div>
-                {errors.password && <p className="text-[10px] font-bold text-danger mt-1 uppercase tracking-widest">{errors.password.message}</p>}
-              </div>
-            </motion.div>
-
-            {/* Actions */}
-            <motion.div variants={item} className="pt-4 flex flex-col gap-4">
-              <motion.button
-                type="submit"
-                disabled={loading}
-                whileHover={{ y: -1 }}
-                whileTap={{ y: 0 }}
-                className="w-full h-14 bg-primary text-white font-bold uppercase text-[11px] tracking-[0.2em] rounded-xl flex items-center justify-center gap-3 shadow-xl shadow-primary/10 hover:bg-black transition-all disabled:opacity-50"
-              >
-                {loading ? 'Authenticating...' : (
-                  <>
-                    <Fingerprint size={18} />
-                    Sign In
-                    <ArrowRight size={18} className="opacity-50" />
-                  </>
-                )}
-              </motion.button>
-              
-              <div className="text-center">
-                <p className="text-[10px] font-bold text-muted/50 uppercase tracking-widest">
-                  Secure Access • 256-bit Encryption
-                </p>
-              </div>
-            </motion.div>
-          </form>
-
-          {/* Divider */}
-          <motion.div variants={item} className="my-12 flex items-center gap-4">
-            <div className="flex-1 h-[1px] bg-border/40" />
-            <span className="text-[9px] font-bold text-muted/30 uppercase tracking-[0.3em]">Demographics</span>
-            <div className="flex-1 h-[1px] bg-border/40" />
-          </motion.div>
-
-          {/* Demo Access Links */}
-          <motion.div variants={item} className="grid grid-cols-3 gap-3">
-            {DEMO_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.label}
-                onClick={() => fillDemo(acc.email)}
-                className="px-5 py-2.5 rounded-full border border-border/60 label-premium !text-[9px] !text-muted/60 hover:bg-surface hover:border-accent/40 hover:text-accent transition-all"
-              >
-                {acc.label}
-              </button>
-            ))}
-          </motion.div>
-
-          {/* Footer Link */}
-          <motion.div variants={item} className="mt-16 text-center">
-            <p className="text-xs text-muted">
-              Don&apos;t have an account?{' '}
-              <Link to="/register" className="text-primary font-bold hover:text-accent transition-colors underline underline-offset-4 decoration-border/60 hover:decoration-accent/40">
-                Join the Network
-              </Link>
+        {/* Error */}
+        {error && (
+          <div className="border border-red-200 bg-red-50 px-4 py-3 mb-6 max-w-sm">
+            <p className="text-xs text-red-600">
+              {error}
             </p>
-          </motion.div>
-        </motion.div>
-      </main>
+          </div>
+        )}
 
-      {/* Background Decor (Subtle) */}
-      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-10%] left-[-5%] w-[300px] h-[300px] bg-blue-500/5 rounded-full blur-[80px]" />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5 max-w-sm w-full">
+          
+          {/* Email */}
+          <div>
+            <label className="text-xs text-gray-400 uppercase tracking-widest mb-2 block">
+              Email address
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setError('')
+              }}
+              placeholder="you@example.com"
+              required
+              autoFocus
+              autoComplete="email"
+              className="w-full border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-900 transition-colors"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-gray-400 uppercase tracking-widest">
+                Password
+              </label>
+              <button
+                type="button"
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                Forgot password?
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  setError('')
+                }}
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+                className="w-full border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-900 transition-colors pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors">
+                {showPassword ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gray-900 text-white py-3.5 text-xs font-semibold uppercase tracking-widest hover:bg-black transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            {loading ? (
+              <>
+                <div className="w-3.5 h-3.5 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                Signing in...
+              </>
+            ) : (
+              'Sign in'
+            )}
+          </button>
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4 my-8 max-w-sm">
+          <div className="flex-1 h-px bg-gray-100"></div>
+          <span className="text-xs text-gray-300">or</span>
+          <div className="flex-1 h-px bg-gray-100"></div>
+        </div>
+
+        {/* Browse without account */}
+        <Link to="/map" className="max-w-sm w-full border border-gray-200 text-gray-500 py-3.5 text-xs font-semibold uppercase tracking-widest hover:border-gray-400 hover:text-gray-700 transition-colors text-center block">
+          Browse without account
+        </Link>
+
+        {/* Terms */}
+        <p className="text-xs text-gray-300 max-w-sm mt-8 leading-relaxed">
+          By continuing you agree to our{' '}
+          <Link to="/terms" className="text-gray-400 hover:text-gray-600">
+            Terms
+          </Link>
+          {' '}and{' '}
+          <Link to="/privacy" className="text-gray-400 hover:text-gray-600">
+            Privacy Policy
+          </Link>
+        </p>
       </div>
     </div>
   )
 }
+
+export default Login

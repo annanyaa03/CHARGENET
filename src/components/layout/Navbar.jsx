@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import {
@@ -22,9 +22,9 @@ const navData = {
     { label: 'Fleet Solutions', subtitle: 'Scale your EV fleet',            to: '/solutions/fleet' },
   ],
   resources: [
-    { icon: BookOpen,  label: 'Charging Guide', subtitle: 'Everything you need to know',  color: 'text-blue-600',  bg: 'bg-blue-50',  to: '/resources/guide' },
-    { icon: Lightbulb, label: 'Help Center',    subtitle: 'Support & documentation',      color: 'text-amber-600', bg: 'bg-amber-50', to: '/resources/help' },
-    { icon: Newspaper, label: 'Latest Blog',    subtitle: 'Industry news & updates',      color: 'text-teal-600',  bg: 'bg-teal-50',  to: '/resources/blog' },
+    { label: 'Charging Guide', subtitle: 'Everything you need to know',  to: '/resources/charging-guide' },
+    { label: 'Help Center',    subtitle: 'Support and documentation',    to: '/resources/help' },
+    { label: 'Latest Blog',    subtitle: 'Industry news and updates',    to: '/resources/blog' },
   ]
 };
 
@@ -66,10 +66,61 @@ export function Navbar({ solid = false }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isScrolledState, setIsScrolledState] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
   const isScrolled = solid || isScrolledState;
   const navRef = useRef(null);
+
+  // --- Notifications State ---
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: 1, type: 'booking', title: 'Booking confirmed', message: 'Your slot at Mumbai BKC EV Station is confirmed for today at 3:00 PM.', time: '2 mins ago', read: false },
+    { id: 2, type: 'charger', title: 'Charger now available', message: 'A CCS charger at Pune Hinjewadi Tech Park is now free.', time: '15 mins ago', read: false },
+    { id: 3, type: 'session', title: 'Charging session complete', message: 'Your session at Delhi Connaught Place ended. Total: ₹124.50', time: '1 hour ago', read: true },
+    { id: 4, type: 'promo', title: 'Weekend offer', message: 'Get 20% off all Type 2 charging sessions this weekend with Pro plan.', time: '2 hours ago', read: true },
+    { id: 5, type: 'system', title: 'New station added', message: 'Bengaluru Whitefield EV Hub is now live with 4 chargers near you.', time: 'Yesterday', read: true }
+  ]);
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markRead = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const notificationRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUserNotifications = async () => {
+      const { data } = await supabase.from('bookings').select(`id, status, created_at, booking_date, booking_time, stations(name)`).eq('user_id', user.id).order('created_at', { ascending: false }).limit(5);
+      if (data && data.length > 0) {
+        const bookingNotifs = data.map(b => ({
+          id: b.id, type: 'booking', title: b.status === 'confirmed' ? 'Booking confirmed' : `Booking ${b.status}`,
+          message: `Your slot at ${b.stations?.name || 'station'} on ${b.booking_date} at ${b.booking_time}`,
+          time: new Date(b.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+          read: false
+        }));
+        setNotifications(prev => [...bookingNotifs, ...prev.filter(n => n.type !== 'booking')]);
+      }
+    };
+    fetchUserNotifications();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel('user-bookings').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings', filter: `user_id=eq.${user.id}` }, (payload) => {
+      const newNotif = { id: payload.new.id, type: 'booking', title: 'New booking confirmed', message: `Booking created successfully`, time: 'Just now', read: false };
+      setNotifications(prev => [newNotif, ...prev]);
+    }).subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [user]);
 
   const isActive = (path) => location.pathname === path;
   const isPartiallyActive = (path) => location.pathname.startsWith(path);
@@ -260,12 +311,88 @@ export function Navbar({ solid = false }) {
 
             <div className={`h-6 w-px transition-colors ${isScrolled ? 'bg-gray-200' : 'bg-white/20'} mx-1`}></div>
 
-            <button className={`relative p-2 rounded-none transition-colors flex items-center justify-center ${
-              isScrolled ? 'text-gray-500 hover:bg-gray-100' : 'text-white hover:bg-white/10'
-            }`}>
-              <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-transparent"></span>
-            </button>
+            <div className="relative" ref={notificationRef}>
+              {/* Bell Button */}
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`relative w-9 h-9 flex items-center justify-center transition-all ${
+                  isScrolled ? 'text-gray-500 hover:text-gray-900 bg-transparent' : 'text-white hover:bg-white/10'
+                }`}>
+                
+                {/* Bell icon */}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+
+                {/* Unread dot */}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gray-900 rounded-full"></span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 shadow-lg z-50">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-medium text-gray-900">Notifications</p>
+                      {unreadCount > 0 && (
+                        <span className="text-xs bg-gray-900 text-white px-2 py-0.5">{unreadCount} new</span>
+                      )}
+                    </div>
+                    {unreadCount > 0 && (
+                      <button onClick={markAllRead} className="text-xs text-gray-400 hover:text-gray-600 transition-all">
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Notification List */}
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="py-12 text-center">
+                        <p className="text-sm text-gray-400">No notifications yet</p>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          onClick={() => markRead(notif.id)}
+                          className={`px-5 py-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-all last:border-0 ${!notif.read ? 'bg-gray-50' : 'bg-white'}`}>
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-1.5">
+                              {!notif.read ? (
+                                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
+                              ) : (
+                                <div className="w-1.5 h-1.5 rounded-full"></div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs mb-0.5 ${!notif.read ? 'font-medium text-gray-900' : 'text-gray-600'}`}>{notif.title}</p>
+                              <p className="text-xs text-gray-400 leading-relaxed mb-1.5">{notif.message}</p>
+                              <p className="text-xs text-gray-300">{notif.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-5 py-3 border-t border-gray-100">
+                    <button
+                      onClick={() => {
+                        setShowNotifications(false);
+                        navigate('/dashboard');
+                      }}
+                      className="text-xs text-gray-500 hover:text-gray-900 transition-all w-full text-center">
+                      View all in dashboard
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center gap-3">
               <Link
