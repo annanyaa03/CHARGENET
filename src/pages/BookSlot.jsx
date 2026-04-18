@@ -130,7 +130,7 @@ const BookSlot = () => {
             {/* Station heading */}
             <div className="mb-10">
               <p className="text-xs text-gray-400 mb-3">Booking a slot at</p>
-              <h1 className="text-2xl font-normal text-gray-900 tracking-tight mb-1">
+              <h1 className="text-3xl font-semibold text-gray-900 tracking-tight mb-1">
                 {station?.name}
               </h1>
               <p className="text-sm text-gray-400">
