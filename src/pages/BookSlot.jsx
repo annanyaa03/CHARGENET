@@ -94,6 +94,23 @@ const BookSlot = () => {
     return rem > 0 ? `${h}h ${rem}m` : `${h}h`
   }
 
+  const formatAddress = (station) => {
+    if (!station) return ''
+    
+    const addr = station.address || ''
+    const city = station.city || ''
+    const state = station.state || ''
+    
+    const hasCity = addr.toLowerCase().includes(city.toLowerCase())
+    const hasState = addr.toLowerCase().includes(state.toLowerCase())
+    
+    let result = addr
+    if (!hasCity && city) result += ', ' + city
+    if (!hasState && state) result += ', ' + state
+    
+    return result
+  }
+
   if (loading) return (
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="w-5 h-5 border border-gray-300 border-t-gray-900 rounded-full animate-spin" />
@@ -145,23 +162,7 @@ const BookSlot = () => {
               </div>
             )}
 
-    const formatAddress = (station) => {
-      if (!station) return ''
-      const addr = station.address || ''
-      const city = station.city || ''
-      const state = station.state || ''
-      
-      const hasCity = addr.toLowerCase().includes(city.toLowerCase())
-      const hasState = addr.toLowerCase().includes(state.toLowerCase())
-      
-      let result = addr
-      if (!hasCity && city) result += ', ' + city
-      if (!hasState && state) result += ', ' + state
-      
-      return result
-    }
-
-    /* ── Step 1: Charger ── */
+            {/* ── Step 1: Charger ── */}
             <div className="mb-10">
               <p className="text-xs text-gray-400 mb-4 flex items-center gap-2">
                 <span className="text-gray-300">01</span>

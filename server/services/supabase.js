@@ -308,20 +308,39 @@ export const reviewService = {
 export const stationService = {
 
   getAll: async ({ 
-    city, status, limit = 20, 
+    city, status, limit = 50, 
     page = 1, search 
   } = {}) => {
     const limitNum = Math.min(
-      parseInt(limit), 100
+      parseInt(limit) || 50, 100
     )
-    const pageNum = Math.max(parseInt(page), 1)
+    const pageNum = Math.max(
+      parseInt(page) || 1, 1
+    )
     const from = (pageNum - 1) * limitNum
     const to = from + limitNum - 1
 
     let query = supabase
       .from('stations')
-      .select('*', { count: 'exact' })
-      .eq('status', status || 'active')
+      .select(`
+        id,
+        name,
+        address,
+        city,
+        state,
+        lat,
+        lng,
+        status,
+        slug,
+        rating,
+        review_count,
+        total_slots,
+        available_slots,
+        description,
+        open_hours,
+        created_at
+      `, { count: 'exact' })
+      .eq('status', 'active')
       .range(from, to)
 
     if (city) query = query.eq('city', city)

@@ -68,32 +68,31 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-function createMarkerIcon(isSelected, status = 'active') {
-  const cfg   = STATUS_CONFIG[status] || STATUS_CONFIG.active
-  const color = isSelected ? '#111111' : cfg.color
-  const size  = isSelected ? 18 : 11
+function createMarkerIcon(station) {
+  const available = station.available_slots || 0
+  const total = station.total_slots || 3
+  
+  let color = '#111827'  // available - dark
+  if (available === 0) {
+    color = '#9CA3AF'    // all busy - gray
+  } else if (available < total / 2) {
+    color = '#374151'    // half busy - medium
+  }
+  
   return L.divIcon({
     className: '',
     html: `
       <div style="
-        width:${size}px; height:${size}px;
-        background:${color};
+        width: 10px;
+        height: 10px;
+        background: ${color};
         border: 2px solid white;
         border-radius: 50%;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-        position:relative;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
       "></div>
-      ${isSelected ? `<div style="
-        position:absolute; top:50%; left:50%;
-        transform:translate(-50%,-50%);
-        width:34px; height:34px;
-        border:2px solid rgba(17,17,17,0.3);
-        border-radius:50%;
-        animation:markerPulse 1.5s ease-out infinite;
-      "></div>` : ''}
     `,
-    iconSize:   [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: [10, 10],
+    iconAnchor: [5, 5]
   })
 }
 
@@ -305,8 +304,9 @@ export default function MapView() {
   const filtered = useMemo(() => {
     let r = [...stations]
 
-    // Status tab
-    if (statusTab !== 'all') r = r.filter(s => s.status === statusTab)
+    if (statusTab === 'active') r = r.filter(s => (s.available_slots || 0) > 0)
+    if (statusTab === 'busy') r = r.filter(s => (s.available_slots || 0) === 0 && s.status !== 'inactive')
+    if (statusTab === 'inactive') r = r.filter(s => s.status === 'inactive')
 
     // Text search
     if (search.trim()) {
@@ -341,8 +341,8 @@ export default function MapView() {
   // ── Tab counts ─────────────────────────────────────────────────────────────
   const counts = useMemo(() => ({
     all:      stations.length,
-    active:   stations.filter(s => s.status === 'active').length,
-    busy:     stations.filter(s => s.status === 'busy').length,
+    active:   stations.filter(s => (s.available_slots || 0) > 0).length,
+    busy:     stations.filter(s => (s.available_slots || 0) === 0 && s.status !== 'inactive').length,
     inactive: stations.filter(s => s.status === 'inactive').length,
   }), [stations])
 
@@ -412,21 +412,23 @@ export default function MapView() {
           {/* ── Status tabs ── */}
           <div className="px-4 py-2 border-b border-gray-100 flex-shrink-0">
             <div className="flex gap-1 overflow-x-auto">
-              {STATUS_TABS.map(tab => {
-                const cfg    = STATUS_CONFIG[tab]
-                const active = statusTab === tab
-                return (
-                  <button key={tab} onClick={() => setStatusTab(tab)}
-                    className={`flex-shrink-0 px-2.5 py-1 text-[11px] font-semibold transition-all ${
-                      active
-                        ? tab === 'all' ? 'bg-gray-900 text-white' : 'text-white'
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
-                    style={active && tab !== 'all' ? { background: cfg.color } : {}}>
-                    {tab === 'all' ? `All (${counts.all})` : `${cfg.label} (${counts[tab]})`}
-                  </button>
-                )
-              })}
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'active', label: 'Active' },
+                { key: 'busy', label: 'Busy' },
+                { key: 'inactive', label: 'Inactive' }
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setStatusTab(tab.key)}
+                  className={`px-3 py-1.5 text-xs transition-all ${
+                    statusTab === tab.key
+                      ? 'bg-gray-900 text-white'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  {tab.label} ({counts[tab.key]})
+                </button>
+              ))}
             </div>
           </div>
 
@@ -546,45 +548,66 @@ export default function MapView() {
                               : 'border-l-transparent hover:bg-gray-50 hover:border-l-gray-200'
                           }`}
                         >
-                          {/* Row 1: Name + availability dots (Improvements 5, 9) */}
-                          <div className="flex items-start justify-between mb-1">
-                            <p className={`text-[13px] leading-snug flex-1 pr-3 ${isSelected ? 'font-semibold text-gray-900' : 'font-normal text-gray-800'}`}>
+                          {/* Row 1: Name */}
+                          <div className="flex items-start justify-between mb-1.5">
+                            <p className="text-sm font-normal text-gray-900 leading-snug pr-4 flex-1">
                               {station.name}
                             </p>
-                            {/* Availability dots replace useless ACTIVE badge (Improvement 1, 5) */}
-                            <div className="flex items-center gap-0.5 flex-shrink-0 pt-0.5">
-                              {Array(Math.min(total, 5)).fill(0).map((_, i) => (
-                                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < avail ? 'bg-gray-800' : 'bg-gray-200'}`} />
-                              ))}
+                            {/* Availability dots */}
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {Array(total)
+                                .fill(0)
+                                .map((_, i) => {
+                                  const occupied = Math.round((total - avail) * 0.75)
+                                  
+                                  let dotColor = 'bg-gray-900'
+                                  if (i >= avail && i < avail + occupied) {
+                                    dotColor = 'bg-gray-300'
+                                  } else if (i >= avail + occupied) {
+                                    dotColor = 'bg-red-300'
+                                  }
+                                  
+                                  return (
+                                    <div 
+                                      key={i}
+                                      title={
+                                        i < avail 
+                                          ? 'Available' 
+                                          : i < avail + occupied
+                                          ? 'Occupied'
+                                          : 'Faulty'
+                                      }
+                                      className={`w-2 h-2 rounded-full ${dotColor}`}>
+                                    </div>
+                                  )
+                                })}
                             </div>
                           </div>
 
-                          {/* Row 2: City + distance (Improvement 4) */}
+                          {/* Row 2: City + distance */}
                           <p className="text-xs text-gray-400 mb-2">
                             {station.city}
                             {distLabel && <span className="text-gray-300"> · </span>}
                             {distLabel && <span>{distLabel}</span>}
                           </p>
 
-                          {/* Row 3: Charger type pills + price (Improvements 1, 3) */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1">
-                              {chargerTypes.map(t => <ChargerPill key={t} type={t} />)}
-                            </div>
-                            <span className="text-[11px] text-gray-400">from ₹8.50/kWh</span>
-                          </div>
-
-                          {/* Row 4: Rating — only shown if reviews exist (Improvement 2) */}
-                          {reviewCount > 0 ? (
-                            <div className="flex items-center gap-1 mt-1.5">
-                              <StarRow rating={station.rating} />
-                              <span className="text-[11px] text-gray-400 ml-0.5">
-                                {(station.rating || 0).toFixed(1)} ({reviewCount})
+                          {/* Row 3: Bottom row with text and price */}
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-medium ${
+                                avail === 0
+                                  ? 'text-red-500'
+                                  : avail <= 1
+                                  ? 'text-yellow-600'
+                                  : 'text-gray-700'
+                              }`}>
+                                {avail === 0 ? 'All in use' : `${avail} free`}
                               </span>
+                              <span className="text-gray-200 text-xs">·</span>
+                              <span className="text-xs text-gray-400">{total} total</span>
                             </div>
-                          ) : (
-                            <p className="text-[11px] text-gray-300 mt-1.5">No reviews yet</p>
-                          )}
+                            <span className="text-xs text-gray-400">from ₹8.50/kWh</span>
+                          </div>
                         </div>
                       </React.Fragment>
                     )
@@ -630,7 +653,7 @@ export default function MapView() {
               <Marker
                 key={station.id}
                 position={[station.lat, station.lng]}
-                icon={createMarkerIcon(selectedStation?.id === station.id, station.status)}
+                icon={createMarkerIcon(station)}
                 eventHandlers={{ click: () => handleStationClick(station) }}
               />
             ))}
@@ -666,103 +689,80 @@ export default function MapView() {
               STATION PREVIEW CARD
           ══════════════════════════════════════ */}
           {showCard && selectedStation && (() => {
-            const cfg          = STATUS_CONFIG[selectedStation.status] || STATUS_CONFIG.faulty
-            const distKm       = haversine(userLoc?.lat, userLoc?.lng, selectedStation.lat, selectedStation.lng)
-            const distLabel    = fmtDist(distKm)
-            const total        = selectedStation.total_slots   ?? 3
-            const avail        = selectedStation.available_slots ?? total
-            const reviewCount  = selectedStation.review_count || selectedStation.totalReviews || 0
-            const chargerTypes = STATION_CHARGER_TYPES(selectedStation)
-
             return (
               <div
                 key={selectedStation.id}
-                className="card-slide-up absolute bottom-5 left-1/2 w-[320px] bg-white border border-gray-200 shadow-2xl z-[1002] overflow-hidden"
-                style={{ transform: 'translateX(-50%)' }}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1002] w-72 bg-white border border-gray-200 shadow-lg animate-slide-up"
                 onClick={e => e.stopPropagation()}
               >
-                {/* Status colour bar */}
-                <div className="h-0.5 w-full" style={{ background: cfg.color }} />
-
                 {/* Header */}
-                <div className="flex items-start justify-between px-4 pt-4 pb-3 border-b border-gray-100">
-                  <div className="flex-1 pr-3 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 leading-snug mb-0.5 truncate">
-                      {selectedStation.name}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate">
-                      {selectedStation.address}, {selectedStation.city}
-                    </p>
+                <div className="p-4 border-b border-gray-100">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 pr-3">
+                      <p className="text-sm font-medium text-gray-900 leading-snug mb-0.5">
+                        {selectedStation.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {selectedStation.city}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleCloseCard}
+                      className="text-gray-300 hover:text-gray-600 flex-shrink-0">
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button onClick={handleCloseCard}
-                    className="flex-shrink-0 w-6 h-6 bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-all">
-                    <X size={13} />
-                  </button>
                 </div>
 
-                {/* Body */}
-                <div className="px-4 py-3 border-b border-gray-100 space-y-2.5">
-
-                  {/* Status + distance */}
+                {/* Availability */}
+                <div className="p-4 border-b border-gray-100">
+                  {/* Status bar */}
+                  <div className="flex gap-1 mb-2">
+                    {Array(selectedStation.total_slots || 3).fill(0).map((_, i) => {
+                      const avail = selectedStation.available_slots || 0
+                      const total = selectedStation.total_slots || 3
+                      const occupied = Math.round((total - avail) * 0.75)
+                      
+                      let barColor = 'bg-gray-900'
+                      if (i >= avail && i < avail + occupied) {
+                        barColor = 'bg-gray-300'
+                      } else if (i >= avail + occupied) {
+                        barColor = 'bg-red-200'
+                      }
+                      
+                      return <div key={i} className={`h-1 flex-1 ${barColor}`}></div>
+                    })}
+                  </div>
+                  
+                  {/* Availability text */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.color }} />
-                      <span className="text-xs text-gray-600 capitalize font-medium">{selectedStation.status}</span>
-                    </div>
-                    {distLabel && <span className="text-xs text-gray-400">{distLabel} away</span>}
-                  </div>
-
-                  {/* Availability dots */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-gray-400">Availability</span>
-                      <span className="text-xs font-medium text-gray-700">{avail}/{total} free</span>
-                    </div>
-                    <div className="flex gap-1">
-                      {Array(total).fill(0).map((_, i) => (
-                        <div key={i} className={`h-1 flex-1 rounded-sm ${i < avail ? 'bg-gray-900' : 'bg-gray-150'}`} style={{ background: i < avail ? '#111' : '#e5e7eb' }} />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Charger types + price */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-1">{chargerTypes.map(t => <ChargerPill key={t} type={t} />)}</div>
-                    <span className="text-[11px] text-gray-400">₹8.50/kWh</span>
-                  </div>
-
-                  {/* Rating */}
-                  {reviewCount > 0 ? (
-                    <div className="flex items-center gap-1.5">
-                      <StarRow rating={selectedStation.rating} />
-                      <span className="text-xs text-gray-400">
-                        {(selectedStation.rating || 0).toFixed(1)} · {reviewCount} reviews
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-gray-900"></div>
+                        {selectedStation.available_slots || 0}{' '}free
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                        {(selectedStation.total_slots || 3) - (selectedStation.available_slots || 0)} in use
                       </span>
                     </div>
-                  ) : (
-                    <p className="text-xs text-gray-300">No reviews yet</p>
-                  )}
-
-                  {/* Open hours */}
-                  {selectedStation.openHours && (
-                    <div className="flex items-center gap-1.5">
-                      <Clock size={11} className="text-gray-400" />
-                      <span className="text-xs text-gray-500">Open: {selectedStation.openHours}</span>
-                    </div>
-                  )}
+                    <span className="text-xs text-gray-400">
+                      {selectedStation.total_slots || 3} total
+                    </span>
+                  </div>
                 </div>
 
                 {/* Actions */}
-                <div className="px-3 py-2.5 flex gap-2">
+                <div className="p-3 flex gap-2">
                   <button
                     onClick={() => navigate(`/book/${selectedStation.id}`)}
-                    className="flex-1 border border-gray-200 text-gray-600 py-2 text-xs font-medium hover:border-gray-400 hover:text-gray-900 transition-all">
+                    className="flex-1 border border-gray-200 text-gray-600 py-2 text-xs font-normal hover:border-gray-400 transition-colors">
                     Book slot
                   </button>
                   <button
                     onClick={() => navigate(`/station/${selectedStation.slug || selectedStation.id}`)}
-                    className="flex-1 bg-gray-900 text-white py-2 text-xs font-medium hover:bg-black transition-all flex items-center justify-center gap-1">
-                    View full details <ChevronRight size={12} />
+                    className="flex-1 bg-gray-900 text-white py-2 text-xs font-normal hover:bg-black transition-colors">
+                    View details
                   </button>
                 </div>
               </div>

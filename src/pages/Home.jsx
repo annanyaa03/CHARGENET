@@ -11,14 +11,10 @@ import { PageWrapper } from '../components/layout/PageWrapper';
 /* --- Components --- */
 
 const Reveal = ({ children, delay = 0, y = 20 }) => (
-  <motion.div
-    initial={{ opacity: 0, y }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+  <div
   >
     {children}
-  </motion.div>
+  </div>
 );
 
 const CountUp = ({ end, suffix = "" }) => {
@@ -275,12 +271,8 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-6 md:gap-8 relative">
               {/* Connecting line (desktop) */}
               <div className="hidden md:block absolute top-[72px] left-[calc(16.67%+40px)] right-[calc(16.67%+40px)] h-px bg-gray-200 z-0">
-                <motion.div
+                <div
                   className="h-full bg-gradient-to-r from-[#1D9E75] to-[#1D9E75]/30 origin-left"
-                  initial={{ scaleX: 0 }}
-                  whileInView={{ scaleX: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 />
               </div>
 
@@ -294,28 +286,17 @@ export default function Home() {
                 ]
                 return (
                   <Reveal key={step.title} delay={i * 0.15}>
-                    <motion.div
+                    <div
                       className="relative text-center cursor-pointer select-none"
-                      onHoverStart={() => setActiveStep(i)}
-                      onHoverEnd={() => setActiveStep(null)}
                       onClick={() => setActiveStep(isHovered ? null : i)}
                     >
                       {/* Card */}
-                      <motion.div
+                      <div
                         className="relative bg-white rounded-none border border-gray-100 p-8 pb-6 overflow-hidden"
-                        animate={{
-                          y: isHovered ? -6 : 0,
-                          boxShadow: isHovered
-                            ? '0 24px 60px rgba(29,158,117,0.12), 0 8px 24px rgba(0,0,0,0.06)'
-                            : '0 1px 4px rgba(0,0,0,0.04)'
-                        }}
-                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                       >
                         {/* Top color bar that fills on hover */}
-                        <motion.div
+                        <div
                           className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#1D9E75] to-[#1D9E75]/40 origin-left"
-                          animate={{ scaleX: isHovered ? 1 : 0 }}
-                          transition={{ duration: 0.3, ease: 'easeOut' }}
                         />
 
                         {/* Ghost step number */}
@@ -327,43 +308,30 @@ export default function Home() {
 
                         {/* Icon circle */}
                         <div className="mb-6 relative z-10">
-                          <motion.div
+                          <div
                             className="w-[72px] h-[72px] rounded-none mx-auto flex items-center justify-center relative"
-                            animate={{
-                              background: isHovered ? 'rgba(29,158,117,0.12)' : 'rgba(29,158,117,0.07)',
-                              scale: isHovered ? 1.08 : 1,
-                            }}
-                            transition={{ duration: 0.3 }}
                           >
                             {/* Pulsing ring on hover */}
                             {isHovered && (
-                              <motion.div
+                              <div
                                 className="absolute inset-0 rounded-none"
                                 style={{ border: '2px solid rgba(29,158,117,0.3)' }}
-                                animate={{ scale: [1, 1.4], opacity: [0.6, 0] }}
-                                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
                               />
                             )}
-                            <motion.div
-                              animate={{ color: isHovered ? '#1D9E75' : '#1D9E75CC' }}
+                            <div
                             >
                               <Icon size={32} />
-                            </motion.div>
-                          </motion.div>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Step number dot */}
                         <div className="flex items-center justify-center gap-2 mb-2">
-                          <motion.span
+                          <span
                             className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-none"
-                            animate={{
-                              background: isHovered ? 'rgba(29,158,117,0.1)' : 'transparent',
-                              color: isHovered ? '#1D9E75' : '#9CA3AF',
-                            }}
-                            transition={{ duration: 0.2 }}
                           >
                             Step {step.number}
-                          </motion.span>
+                          </span>
                         </div>
 
                         <h3 className="text-xl font-bold text-[#051428] mb-3 relative z-10">{step.title}</h3>
@@ -373,10 +341,8 @@ export default function Home() {
                         </p>
 
                         {/* CTA link — expands on hover */}
-                        <motion.div
+                        <div
                           className="overflow-hidden"
-                          animate={{ height: isHovered ? 'auto' : 0, opacity: isHovered ? 1 : 0, marginTop: isHovered ? 16 : 0 }}
-                          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                         >
                           <button
                             onClick={(e) => { e.stopPropagation(); window.location.href = stepLinks[i].to }}
@@ -387,16 +353,14 @@ export default function Home() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                             </svg>
                           </button>
-                        </motion.div>
-                      </motion.div>
+                        </div>
+                      </div>
 
                       {/* Bottom connector dot */}
-                      <motion.div
+                      <div
                         className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#1D9E75] hidden md:block"
-                        animate={{ scale: isHovered ? 2 : 1, opacity: isHovered ? 1 : 0.3 }}
-                        transition={{ duration: 0.3 }}
                       />
-                    </motion.div>
+                    </div>
                   </Reveal>
                 )
               })}
@@ -445,14 +409,10 @@ export default function Home() {
                 {features.map((feature, i) => {
                   const isActive = activeFeature === i;
                   return (
-                    <motion.button
+                    <button
                       key={feature.title}
                       onClick={() => setActiveFeature(i)}
                       className="w-full text-left group"
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: i * 0.07 }}
                     >
                       <div
                         className={`relative flex items-center gap-4 px-5 py-4 rounded-none transition-all duration-300 ${
@@ -504,20 +464,15 @@ export default function Home() {
                           style={{ color: isActive ? feature.color : 'transparent', transform: isActive ? 'translateX(0)' : 'translateX(-4px)' }}
                         />
                       </div>
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
 
               {/* Right — Active feature detail */}
               <div className="lg:sticky lg:top-28">
-                <AnimatePresence mode="wait">
-                  <motion.div
+                <div
                     key={activeFeature}
-                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -16, scale: 0.98 }}
-                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                     className="rounded-none border border-gray-200 p-8 relative overflow-hidden bg-white shadow-xl shadow-gray-200/50"
                   >
                     {/* Background glow inside card */}
@@ -580,9 +535,7 @@ export default function Home() {
                         />
                       ))}
                     </div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+                  </div></div>
             </div>
           </div>
         </section>
