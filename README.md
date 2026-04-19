@@ -1,13 +1,44 @@
-# ChargeNet
+<div align="center">
 
-**India's EV charging station discovery and booking platform.**
+```
+ ██████╗██╗  ██╗ █████╗ ██████╗  ██████╗ ███████╗███╗   ██╗███████╗████████╗
+██╔════╝██║  ██║██╔══██╗██╔══██╗██╔════╝ ██╔════╝████╗  ██║██╔════╝╚══██╔══╝
+██║     ███████║███████║██████╔╝██║  ███╗█████╗  ██╔██╗ ██║█████╗     ██║   
+██║     ██╔══██║██╔══██║██╔══██╗██║   ██║██╔══╝  ██║╚██╗██║██╔══╝     ██║   
+╚██████╗██║  ██║██║  ██║██║  ██║╚██████╔╝███████╗██║ ╚████║███████╗   ██║   
+ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝╚═╝  ╚═══╝╚══════╝   ╚═╝   
+```
 
-ChargeNet allows EV drivers to locate charging stations across India, check real-time charger availability, book time slots, view weather and AQI conditions, and read community reviews. The platform exposes public shareable URLs per station and uses AI-assisted tagging for discoverability.
+**India's EV Charging Station Network**
+
+*Find. Book. Charge.*
+
+---
+
+![Node](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4.x-000000?style=flat-square&logo=express&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?style=flat-square&logo=vite&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?style=flat-square&logo=github-actions&logoColor=white)
+
+</div>
+
+---
+
+## Overview
+
+ChargeNet is a full-stack web application that connects EV drivers with a network of **80+ charging stations** across India. The platform provides real-time charger availability, slot booking, weather and AQI data at each station, community reviews, and AI-powered station tagging — all accessible through a clean, map-first interface.
+
+The backend is built with a production-grade Express.js architecture: modular MVC structure, Zod schema validation, Pino structured logging, per-route rate limiting, Helmet security headers, and Supabase JWT authentication.
 
 ---
 
 ## Table of Contents
 
+- [Features](#features)
+- [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Database Schema](#database-schema)
@@ -15,10 +46,74 @@ ChargeNet allows EV drivers to locate charging stations across India, check real
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Development Scripts](#development-scripts)
+- [Security](#security)
+- [Contributing](#contributing)
+
+---
+
+## Features
+
+| Feature | Description |
+|---|---|
+| Station Discovery | Browse 80+ stations on an interactive Leaflet map |
+| Real-time Availability | Live charger status per station |
+| Slot Booking | Book and cancel EV charging sessions |
+| Weather and AQI | On-site environmental data via Open-Meteo |
+| Reviews and Ratings | Community-sourced station feedback |
+| AI Tagging | Anthropic Claude-powered station tag generation |
+| Shareable URLs | Public slug-based station pages |
+| Payments | Razorpay integration |
+
+---
+
+## Architecture
+
+```
+                          CLIENT (React + Vite)
+                                   |
+                          HTTP / REST (JSON)
+                                   |
+            ┌──────────────────────▼──────────────────────┐
+            │              EXPRESS API SERVER              │
+            │                                             │
+            │  requestLogger → helmet → cors → bodyParser │
+            │          → rateLimit → requireAuth          │
+            │                                             │
+            │   /api/v1/stations   →  stationRoutes       │
+            │   /api/v1/chargers   →  chargerRoutes       │
+            │   /api/v1/bookings   →  bookingRoutes       │
+            │   /api/v1/reviews    →  reviewRoutes        │
+            │                                             │
+            │        notFoundHandler → errorHandler       │
+            └──────────────┬──────────────────────────────┘
+                           |
+              ┌────────────┴────────────┐
+              |                         |
+       ┌──────▼──────┐         ┌────────▼────────┐
+       │  SUPABASE   │         │  EXTERNAL APIs  │
+       │ PostgreSQL  │         │                 │
+       │    + Auth   │         │  Open-Meteo     │
+       │    + RLS    │         │  Anthropic AI   │
+       └─────────────┘         │  Razorpay       │
+                               └─────────────────┘
+```
 
 ---
 
 ## Tech Stack
+
+### Backend
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Node.js | >= 18 | Runtime |
+| Express.js | 4.x | HTTP framework |
+| Supabase JS | 2.x | Database client and JWT verification |
+| Zod | 3.x | Request schema validation |
+| Pino | Latest | Structured JSON logging |
+| Helmet | Latest | HTTP security headers |
+| express-rate-limit | Latest | Per-route rate limiting |
+| Vitest | Latest | Unit and integration testing |
 
 ### Frontend
 
@@ -32,27 +127,17 @@ ChargeNet allows EV drivers to locate charging stations across India, check real
 | TanStack Query | 5.x | Server state and caching |
 | React Leaflet | 4.2 | Interactive maps |
 | Framer Motion | 11.x | Animations |
-| React Hook Form | 7.x | Form management |
-| Supabase JS | 2.39 | Auth and database client |
-
-### Backend
-
-| Technology | Purpose |
-|---|---|
-| Node.js + Express.js | REST API server |
-| Supabase (PostgreSQL) | Primary database and authentication |
-| Nodemailer | Transactional email via SMTP |
-| Razorpay | Payment processing |
+| React Hook Form | 7.x | Form handling |
 
 ### External APIs
 
-| API | Purpose | Pricing |
+| API | Purpose | Cost |
 |---|---|---|
 | Open-Meteo | Weather and AQI data | Free |
 | OpenStreetMap / Leaflet | Map tiles | Free |
 | Nominatim | Geocoding | Free |
 | Anthropic Claude | AI station tagging | Usage-based |
-| Razorpay | Payment gateway | Transaction fee |
+| Razorpay | Payment processing | Transaction fee |
 
 ---
 
@@ -60,96 +145,198 @@ ChargeNet allows EV drivers to locate charging stations across India, check real
 
 ```
 chargenet/
-├── backend/                  # Legacy backend (deprecated, kept for reference)
-├── public/                   # Static assets
-├── scripts/                  # Utility and seed scripts
-├── server/                   # Active Express API server
-│   ├── index.js              # All routes and middleware
+├── .github/
+│   └── workflows/
+│       └── ci.yml                  # GitHub Actions CI pipeline
+│
+├── server/                         # Express API server
+│   ├── controllers/
+│   │   ├── bookingsController.js
+│   │   ├── chargersController.js
+│   │   ├── reviewsController.js
+│   │   └── stationsController.js
+│   ├── lib/
+│   │   ├── logger.js               # Pino logger instance
+│   │   ├── response.js             # Standardised response helpers
+│   │   └── supabase.js             # Supabase client (service role)
+│   ├── middleware/
+│   │   ├── asyncHandler.js         # Async error wrapper
+│   │   ├── auth.js                 # Supabase JWT verification
+│   │   ├── errorHandler.js         # Global error and 404 handler
+│   │   ├── logger.js               # pino-http request logger
+│   │   ├── rateLimit.js            # Per-route rate limiters
+│   │   ├── security.js             # Helmet and CORS configuration
+│   │   └── validate.js             # Zod schema validator middleware
+│   ├── routes/
+│   │   ├── bookings.js
+│   │   ├── chargers.js
+│   │   ├── reviews.js
+│   │   └── stations.js
+│   ├── schemas/
+│   │   ├── auth.schema.js
+│   │   ├── booking.schema.js
+│   │   ├── review.schema.js
+│   │   └── station.schema.js
+│   ├── services/
+│   │   ├── ai.js                   # Anthropic Claude integration
+│   │   ├── booking.service.js
+│   │   ├── charger.service.js
+│   │   ├── review.service.js
+│   │   ├── station.service.js
+│   │   └── supabase.js
+│   ├── tests/                      # Vitest test suite
+│   ├── index.js                    # Application entry point
+│   ├── vitest.config.js
 │   └── package.json
-├── src/                      # React frontend source
-│   ├── components/           # Reusable UI components
-│   ├── context/              # React context providers
-│   ├── hooks/                # Custom React hooks
-│   ├── lib/                  # Supabase client initialisation
-│   ├── mock/                 # Static mock data for development
-│   ├── pages/                # Route-level page components
-│   │   └── solutions/        # Solution-specific pages
-│   ├── routes/               # Route configuration
-│   ├── services/             # API service layer (fetch wrappers)
-│   ├── store/                # Zustand state stores
-│   └── utils/                # Shared utility functions
-├── .env.example              # Environment variable template
-├── index.html                # HTML entry point
-├── package.json              # Root dependencies and scripts
-└── vite.config.js            # Vite configuration
+│
+├── sql/
+│   ├── schema.sql                  # Full database schema
+│   ├── seed-stations.sql           # Station seed data
+│   ├── database-design-fix.sql
+│   └── public-rls-fix.sql          # Row Level Security policies
+│
+├── src/                            # React frontend
+│   ├── components/
+│   ├── context/
+│   ├── hooks/
+│   ├── lib/                        # Supabase client (anon key)
+│   ├── mock/
+│   ├── pages/
+│   ├── routes/
+│   ├── services/                   # Frontend API service layer
+│   ├── store/                      # Zustand stores
+│   └── utils/
+│
+├── .env.example
+├── SECURITY.md
+├── package.json
+└── vite.config.js
 ```
 
 ---
 
 ## Database Schema
 
-| Table | Description |
-|---|---|
-| `stations` | EV charging station records |
-| `chargers` | Individual charger units per station |
-| `bookings` | User slot reservations |
-| `reviews` | Station ratings and text reviews |
-| `tags` | Descriptive station tags |
-| `station_tags` | Junction table: stations to tags (many-to-many) |
-| `profiles` | Extended user profile data |
+```
+┌─────────────┐       ┌──────────────┐       ┌──────────────┐
+│  stations   │──────<│   chargers   │       │   bookings   │
+│─────────────│       │──────────────│       │──────────────│
+│ id          │       │ id           │       │ id           │
+│ name        │       │ station_id   │       │ user_id      │
+│ slug        │       │ type         │       │ charger_id   │
+│ location    │       │ power_kw     │       │ station_id   │
+│ latitude    │       │ status       │       │ start_time   │
+│ longitude   │       │ connector    │       │ end_time     │
+│ address     │       └──────────────┘       │ status       │
+│ amenities   │                              └──────────────┘
+└──────┬──────┘
+       │                ┌──────────────┐       ┌──────────────┐
+       ├───────────────<│   reviews    │       │   profiles   │
+       │                │──────────────│       │──────────────│
+       │                │ id           │       │ id           │
+       │                │ station_id   │       │ user_id      │
+       │                │ user_id      │       │ full_name    │
+       │                │ rating       │       │ vehicle_type │
+       │                │ comment      │       └──────────────┘
+       │                └──────────────┘
+       │
+       │         ┌──────────────┐     ┌──────────────┐
+       └────────<│ station_tags │>────│     tags     │
+                 └──────────────┘     └──────────────┘
+```
 
 ---
 
 ## API Reference
 
-Base URL: `http://localhost:3001/api`
+**Base URL:** `http://localhost:3001/api/v1`
+
+All write endpoints require an `Authorization: Bearer <token>` header.  
+All responses follow the envelope: `{ success, data | error, timestamp }`.
+
+---
 
 ### Health
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health` | Server health check |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/health` | Public | Server status, uptime, version |
+
+---
 
 ### Stations
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/stations` | List all stations |
-| GET | `/stations/:id` | Retrieve a station by ID |
-| GET | `/stations/slug/:slug` | Retrieve a station by public slug |
-| POST | `/stations` | Create a new station |
-| PUT | `/stations/:id` | Update a station |
-| DELETE | `/stations/:id` | Delete a station |
-| GET | `/stations/:id/chargers` | List chargers at a station |
-| GET | `/stations/:id/reviews` | List reviews for a station |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/stations` | Public | List all stations |
+| GET | `/stations/:id` | Public | Get station by ID |
+| GET | `/stations/slug/:slug` | Public | Get station by public slug |
+| POST | `/stations` | Required | Create a station |
+| PUT | `/stations/:id` | Required | Update a station |
+| DELETE | `/stations/:id` | Required | Delete a station |
+| GET | `/stations/:id/chargers` | Public | List chargers at a station |
+| GET | `/stations/:id/reviews` | Public | List reviews for a station |
+
+---
 
 ### Chargers
 
-| Method | Endpoint | Description |
-|---|---|---|
-| PATCH | `/chargers/:id/status` | Update charger availability status |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| PATCH | `/chargers/:id/status` | Required | Update charger availability |
+
+---
 
 ### Bookings
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/bookings` | List bookings for the authenticated user |
-| POST | `/bookings` | Create a new booking |
-| PATCH | `/bookings/:id/cancel` | Cancel an existing booking |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/bookings` | Required | List current user's bookings |
+| POST | `/bookings` | Required | Create a booking |
+| PATCH | `/bookings/:id/cancel` | Required | Cancel a booking |
+
+---
 
 ### Reviews
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/reviews` | Submit a station review |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/reviews` | Required | Submit a station review |
 
-### Authentication
+---
 
-| Method | Endpoint | Description |
+### Response Format
+
+```json
+// Success
+{
+  "success": true,
+  "data": { ... },
+  "timestamp": "2025-01-01T00:00:00.000Z"
+}
+
+// Error
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": [{ "field": "rating", "message": "Expected number" }]
+  },
+  "timestamp": "2025-01-01T00:00:00.000Z"
+}
+```
+
+### Error Codes
+
+| Code | HTTP Status | Cause |
 |---|---|---|
-| POST | `/auth/signup` | Register a new user |
-| POST | `/auth/login` | Authenticate and receive a session |
-| POST | `/auth/logout` | Invalidate the current session |
+| `VALIDATION_ERROR` | 400 | Zod schema validation failed |
+| `UNAUTHORIZED` | 401 | Missing or invalid JWT |
+| `FORBIDDEN` | 403 | Authenticated but not permitted |
+| `NOT_FOUND` | 404 | Resource does not exist |
+| `CONFLICT` | 409 | Duplicate resource (DB constraint) |
+| `SERVER_ERROR` | 500 | Unhandled internal error |
 
 ---
 
@@ -159,79 +346,87 @@ Base URL: `http://localhost:3001/api`
 
 - Node.js >= 18
 - npm >= 9
-- A [Supabase](https://supabase.com) project with the schema applied
+- A [Supabase](https://supabase.com) project
+- Razorpay test account (optional, for payment flows)
 
-### Installation
+### 1. Clone and Install
 
 ```bash
-# Clone the repository
 git clone https://github.com/annanyaa03/CHARGENET.git
 cd CHARGENET
 
-# Install frontend dependencies
+# Frontend dependencies
 npm install
 
-# Install server dependencies
+# Server dependencies
 cd server && npm install && cd ..
-
-# Configure environment variables
-cp .env.example .env
-# Edit .env and populate all required values
 ```
 
-### Running Locally
+### 2. Configure Environment
 
 ```bash
-# Start frontend only (port 5173)
+cp .env.example .env
+cp server/.env.example server/.env
+# Edit both files and populate all required values
+```
+
+### 3. Apply Database Schema
+
+In your Supabase SQL editor, run the files in this order:
+
+```
+sql/schema.sql
+sql/public-rls-fix.sql
+sql/seed-stations.sql      # optional: seeds 80+ stations
+```
+
+### 4. Start Development Servers
+
+```bash
+# Frontend only   — http://localhost:5173
 npm run dev
 
-# Start backend only (port 3001)
+# Backend only    — http://localhost:3001
 npm run dev:server
 
-# Start both concurrently
+# Both together
 npm run dev:all
-```
-
-### Production Build
-
-```bash
-npm run build
 ```
 
 ---
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` before running the project.
-
-### Frontend (Vite — compiled into client bundle, publicly visible)
+### Frontend (`/.env`) — compiled into browser bundle, publicly visible
 
 | Variable | Description |
 |---|---|
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anonymous (publishable) key |
-| `VITE_API_URL` | Base URL of the Express API server |
+| `VITE_API_URL` | Express API base URL |
 | `VITE_RAZORPAY_KEY_ID` | Razorpay publishable key |
 
-### Server (Node — server-side only, never expose to client)
+### Server (`/server/.env`) — server-side only, never exposed to client
 
 | Variable | Description |
 |---|---|
-| `PORT` | Port the Express server listens on (default: 3001) |
-| `NODE_ENV` | Runtime environment: `development` or `production` |
+| `PORT` | Server port (default: `3001`) |
+| `NODE_ENV` | `development` or `production` |
+| `FRONTEND_URL` | Allowed CORS origin in production |
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase anonymous key |
-| `SUPABASE_SECRET_KEY` | Supabase service role key — privileged, server only |
+| `SUPABASE_SECRET_KEY` | Supabase service role key — privileged |
 | `SUPABASE_JWT_SECRET` | JWT secret for token verification |
 | `RAZORPAY_KEY_ID` | Razorpay key ID |
 | `RAZORPAY_KEY_SECRET` | Razorpay secret key — server only |
 | `SMTP_HOST` | SMTP server hostname |
-| `SMTP_PORT` | SMTP server port (typically 587) |
+| `SMTP_PORT` | SMTP port (typically `587`) |
 | `SMTP_USER` | SMTP authentication username |
 | `SMTP_PASS` | SMTP authentication password |
-| `SMTP_FROM` | Sender address for outgoing mail |
+| `SMTP_FROM` | Sender address for transactional email |
 
-> `VITE_` prefixed variables are compiled into the browser bundle and are publicly visible to all users. Never assign privileged secrets (`SUPABASE_SECRET_KEY`, `RAZORPAY_KEY_SECRET`, `SMTP_PASS`) to `VITE_` variables.
+> `VITE_` prefixed variables are bundled into the client and visible to all users.  
+> Never assign privileged credentials — service role keys, payment secrets, SMTP passwords — to `VITE_` variables.
 
 ---
 
@@ -240,15 +435,39 @@ Copy `.env.example` to `.env` before running the project.
 | Script | Description |
 |---|---|
 | `npm run dev` | Start Vite frontend dev server |
-| `npm run dev:server` | Start Express API server via nodemon |
+| `npm run dev:server` | Start Express API with nodemon |
 | `npm run dev:all` | Start frontend and backend concurrently |
-| `npm run build` | Build frontend for production |
-| `npm run preview` | Preview the production build locally |
+| `npm run build` | Production build of the frontend |
+| `npm run preview` | Preview production build locally |
 | `npm run lint` | Run ESLint across all JS and JSX files |
+| `cd server && npm test` | Run Vitest test suite |
 
 ---
 
+## Security
 
+The backend implements a layered security model across every request.
+
+**HTTP Headers** — Helmet enforces Content Security Policy, HSTS with a one-year max-age and preload, X-Frame-Options deny, X-Content-Type-Options nosniff, and Referrer-Policy strict-origin-when-cross-origin.
+
+**CORS** — Strict origin whitelist. Requests from unlisted origins are rejected at the middleware level. `Access-Control-Allow-Credentials` is enabled for authenticated flows.
+
+**Authentication** — All non-GET routes require a valid Supabase JWT as `Authorization: Bearer <token>`. Tokens are verified server-side via the Supabase service role client and the authenticated user is attached to `req.user` for all downstream handlers.
+
+**Rate Limiting** — Four independent limiters protect distinct surfaces:
+
+| Limiter | Window | Limit |
+|---|---|---|
+| General API | 15 minutes | 100 requests |
+| Authentication | 15 minutes | 10 requests |
+| Bookings | 1 hour | 20 requests |
+| Reviews | 1 hour | 5 requests |
+
+**Validation** — All incoming request bodies are validated against Zod schemas before reaching controllers. Invalid payloads return structured 400 responses with per-field error details.
+
+**Database** — Row Level Security policies are applied at the Supabase layer, ensuring users can only access their own data regardless of API-level checks.
+
+To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -256,11 +475,19 @@ Copy `.env.example` to `.env` before running the project.
 
 1. Fork the repository.
 2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Commit your changes with descriptive messages.
-4. Push to your fork and open a pull request against `main`.
+3. Write tests for any new behaviour.
+4. Ensure all tests pass: `cd server && npm test`
+5. Commit using [Conventional Commits](https://www.conventionalcommits.org/).
+6. Open a pull request against `main` with a clear description of changes.
 
 ---
 
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+Built with React, Express, and Supabase.
+</div>
