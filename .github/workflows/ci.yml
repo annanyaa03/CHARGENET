@@ -1,0 +1,95 @@
+name: ChargeNet CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js 20
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      # Step 3: Install root dependencies
+      - name: Install root dependencies
+        run: npm ci
+
+      # Step 4: Install server dependencies
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      # Step 5: Lint frontend
+      - name: Lint frontend
+        run: npm run lint
+        continue-on-error: true
+
+      # Step 6: Run server tests
+      - name: Run tests
+        working-directory: server
+        run: npm test
+        env:
+          # Dummy values for testing
+          # Real secrets NOT needed for mocked tests
+          SUPABASE_URL: https://test.supabase.co
+          SUPABASE_SERVICE_KEY: test-service-key-for-ci
+          PORT: 3002
+          NODE_ENV: test
+
+      # Step 7: Upload coverage report
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: server/coverage/
+          retention-days: 7
+
+  build:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          # Dummy build env vars
+          VITE_SUPABASE_URL: https://test.supabase.co
+          VITE_SUPABASE_ANON_KEY: test-anon-key
+          VITE_API_URL: http://localhost:3001
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: dist/
+          retention-days: 7
