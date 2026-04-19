@@ -1,27 +1,18 @@
 import { chargerService } from '../services/supabase.js'
+import { successResponse } from '../lib/response.js'
 
 export const chargerController = {
 
   getByStation: async (req, res) => {
     const chargers = await chargerService
       .getByStation(req.params.id)
-    
-    res.json({
-      success: true,
-      data: { chargers },
-      timestamp: new Date().toISOString()
-    })
+    successResponse(res, { chargers })
   },
 
   create: async (req, res) => {
     const charger = await chargerService
       .create(req.body)
-    
-    res.status(201).json({
-      success: true,
-      data: { charger },
-      timestamp: new Date().toISOString()
-    })
+    successResponse(res, { charger }, 201)
   },
 
   updateStatus: async (req, res) => {
@@ -30,24 +21,14 @@ export const chargerController = {
         req.params.id, 
         req.body.status
       )
-    
-    res.json({
-      success: true,
-      data: { charger },
-      timestamp: new Date().toISOString()
-    })
+    successResponse(res, { charger })
   },
 
   delete: async (req, res) => {
     await chargerService
       .delete(req.params.id)
-    
-    res.json({
-      success: true,
-      data: { 
-        message: 'Charger deleted' 
-      },
-      timestamp: new Date().toISOString()
+    successResponse(res, { 
+      message: 'Charger deleted' 
     })
   }
 }

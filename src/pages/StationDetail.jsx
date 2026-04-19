@@ -43,7 +43,7 @@ function AmenityCard({ item }) {
   }
 
   return (
-    <div className="py-4 flex items-center justify-between border-b border-gray-100 last:border-0">
+    <div className="py-4 px-4 -mx-4 flex items-center justify-between border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-all duration-300 group rounded-sm">
       <div className="flex items-center gap-3">
         <div className="w-7 h-7 border border-gray-100 flex items-center justify-center text-gray-400">
           {getIcon(item.type)}
@@ -140,19 +140,32 @@ const StationDetail = () => {
     }
   }, [station])
 
+  /* ── API Configuration ── */
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
   const fetchChargers = useCallback(async (stationId) => {
     try {
-      const { data, error } = await supabase.from('chargers').select('*').eq('station_id', stationId)
-      if (!error) setChargers(data || [])
-    } catch (err) { console.error(err) }
-  }, [])
+      const response = await fetch(`${API_URL}/api/v1/stations/${stationId}/chargers`)
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`)
+      const result = await response.json()
+      setChargers(result.data?.chargers || [])
+    } catch (err) {
+      console.error('Chargers fetch error:', err)
+      setChargers([])
+    }
+  }, [API_URL])
 
   const fetchReviews = useCallback(async (stationId) => {
     try {
-      const { data, error } = await supabase.from('reviews').select('*').eq('station_id', stationId).order('created_at', { ascending: false })
-      if (!error) setReviews(data || [])
-    } catch (err) { console.error(err) }
-  }, [])
+      const response = await fetch(`${API_URL}/api/v1/stations/${stationId}/reviews`)
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`)
+      const result = await response.json()
+      setReviews(result.data?.reviews || [])
+    } catch (err) {
+      console.error('Reviews fetch error:', err)
+      setReviews([])
+    }
+  }, [API_URL])
 
   const fetchNearbyPlacesData = useCallback(async (city) => {
     try {
@@ -168,13 +181,23 @@ const StationDetail = () => {
 
   const loadData = useCallback(async () => {
     try {
-      const res = await getStationById(slug)
-      if (res.success) {
-        setStation(res.data)
-        document.title = `${res.data.name} — ChargeNet`
-        fetchChargers(res.data.id)
-        fetchReviews(res.data.id)
-        fetchNearbyPlacesData(res.data.city)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+      const url = isUUID
+        ? `${API_URL}/api/v1/stations/${slug}`
+        : `${API_URL}/api/v1/stations/slug/${slug}`
+      
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`Station not found: ${response.status}`)
+      
+      const result = await response.json()
+      const stationData = result.data?.station || result.data
+      
+      if (stationData) {
+        setStation(stationData)
+        document.title = `${stationData.name} — ChargeNet`
+        fetchChargers(stationData.id)
+        fetchReviews(stationData.id)
+        fetchNearbyPlacesData(stationData.city)
       }
     } catch (err) {
       console.error('Failed to load station:', err)
@@ -182,18 +205,20 @@ const StationDetail = () => {
     } finally {
       setLoading(false)
     }
-  }, [slug, fetchChargers, fetchReviews, fetchNearbyPlacesData])
+  }, [slug, API_URL, fetchChargers, fetchReviews, fetchNearbyPlacesData])
 
   useEffect(() => { loadData() }, [loadData])
 
   useEffect(() => {
     if (!station?.id) return
-    const channel = supabase
-      .channel(`station-chargers-${station.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chargers', filter: `station_id=eq.${station.id}` }, () => loadData())
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [station?.id, loadData])
+    
+    // Poll every 30 seconds for charger updates instead of realtime WebSocket
+    const interval = setInterval(() => {
+      fetchChargers(station.id)
+    }, 30000)
+    
+    return () => clearInterval(interval)
+  }, [station?.id, fetchChargers])
 
   /* ── Loading ── */
   if (loading) return (
@@ -273,7 +298,7 @@ const StationDetail = () => {
      RENDER
   ══════════════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900 antialiased">
+    <div className="min-h-screen bg-white font-sans text-gray-900 antialiased pb-24">
       <Navbar solid={true} />
 
       {/* ── Thin top bar ── */}
@@ -290,12 +315,12 @@ const StationDetail = () => {
           <div className="flex items-center gap-5">
             <button
               onClick={handleShare}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+              className="text-xs text-gray-400 hover:text-gray-900 transition-colors px-2 py-1 hover:bg-gray-50 rounded-sm">
               Share
             </button>
             <button
               onClick={toggleSave}
-              className={`text-xs transition-colors ${isSaved ? 'text-gray-800' : 'text-gray-400 hover:text-gray-600'}`}>
+              className={`text-xs transition-colors px-2 py-1 rounded-sm ${isSaved ? 'text-gray-800 hover:bg-gray-50' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'}`}>
               {isSaved ? 'Saved' : 'Save'}
             </button>
           </div>
@@ -313,7 +338,7 @@ const StationDetail = () => {
             <div className="mb-8 pb-8 border-b border-gray-100">
 
               {/* Name */}
-              <h1 className="text-2xl font-normal text-gray-900 tracking-tight mb-2">
+              <h1 className="text-4xl font-normal text-gray-900 tracking-tight mb-2">
                 {station.name}
               </h1>
 
@@ -368,21 +393,20 @@ const StationDetail = () => {
               )}
             </div>
 
-            {/* Quick info bar */}
-            <div className="grid grid-cols-4 divide-x divide-gray-100 border border-gray-100 mb-8">
-              <div className="px-4 py-3">
+            <div className="grid grid-cols-4 divide-x divide-gray-100 border border-gray-100 mb-8 overflow-hidden rounded-sm">
+              <div className="px-4 py-3 hover:bg-gray-50 transition-colors duration-300">
                 <p className="text-xs text-gray-400 mb-1">Chargers</p>
                 <p className="text-sm text-gray-900">{availableCount}/{chargers.length} free</p>
               </div>
-              <div className="px-4 py-3">
+              <div className="px-4 py-3 hover:bg-gray-50 transition-colors duration-300">
                 <p className="text-xs text-gray-400 mb-1">From</p>
                 <p className="text-sm text-gray-900">₹{minPrice}/kWh</p>
               </div>
-              <div className="px-4 py-3">
+              <div className="px-4 py-3 hover:bg-gray-50 transition-colors duration-300">
                 <p className="text-xs text-gray-400 mb-1">Weather</p>
                 <p className="text-sm text-gray-900">{weather?.temp ?? '—'}°C</p>
               </div>
-              <div className="px-4 py-3">
+              <div className="px-4 py-3 hover:bg-gray-50 transition-colors duration-300">
                 <p className="text-xs text-gray-400 mb-1">Air quality</p>
                 <p className="text-sm text-gray-900">{aqiLevel}</p>
               </div>
@@ -400,7 +424,7 @@ const StationDetail = () => {
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`px-5 py-3 text-xs transition-all border-b-2 -mb-px whitespace-nowrap ${
+                      className={`px-5 py-3 text-xs transition-all border-b-2 -mb-px whitespace-nowrap hover:bg-gray-50/50 rounded-t-sm ${
                         activeTab === tab
                           ? 'border-gray-900 text-gray-900 font-medium'
                           : 'border-transparent text-gray-400 hover:text-gray-600'
@@ -421,14 +445,14 @@ const StationDetail = () => {
             {activeTab === 'Chargers' && (
               <div className="divide-y divide-gray-100">
                 {chargers.map(charger => (
-                  <div 
-                    key={charger.id}
-                    className="flex items-center justify-between py-3.5 border-b border-gray-50 last:border-0 group">
+                    <div 
+                      key={charger.id}
+                      className="flex items-center justify-between py-4 px-4 -mx-4 hover:bg-gray-50/80 transition-all duration-300 group rounded-sm">
                     
                     {/* Left - all info on two lines max */}
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-900 font-normal">
+                        <span className="text-base text-gray-900 font-semibold">
                           {charger.type}
                         </span>
                         <span className={`text-xs px-2 py-0.5 border ${
@@ -502,7 +526,7 @@ const StationDetail = () => {
                     <p className="text-sm text-gray-400">No reviews yet. Be the first to review.</p>
                   )}
                   {reviews.map(review => (
-                    <div key={review.id} className="py-6 border-b border-gray-100 last:border-0">
+                    <div key={review.id} className="py-6 px-4 -mx-4 hover:bg-gray-50/50 transition-all duration-300 rounded-sm group">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
@@ -563,7 +587,7 @@ const StationDetail = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-0">
                     {facilities.map((f, i) => (
-                      <div key={i} className="flex items-start gap-3 py-4 border-b border-gray-50">
+                      <div key={i} className="flex items-start gap-3 py-4 px-4 -mx-4 border-b border-gray-50 hover:bg-gray-50/50 transition-all duration-300 rounded-sm">
                         <div className="w-1.5 h-1.5 bg-gray-300 flex-shrink-0 mt-1.5" />
                         <div>
                           <p className="text-sm text-gray-700">{f}</p>
@@ -612,9 +636,9 @@ const StationDetail = () => {
           <div className="lg:col-span-5">
             <div className="sticky top-20">
 
-              <div className="border border-gray-200 divide-y divide-gray-100">
+              <div className="border border-gray-200 divide-y divide-gray-100 overflow-hidden rounded-sm">
                 {/* Section 1: Book button */}
-                <div className="p-5">
+                <div className="p-5 hover:bg-gray-50/30 transition-colors duration-300">
                   <button
                     onClick={() => navigate(`/book/${station.id}`)}
                     className="w-full bg-gray-900 text-white py-3 text-sm font-normal hover:bg-black transition-colors mb-2">
@@ -626,7 +650,7 @@ const StationDetail = () => {
                 </div>
 
                 {/* Section 2: Availability */}
-                <div className="p-5">
+                <div className="p-5 hover:bg-gray-50/30 transition-colors duration-300">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs text-gray-400">Availability</p>
                     <span className="text-xs text-gray-400">Live</span>
@@ -652,7 +676,7 @@ const StationDetail = () => {
                 </div>
 
                 {/* Section 3: Weather */}
-                <div className="p-5">
+                <div className="p-5 hover:bg-gray-50/30 transition-colors duration-300">
                   <p className="text-xs text-gray-400 mb-3">Current conditions</p>
                   <div className="flex items-baseline gap-1 mb-1">
                     <span className="text-3xl font-light text-gray-900">
@@ -679,7 +703,7 @@ const StationDetail = () => {
                 </div>
 
                 {/* Section 4: Station details */}
-                <div className="p-5">
+                <div className="p-5 hover:bg-gray-50/30 transition-colors duration-300">
                   <p className="text-xs text-gray-400 mb-3">Station details</p>
                   <div className="space-y-2.5">
                     {[
@@ -704,20 +728,24 @@ const StationDetail = () => {
         </div>
       </div>
 
-      {/* Footer CTA */}
-      <section className="border-t border-gray-100 py-16">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-xl font-normal text-gray-900 mb-3 tracking-tight">Ready to power up?</h2>
-          <p className="text-sm text-gray-400 mb-8">
-            Secure your terminal at {station.name} in just a few clicks.
-          </p>
+      {/* Fixed Bottom CTA Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-100 px-6 py-4 flex items-center justify-between z-20 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-400">
+              From ₹{minPrice}/kWh
+            </p>
+            <p className="text-sm text-gray-900 font-medium tracking-tight">
+              {availableCount} of {chargers.length} chargers free
+            </p>
+          </div>
           <button
             onClick={() => navigate(`/book/${station.id}`)}
-            className="bg-gray-900 text-white px-8 py-3.5 text-xs hover:bg-black transition-colors">
-            Start booking session
+            className="bg-gray-900 text-white px-8 py-3 text-sm font-normal hover:bg-black transition-all duration-300 shadow-sm">
+            Book a Slot
           </button>
         </div>
-      </section>
+      </div>
     </div>
   )
 }

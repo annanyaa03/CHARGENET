@@ -16,21 +16,7 @@ const validateBody = (schema) => {
       req.body = validated
       next()
     } catch (err) {
-      if (err instanceof ZodError) {
-        // Format Zod errors into readable messages
-        const errors = err.errors.map(e => ({
-          field: e.path.join('.'),
-          message: e.message,
-          code: e.code
-        }))
-
-        return res.status(400).json({
-          success: false,
-          message: 'Validation failed',
-          errors,
-          timestamp: new Date().toISOString()
-        })
-      }
+      // Delegate to central error handler
       next(err)
     }
   }
@@ -47,19 +33,6 @@ const validateQuery = (schema) => {
       req.query = validated
       next()
     } catch (err) {
-      if (err instanceof ZodError) {
-        const errors = err.errors.map(e => ({
-          field: e.path.join('.'),
-          message: e.message,
-          code: e.code
-        }))
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid query parameters',
-          errors,
-          timestamp: new Date().toISOString()
-        })
-      }
       next(err)
     }
   }
@@ -76,19 +49,6 @@ const validateParams = (schema) => {
       req.params = validated
       next()
     } catch (err) {
-      if (err instanceof ZodError) {
-        const errors = err.errors.map(e => ({
-          field: e.path.join('.'),
-          message: e.message,
-          code: e.code
-        }))
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid URL parameters',
-          errors,
-          timestamp: new Date().toISOString()
-        })
-      }
       next(err)
     }
   }

@@ -1,147 +1,148 @@
 import { ZodError } from 'zod'
+import { ERROR_CODES } from '../lib/response.js'
 
-/**
- * Global error handling middleware
- * Must be the LAST middleware in chain
- * Must have 4 parameters (err, req, res, next)
- */
 const errorHandler = (err, req, res, next) => {
-  // Always log the full error server-side
-  console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.error(`[ERROR] ${new Date().toISOString()}`)
-  console.error(`Route: ${req.method} ${req.path}`)
-  console.error(`User: ${req.user?.id || 'anonymous'}`)
-  console.error('Error:', err)
-  console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  // Log full error server side
+  console.error(
+    `[ERROR] ${req.method} ${req.path}:`,
+    err.message
+  )
 
-  // Handle Zod validation errors → 400
+  // Zod validation errors → 400
   if (err instanceof ZodError) {
     const errors = err.errors.map(e => ({
-      field: e.path.join('.') || 'unknown',
-      message: e.message,
-      code: e.code,
-      received: e.received
+      field: e.path.join('.'),
+      message: e.message
     }))
-
     return res.status(400).json({
       success: false,
-      message: 'Validation failed',
-      errors,
+      error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Validation failed',
+        details: errors
+      },
       timestamp: new Date().toISOString()
     })
   }
 
-  // Handle Supabase/DB errors → 400 or 500
-  if (err.code) {
-    // PostgreSQL unique violation
-    if (err.code === '23505') {
-      return res.status(409).json({
-        success: false,
-        message: 'Resource already exists',
-        error: 'Duplicate entry',
-        timestamp: new Date().toISOString()
-      })
-    }
-
-    // PostgreSQL foreign key violation
-    if (err.code === '23503') {
-      return res.status(400).json({
-        success: false,
-        message: 'Referenced resource not found',
-        error: 'Foreign key violation',
-        timestamp: new Date().toISOString()
-      })
-    }
-
-    // PostgreSQL not null violation
-    if (err.code === '23502') {
-      return res.status(400).json({
-        success: false,
-        message: 'Required field missing',
-        error: err.message,
-        timestamp: new Date().toISOString()
-      })
-    }
-
-    // Supabase Single Row Not Found
-    if (err.code === 'PGRST116') {
-      return res.status(404).json({
-        success: false,
-        message: 'Resource not found',
-        timestamp: new Date().toISOString()
-      })
-    }
+  // Custom status errors
+  if (err.status === 404) {
+    return res.status(404).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.NOT_FOUND,
+        message: err.message || 'Not found'
+      },
+      timestamp: new Date().toISOString()
+    })
   }
 
-  // Handle JWT errors → 401
+  if (err.status === 401) {
+    return res.status(401).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.UNAUTHORIZED,
+        message: err.message || 'Unauthorized'
+      },
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  if (err.status === 403) {
+    return res.status(403).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.FORBIDDEN,
+        message: err.message || 'Forbidden'
+      },
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  if (err.status === 409) {
+    return res.status(409).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.CONFLICT,
+        message: err.message || 'Conflict'
+      },
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  // PostgreSQL & Supabase errors
+  if (err.code === '23505') {
+    return res.status(409).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.CONFLICT,
+        message: 'Resource already exists'
+      },
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  if (err.code === 'PGRST116') {
+    return res.status(404).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'Resource not found'
+      },
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  if (err.code === '23503' || err.code === '23502') {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.BAD_REQUEST,
+        message: 'Invalid request data'
+      },
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  // JWT errors
   if (
     err.name === 'JsonWebTokenError' ||
-    err.name === 'TokenExpiredError' ||
-    err.name === 'NotBeforeError'
+    err.name === 'TokenExpiredError'
   ) {
     return res.status(401).json({
       success: false,
-      message: 'Unauthorized',
-      error: 'Invalid or expired token',
+      error: {
+        code: ERROR_CODES.UNAUTHORIZED,
+        message: 'Invalid or expired token'
+      },
       timestamp: new Date().toISOString()
     })
   }
 
-  // Handle CORS errors → 403
-  if (err.message?.includes('CORS')) {
-    return res.status(403).json({
+  // Generic server error → 500
+  return res
+    .status(err.status || 500)
+    .json({
       success: false,
-      message: 'Forbidden',
-      error: 'CORS policy violation',
+      error: {
+        code: err.code || 
+          ERROR_CODES.SERVER_ERROR,
+        message: process.env.NODE_ENV === 
+          'production'
+          ? 'Internal server error'
+          : err.message
+      },
       timestamp: new Date().toISOString()
     })
-  }
-
-  // Handle rate limit errors → 429
-  if (err.status === 429) {
-    return res.status(429).json({
-      success: false,
-      message: 'Too many requests',
-      error: 'Rate limit exceeded',
-      timestamp: new Date().toISOString()
-    })
-  }
-
-  // Handle not found errors → 404
-  if (err.status === 404 || 
-    err.message === 'Not found') {
-    return res.status(404).json({
-      success: false,
-      message: 'Resource not found',
-      timestamp: new Date().toISOString()
-    })
-  }
-
-  // All other errors → 500
-  // Only expose details in development
-  const isDev = process.env.NODE_ENV === 
-    'development'
-  
-  return res.status(
-    err.status || err.statusCode || 500
-  ).json({
-    success: false,
-    message: 'Internal server error',
-    error: isDev 
-      ? err.message 
-      : 'Something went wrong',
-    ...(isDev && { stack: err.stack }),
-    timestamp: new Date().toISOString()
-  })
 }
 
-/**
- * 404 handler for unknown routes
- */
 export const notFoundHandler = (req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route ${req.method} ${req.path} not found`,
+    error: {
+      code: ERROR_CODES.NOT_FOUND,
+      message: `Route ${req.method} ${req.path} not found`
+    },
     timestamp: new Date().toISOString()
   })
 }

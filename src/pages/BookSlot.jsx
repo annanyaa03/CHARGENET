@@ -134,7 +134,7 @@ const BookSlot = () => {
                 {station?.name}
               </h1>
               <p className="text-sm text-gray-400">
-                {station?.address}{station?.address && station?.city ? ', ' : ''}{station?.city}
+                {formatAddress(station)}
               </p>
             </div>
 
@@ -145,7 +145,23 @@ const BookSlot = () => {
               </div>
             )}
 
-            {/* ── Step 1: Charger ── */}
+    const formatAddress = (station) => {
+      if (!station) return ''
+      const addr = station.address || ''
+      const city = station.city || ''
+      const state = station.state || ''
+      
+      const hasCity = addr.toLowerCase().includes(city.toLowerCase())
+      const hasState = addr.toLowerCase().includes(state.toLowerCase())
+      
+      let result = addr
+      if (!hasCity && city) result += ', ' + city
+      if (!hasState && state) result += ', ' + state
+      
+      return result
+    }
+
+    /* ── Step 1: Charger ── */
             <div className="mb-10">
               <p className="text-xs text-gray-400 mb-4 flex items-center gap-2">
                 <span className="text-gray-300">01</span>

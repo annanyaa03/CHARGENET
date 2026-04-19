@@ -15,6 +15,8 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
+import { getStations } from '../../services/stationService';
+
 const navData = {
   solutions: [
     { label: 'For Individuals', subtitle: 'Personal charging solutions',    to: '/solutions/individuals' },
@@ -28,7 +30,7 @@ const navData = {
   ]
 };
 
-// Prefetch function for stations
+// Prefetch function for stations using the unified Express API service
 const prefetchStations = async () => {
   try {
     const cached = localStorage.getItem('chargenet_stations');
@@ -38,24 +40,17 @@ const prefetchStations = async () => {
       if (!isOld) return; // Already cached and fresh
     }
 
-    const { data } = await supabase
-      .from('stations')
-      .select(`
-        id, name, address, city, state, lat, lng, status, 
-        rating, total_reviews, facilities, open_hours, 
-        price_per_kwh, connector_types, total_slots,
-        chargers(status)
-      `);
+    const res = await getStations({ limit: 100 });
     
-    if (data) {
+    if (res.success && res.data) {
       localStorage.setItem(
         'chargenet_stations',
         JSON.stringify({
-          data,
+          data: res.data,
           timestamp: Date.now()
         })
       );
-      console.log('[Navbar] Stations prefetched successfully');
+      console.log('[Navbar] Stations prefetched successfully from Express API');
     }
   } catch (err) {
     console.error('[Navbar] Prefetch error:', err);
@@ -99,28 +94,58 @@ export function Navbar({ solid = false }) {
   useEffect(() => {
     if (!user) return;
     const fetchUserNotifications = async () => {
-      const { data } = await supabase.from('bookings').select(`id, status, created_at, booking_date, booking_time, stations(name)`).eq('user_id', user.id).order('created_at', { ascending: false }).limit(5);
-      if (data && data.length > 0) {
-        const bookingNotifs = data.map(b => ({
-          id: b.id, type: 'booking', title: b.status === 'confirmed' ? 'Booking confirmed' : `Booking ${b.status}`,
-          message: `Your slot at ${b.stations?.name || 'station'} on ${b.booking_date} at ${b.booking_time}`,
-          time: new Date(b.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+      if (!user) return
+      
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+        
+        // Get current session token
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!session?.access_token) return
+        
+        const response = await fetch(`${API_URL}/api/v1/bookings`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (!response.ok) {
+          // Silent fail - notifications are not critical
+          return
+        }
+        
+        const result = await response.json()
+        const bookings = result.data?.bookings || []
+        
+        if (bookings.length === 0) return
+        
+        const bookingNotifs = bookings.slice(0, 5).map(b => ({
+          id: b.id,
+          type: 'booking',
+          title: b.status === 'confirmed' ? 'Booking confirmed' : `Booking ${b.status}`,
+          message: `${b.stations?.name || 'Station'} on ${b.booking_date} at ${b.booking_time}`,
+          time: new Date(b.created_at).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short'
+          }),
           read: false
-        }));
-        setNotifications(prev => [...bookingNotifs, ...prev.filter(n => n.type !== 'booking')]);
+        }))
+        
+        setNotifications(prev => [
+          ...bookingNotifs,
+          ...prev.filter(n => n.type !== 'booking')
+        ])
+      } catch (err) {
+        // Silent fail - dont show errors for notifications
+        return
       }
-    };
-    fetchUserNotifications();
+    }
+    fetchUserNotifications()
   }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase.channel('user-bookings').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings', filter: `user_id=eq.${user.id}` }, (payload) => {
-      const newNotif = { id: payload.new.id, type: 'booking', title: 'New booking confirmed', message: `Booking created successfully`, time: 'Just now', read: false };
-      setNotifications(prev => [newNotif, ...prev]);
-    }).subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [user]);
+
 
   const isActive = (path) => location.pathname === path;
   const isPartiallyActive = (path) => location.pathname.startsWith(path);
@@ -245,7 +270,9 @@ export function Navbar({ solid = false }) {
           <div className="flex items-center gap-10">
             <Link
               to="/"
-              className="text-sm font-semibold text-gray-900 uppercase tracking-widest">
+              className={`text-sm font-bold uppercase tracking-widest transition-colors ${
+                isScrolled ? 'text-gray-900' : 'text-white'
+              }`}>
               ChargeNet
             </Link>
 

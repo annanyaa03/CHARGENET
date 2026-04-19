@@ -77,7 +77,10 @@ describe('Stations API', () => {
         .expect(200)
 
       expect(res.body.success).toBe(true)
-      expect(res.body.data).toBeDefined()
+      expect(res.body.data.stations).toBeDefined()
+      expect(res.body.meta).toBeDefined()
+      expect(res.body.meta.page).toBe(1)
+      expect(res.body.meta.total).toBe(0) // Mock doesn't return count unless setup
     })
 
     it('should return empty array when no stations found', async () => {
@@ -116,6 +119,7 @@ describe('Stations API', () => {
         .expect(500)
 
       expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBeDefined()
     })
   })
 
@@ -164,6 +168,7 @@ describe('Stations API', () => {
         .expect(404)
 
       expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe('NOT_FOUND')
     })
   })
 
@@ -242,7 +247,8 @@ describe('Stations API', () => {
         .expect(400)
 
       expect(res.body.success).toBe(false)
-      expect(res.body.errors).toBeDefined()
+      expect(res.body.error.code).toBe('VALIDATION_ERROR')
+      expect(res.body.error.details).toBeDefined()
     })
 
     it('should reject invalid latitude', async () => {
@@ -256,6 +262,7 @@ describe('Stations API', () => {
         .expect(400)
 
       expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe('VALIDATION_ERROR')
     })
 
     it('should reject invalid longitude', async () => {
@@ -269,6 +276,7 @@ describe('Stations API', () => {
         .expect(400)
 
       expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe('VALIDATION_ERROR')
     })
   })
 

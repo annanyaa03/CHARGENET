@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 const Register = () => {
+  const { signUp } = useAuth()
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -21,30 +20,8 @@ const Register = () => {
     setForm(prev => ({ ...prev, [field]: value }))
     setError('')
   }
-
-  const passwordStrength = (pwd) => {
-    if (!pwd) return { score: 0, label: '', color: '' }
-    let score = 0
-    if (pwd.length >= 8) score++
-    if (/[A-Z]/.test(pwd)) score++
-    if (/[0-9]/.test(pwd)) score++
-    if (/[^A-Za-z0-9]/.test(pwd)) score++
-    const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
-    const colors = [
-      '', 
-      'bg-red-300', 
-      'bg-yellow-300',
-      'bg-gray-400', 
-      'bg-gray-900'
-    ]
-    return { 
-      score, 
-      label: labels[score],
-      color: colors[score]
-    }
-  }
-
-  const strength = passwordStrength(form.password)
+  
+  // ... passwordStrength ...
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -67,17 +44,7 @@ const Register = () => {
 
     setLoading(true)
     try {
-      const { error: authError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: { 
-            full_name: form.fullName 
-          }
-        }
-      })
-      
-      if (authError) throw authError
+      await signUp(form.email, form.password, form.fullName)
       setSuccess(true)
     } catch (err) {
       setError(err.message || 'Something went wrong')

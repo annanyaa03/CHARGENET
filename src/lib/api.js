@@ -1,11 +1,39 @@
-// import { supabase } from './supabase'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 /**
- * DEPRECATED: Express Backend (localhost:5000) is no longer used.
- * All services have been migrated to use direct Supabase queries.
+ * Modern API helper for the ChargeNet Express server
+ * Handles standardized responses and auth headers
  */
+export async function apiRequest(endpoint, options = {}) {
+  const url = `${API_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 
-export async function apiRequest() {
-  console.error('apiRequest is DEPRECATED. Please use direct Supabase methods in your service files.')
-  throw new Error('Express Backend is disabled. Migration to Supabase complete.')
+  // Inject Bearer token if available in localStorage
+  // This helps when transitioning from Supabase to Express API
+  const token = localStorage.getItem('chargenet_token') || 
+                localStorage.getItem('supabase.auth.token')
+  
+  if (token && !headers.Authorization) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  })
+
+  const json = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(json.error?.message || 'API request failed')
+    error.code = json.error?.code
+    error.status = response.status
+    throw error
+  }
+
+  return json
 }

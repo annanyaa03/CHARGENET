@@ -26,52 +26,6 @@ const supabase = createClient(
 
 export default supabase;
 
-export const authService = {
-
-  signup: async (email, password, fullName) => {
-    const { data, error } = await 
-      supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName }
-        }
-      })
-
-    if (error) throw error
-    return data
-  },
-
-  login: async (email, password) => {
-    const { data, error } = await 
-      supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-
-    if (error) {
-      const err = new Error('Invalid credentials')
-      err.status = 401
-      throw err
-    }
-    return data
-  },
-
-  logout: async () => {
-    const { error } = await 
-      supabase.auth.signOut()
-    if (error) throw error
-    return true
-  },
-
-  getUser: async (token) => {
-    const { data: { user }, error } = 
-      await supabase.auth.getUser(token)
-    if (error) throw error
-    return user
-  }
-}
-
 
 export const bookingService = {
 
@@ -354,23 +308,21 @@ export const reviewService = {
 export const stationService = {
 
   getAll: async ({ 
-    city, status, limit, offset, search 
+    city, status, limit = 20, 
+    page = 1, search 
   } = {}) => {
+    const limitNum = Math.min(
+      parseInt(limit), 100
+    )
+    const pageNum = Math.max(parseInt(page), 1)
+    const from = (pageNum - 1) * limitNum
+    const to = from + limitNum - 1
+
     let query = supabase
       .from('stations')
-      .select(`
-        id, name, address, city, state,
-        lat, lng, status, slug, rating,
-        review_count, total_slots,
-        available_slots, description,
-        facilities, open_hours, created_at
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('status', status || 'active')
-      .range(
-        parseInt(offset || 0),
-        parseInt(offset || 0) + 
-          parseInt(limit || 50) - 1
-      )
+      .range(from, to)
 
     if (city) query = query.eq('city', city)
     if (search) query = query.ilike(
@@ -379,10 +331,24 @@ export const stationService = {
 
     const { data, error, count } = await query
     if (error) throw error
-    return { stations: data || [], total: count }
+    
+    return { 
+      data: data || [], 
+      total: count || 0,
+      page: pageNum,
+      limit: limitNum
+    }
   },
 
   getById: async (id) => {
+    // Validate UUID format first to avoid DB syntax error (status 500)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    if (!isUUID) {
+      const err = new Error('Invalid station ID format')
+      err.status = 400
+      throw err
+    }
+
     const { data, error } = await supabase
       .from('stations')
       .select('*')
@@ -399,19 +365,38 @@ export const stationService = {
   },
 
   getBySlug: async (slug) => {
-    const { data, error } = await supabase
+    if (!slug) {
+      const err = new Error('Slug is required')
+      err.status = 400
+      throw err
+    }
+
+    // Attempt to find by slug
+    const { data: bySlug, error: slugError } = await supabase
       .from('stations')
       .select('*')
       .eq('slug', slug)
       .single()
 
-    if (error) throw error
-    if (!data) {
-      const err = new Error('Station not found')
-      err.status = 404
-      throw err
+    if (bySlug && !slugError) return bySlug
+
+    // Fallback: If slug not found, check if it's a valid UUID and try fetching by ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+    
+    if (isUUID) {
+      const { data: byId, error: idError } = await supabase
+        .from('stations')
+        .select('*')
+        .eq('id', slug)
+        .single()
+      
+      if (byId && !idError) return byId
     }
-    return data
+
+    // Final failure - not found by slug or ID
+    const err = new Error('Station not found')
+    err.status = 404
+    throw err
   },
 
   create: async (stationData, userId) => {

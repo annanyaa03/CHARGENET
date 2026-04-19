@@ -4,8 +4,8 @@ import cors from 'cors'
 
 // Middleware imports
 import { helmetConfig, corsOptions } from './middleware/security.js'
-import authMiddleware from './middleware/auth.js'
-import { apiLimiter, authLimiter } from './middleware/rateLimit.js'
+import requireAuth from './middleware/auth.js'
+import { apiLimiter } from './middleware/rateLimit.js'
 import errorHandler, { 
   notFoundHandler 
 } from './middleware/errorHandler.js'
@@ -16,7 +16,6 @@ import stationRoutes from './routes/stations.js'
 import chargerRoutes from './routes/chargers.js'
 import bookingRoutes from './routes/bookings.js'
 import reviewRoutes from './routes/reviews.js'
-import authRoutes from './routes/auth.js'
 
 
 const app = express()
@@ -42,17 +41,17 @@ app.use(express.urlencoded({
   limit: '10mb' 
 }))
 
-// 5. Rate limiting (global and auth)
+// 5. Rate limiting
 app.use('/api/', apiLimiter)
-app.use('/api/auth/', authLimiter)
+app.use('/api/v1/', apiLimiter)
 
-// 6. JWT Auth
-app.use(authMiddleware)
+// 6. JWT Auth (Supabase JWT verification)
+app.use(requireAuth)
 
 // ================================
 // HEALTH CHECK (public, no auth)
 // ================================
-app.get('/api/health', (req, res) => {
+const healthHandler = (req, res) => {
   res.json({
     success: true,
     data: {
@@ -63,16 +62,25 @@ app.get('/api/health', (req, res) => {
       timestamp: new Date().toISOString()
     }
   })
-})
+}
+
+app.get('/api/v1/health', healthHandler)
+app.get('/api/health', healthHandler)
 
 // ================================
 // ROUTES
 // ================================
+// v1 routes
+app.use('/api/v1/stations', stationRoutes)
+app.use('/api/v1/chargers', chargerRoutes)
+app.use('/api/v1/bookings', bookingRoutes)
+app.use('/api/v1/reviews', reviewRoutes)
+
+// Backwards compatibility
 app.use('/api/stations', stationRoutes)
 app.use('/api/chargers', chargerRoutes)
 app.use('/api/bookings', bookingRoutes)
 app.use('/api/reviews', reviewRoutes)
-app.use('/api/auth', authRoutes)
 
 // ================================
 // ERROR HANDLERS (must be last)
@@ -85,14 +93,10 @@ app.use(errorHandler)
 // ================================
 app.listen(PORT, () => {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('  ChargeNet API')
+  console.log('  ChargeNet API v1.0.0')
   console.log(`  Port:    ${PORT}`)
-  console.log(`  Env:     ${process.env.NODE_ENV}`)
-  console.log(`  Morgan:  ✓`)
-  console.log(`  Helmet:  ✓`)
-  console.log(`  Auth:    ✓`)
-  console.log(`  Zod:     ✓`)
-  console.log(`  Limits:  ✓`)
+  console.log(`  Auth:    Supabase JWT ✓`)
+  console.log(`  Routes:  No legacy /auth/* needed`)
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 })
 

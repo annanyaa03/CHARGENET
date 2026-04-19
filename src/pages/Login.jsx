@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 const Login = () => {
+  const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -23,13 +22,7 @@ const Login = () => {
     
     setLoading(true)
     try {
-      const { data, error: authError } = 
-        await supabase.auth.signInWithPassword({
-          email,
-          password
-        })
-      
-      if (authError) throw authError
+      await signIn(email, password)
       
       const from = location.state?.from?.pathname || '/dashboard'
       navigate(from, { replace: true })

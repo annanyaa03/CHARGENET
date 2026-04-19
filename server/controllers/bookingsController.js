@@ -1,37 +1,23 @@
 import { bookingService } from '../services/supabase.js'
+import { successResponse } from '../lib/response.js'
 
 export const bookingController = {
 
   getMyBookings: async (req, res) => {
     const bookings = await bookingService
       .getByUser(req.user.id)
-    
-    res.json({
-      success: true,
-      data: { bookings },
-      timestamp: new Date().toISOString()
-    })
+    successResponse(res, { bookings })
   },
 
   create: async (req, res) => {
     const booking = await bookingService
       .create(req.body, req.user.id)
-    
-    res.status(201).json({
-      success: true,
-      data: { booking },
-      timestamp: new Date().toISOString()
-    })
+    successResponse(res, { booking }, 201)
   },
 
   cancel: async (req, res) => {
     const booking = await bookingService
       .cancel(req.params.id, req.user.id)
-    
-    res.json({
-      success: true,
-      data: { booking },
-      timestamp: new Date().toISOString()
-    })
+    successResponse(res, { booking })
   }
 }

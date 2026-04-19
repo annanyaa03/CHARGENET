@@ -56,4 +56,31 @@ router.get('/:id/reviews',
   asyncHandler(reviewController.getByStation)
 )
 
+// GET /api/v1/stations/:id/bookings
+// Returns todays bookings for a station to show availability
+router.get('/:id/bookings',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const today = new Date().toISOString().split('T')[0]
+    
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('id, status, booking_date, booking_time, charger_id')
+      .eq('station_id', id)
+      .eq('booking_date', today)
+      .eq('status', 'confirmed')
+    
+    if (error) {
+      console.error('[API] Bookings fetch error:', error)
+      throw error
+    }
+    
+    res.json({
+      success: true,
+      data: { bookings: data || [] },
+      timestamp: new Date().toISOString()
+    })
+  })
+)
+
 export default router

@@ -24,7 +24,11 @@ const createTestApp = async () => {
     } else {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized'
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized'
+        },
+        timestamp: new Date().toISOString()
       })
     }
     next()
@@ -33,13 +37,8 @@ const createTestApp = async () => {
   const bookingRoutes = await import('../routes/bookings.js')
   app.use('/api/bookings', bookingRoutes.default)
 
-  app.use((err, req, res, next) => {
-    res.status(err.status || 500).json({
-      success: false,
-      message: err.message,
-      errors: err.errors
-    })
-  })
+  const errorHandler = await import('../middleware/errorHandler.js')
+  app.use(errorHandler.default)
 
   return app
 }
@@ -148,7 +147,8 @@ describe('Bookings API', () => {
         .expect(400)
 
       expect(res.body.success).toBe(false)
-      expect(res.body.errors).toBeDefined()
+      expect(res.body.error.details).toBeDefined()
+      expect(res.body.error.code).toBe('VALIDATION_ERROR')
     })
 
     it('should reject booking with invalid time format', async () => {
@@ -198,6 +198,7 @@ describe('Bookings API', () => {
         .expect(409)
 
       expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe('CONFLICT')
     })
 
     it('should reject booking with duration too short', async () => {
@@ -290,6 +291,7 @@ describe('Bookings API', () => {
         .expect(404)
 
       expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe('NOT_FOUND')
     })
 
     it('should return 403 when cancelling another user\'s booking', async () => {
@@ -311,6 +313,7 @@ describe('Bookings API', () => {
         .expect(403)
 
       expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe('FORBIDDEN')
     })
 
     it('should return 409 for already cancelled booking', async () => {
@@ -333,6 +336,7 @@ describe('Bookings API', () => {
         .expect(409)
 
       expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe('CONFLICT')
     })
   })
 })

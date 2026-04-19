@@ -10,10 +10,10 @@ import {
   SlidersHorizontal, Zap
 } from 'lucide-react'
 import { Navbar } from '../components/layout/Navbar'
-import { getStations } from '../services/stationService'
+import { getStations, deduplicateStations } from '../services/stationService'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const defaultCenter = [20.5937, 78.9629]
+const defaultCenter = [20.5937, 78.9629] // Center of India
 const defaultZoom   = 5
 
 const STATUS_CONFIG = {
@@ -240,23 +240,44 @@ export default function MapView() {
     if (cached) {
       try {
         const { data, timestamp } = JSON.parse(cached)
-        if (Date.now() - timestamp < 5 * 60 * 1000) { setStations(data); setLoading(false); return }
-        setStations(data)
+        if (Date.now() - timestamp < 5 * 60 * 1000) { 
+          setStations(deduplicateStations(data))
+          setLoading(false)
+          return 
+        }
+        setStations(deduplicateStations(data))
       } catch { /* ignore */ }
     }
+    
     if (stations.length === 0) setLoading(true)
+    
     try {
       const lat    = latArg  ?? mapCenter[0]
       const lng    = lngArg  ?? mapCenter[1]
       const zoom   = zoomArg ?? mapZoom
       const base   = Math.pow(2, 14 - zoom) * 2
       const radius = zoom < 8 ? Math.max(100, base) : Math.max(5, base)
-      const res    = await getStations({ lat, lng, radius: zoom >= 6 ? Math.min(1000, radius) : null })
+      
+      const res    = await getStations({ 
+        lat, 
+        lng, 
+        radius: zoom >= 6 ? Math.min(1000, radius) : null,
+        limit: 100
+      })
+      
       const data   = res.data || []
-      setStations(data)
-      localStorage.setItem('chargenet_stations', JSON.stringify({ data, timestamp: Date.now() }))
-    } catch (err) { console.error(err) }
-    finally { setLoading(false) }
+      const uniqueStations = deduplicateStations(data)
+      
+      setStations(uniqueStations)
+      localStorage.setItem('chargenet_stations', JSON.stringify({ 
+        data: uniqueStations, 
+        timestamp: Date.now() 
+      }))
+    } catch (err) { 
+      console.error('[MapView] Fetch error:', err) 
+    } finally { 
+      setLoading(false) 
+    }
   }, [mapCenter, mapZoom, stations.length])
 
   // ── Geolocation on mount ───────────────────────────────────────────────────
