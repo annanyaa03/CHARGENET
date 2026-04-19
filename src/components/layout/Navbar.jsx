@@ -243,15 +243,10 @@ export function Navbar({ solid = false }) {
         <div className="max-w-7xl mx-auto flex items-center justify-between w-full h-full px-4 lg:px-8">
           {/* Main Navigation */}
           <div className="flex items-center gap-10">
-            <Link to="/" className="flex items-center gap-2 hover:no-underline">
-              <div className="w-9 h-9 rounded-none bg-black flex items-center justify-center shadow-lg shadow-black/20">
-                <Zap size={20} color="white" fill="white" strokeWidth={1} />
-              </div>
-              <span className={`text-xl font-bold tracking-tight transition-colors ${
-                isScrolled ? 'text-gray-900' : 'text-white'
-              }`}>
-                ChargeNet
-              </span>
+            <Link
+              to="/"
+              className="text-sm font-semibold text-gray-900 uppercase tracking-widest">
+              ChargeNet
             </Link>
 
             <div className="hidden md:flex items-center gap-8 text-sm">
