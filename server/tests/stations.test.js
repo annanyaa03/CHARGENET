@@ -163,8 +163,9 @@ describe('Stations API', () => {
         })
       })
 
+      // Use a valid UUID format so it passes the UUID guard and hits the DB mock
       const res = await request(app)
-        .get('/api/stations/non-existent-id')
+        .get('/api/stations/00000000-0000-0000-0000-000000000000')
         .expect(404)
 
       expect(res.body.success).toBe(false)

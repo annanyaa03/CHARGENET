@@ -1,88 +1,64 @@
-import morgan from 'morgan'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import pinoHttp from 'pino-http'
+import logger from '../lib/logger.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+// HTTP request logger using pino-http
+export const requestLogger = pinoHttp({
+  // Use our shared logger instance
+  logger,
 
-// Custom token: user ID
-morgan.token('user-id', (req) => {
-  return req.user?.id || 'anonymous'
-})
+  // Custom log level per status code
+  customLogLevel: (req, res, err) => {
+    if (err || res.statusCode >= 500) {
+      return 'error'
+    }
+    if (res.statusCode >= 400) {
+      return 'warn'
+    }
+    if (res.statusCode >= 300) {
+      return 'silent'
+    }
+    return 'info'
+  },
 
-// Custom token: request body (safe)
-morgan.token('body', (req) => {
-  if (!req.body) return '-'
-  // Remove sensitive fields
-  const safe = { ...req.body }
-  delete safe.password
-  delete safe.token
-  delete safe.secret
-  const str = JSON.stringify(safe)
-  // Truncate if too long
-  return str.length > 100 
-    ? str.substring(0, 100) + '...' 
-    : str
-})
+  // Custom success message
+  customSuccessMessage: (req, res) => {
+    return `${req.method} ${req.url} - ${res.statusCode}`
+  },
 
-// Dev format: colorful, detailed
-const devFormat = 
-  ':method :url :status ' +
-  ':response-time ms - :res[content-length] ' +
-  '| user::user-id'
+  // Custom error message
+  customErrorMessage: (req, res, err) => {
+    return `${req.method} ${req.url} - ${res.statusCode} - ${err.message}`
+  },
 
-// Production format: structured
-const prodFormat = JSON.stringify({
-  method: ':method',
-  url: ':url',
-  status: ':status',
-  responseTime: ':response-time',
-  contentLength: ':res[content-length]',
-  userId: ':user-id',
-  ip: ':remote-addr',
-  userAgent: ':user-agent',
-  date: ':date[iso]'
-})
+  // Custom attribute keys
+  customAttributeKeys: {
+    req: 'request',
+    res: 'response',
+    err: 'error',
+    responseTime: 'duration'
+  },
 
-// Create logs directory if it doesn't exist
-const logsDir = path.join(__dirname, '../../logs')
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true })
-}
+  // Serialize request — only log what we need
+  serializers: {
+    req: (req) => ({
+      method: req.method,
+      url: req.url,
+      ip: req.remoteAddress,
+      userAgent: req.headers['user-agent']
+    }),
+    res: (res) => ({
+      statusCode: res.statusCode
+    })
+  },
 
-// Access log stream for production
-const accessLogStream = fs.createWriteStream(
-  path.join(logsDir, 'access.log'),
-  { flags: 'a' }
-)
-
-// Error log stream
-const errorLogStream = fs.createWriteStream(
-  path.join(logsDir, 'error.log'),
-  { flags: 'a' }
-)
-
-// Dev logger: console only
-export const devLogger = morgan(devFormat)
-
-// Production logger: file + console
-export const prodLogger = morgan(
-  prodFormat,
-  { stream: accessLogStream }
-)
-
-// Error logger: log only 4xx and 5xx
-export const errorLogger = morgan(
-  devFormat,
-  {
-    stream: errorLogStream,
-    skip: (req, res) => res.statusCode < 400
+  // Skip health check logs (too noisy)
+  autoLogging: {
+    ignore: (req) => 
+      req.url === '/api/health' ||
+      req.url === '/api/v1/health'
   }
-)
+})
 
-// Combined logger for use in app
-export const requestLogger = 
-  process.env.NODE_ENV === 'production'
-    ? prodLogger
-    : devLogger
+// Backwards-compat named exports
+export const devLogger = requestLogger
+export const prodLogger = requestLogger

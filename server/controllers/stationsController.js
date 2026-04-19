@@ -1,4 +1,4 @@
-import { stationService } from '../services/supabase.js'
+import { stationService } from '../services/station.service.js'
 import { 
   successResponse,
   paginatedResponse 

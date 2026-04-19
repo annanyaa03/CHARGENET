@@ -1,4 +1,4 @@
-import { reviewService } from '../services/supabase.js'
+import { reviewService } from '../services/review.service.js'
 import { successResponse } from '../lib/response.js'
 
 export const reviewController = {

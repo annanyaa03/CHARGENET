@@ -1,4 +1,6 @@
 import { Router } from 'express'
+import supabase from '../lib/supabase.js'
+import logger from '../lib/logger.js'
 import { stationController } from '../controllers/stationsController.js'
 import { chargerController } from '../controllers/chargersController.js'
 import { reviewController } from '../controllers/reviewsController.js'
@@ -57,7 +59,7 @@ router.get('/:id/reviews',
 )
 
 // GET /api/v1/stations/:id/bookings
-// Returns todays bookings for a station to show availability
+// Returns today's bookings for a station to show availability
 router.get('/:id/bookings',
   asyncHandler(async (req, res) => {
     const { id } = req.params
@@ -71,7 +73,7 @@ router.get('/:id/bookings',
       .eq('status', 'confirmed')
     
     if (error) {
-      console.error('[API] Bookings fetch error:', error)
+      logger.error({ err: error, stationId: id }, 'Bookings fetch error')
       throw error
     }
     
@@ -84,3 +86,4 @@ router.get('/:id/bookings',
 )
 
 export default router
+

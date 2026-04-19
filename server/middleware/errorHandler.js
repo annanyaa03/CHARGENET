@@ -1,12 +1,16 @@
 import { ZodError } from 'zod'
 import { ERROR_CODES } from '../lib/response.js'
+import logger from '../lib/logger.js'
 
 const errorHandler = (err, req, res, next) => {
-  // Log full error server side
-  console.error(
-    `[ERROR] ${req.method} ${req.path}:`,
-    err.message
-  )
+  // Log full error with structured pino
+  logger.error({
+    err,
+    method: req.method,
+    url: req.url,
+    userId: req.user?.id || 'anonymous',
+    statusCode: err.status || 500
+  }, 'Request error')
 
   // Zod validation errors → 400
   if (err instanceof ZodError) {

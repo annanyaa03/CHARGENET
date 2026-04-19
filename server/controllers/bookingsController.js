@@ -1,4 +1,4 @@
-import { bookingService } from '../services/supabase.js'
+import { bookingService } from '../services/booking.service.js'
 import { successResponse } from '../lib/response.js'
 
 export const bookingController = {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
 import requireAuth from '../middleware/auth.js'
-import supabase from '../services/supabase.js'
+import supabase from '../lib/supabase.js'
 
 // Mock data
 const mockUser = {
@@ -39,7 +39,7 @@ describe('Auth Middleware', () => {
     vi.clearAllMocks()
     
     // Default mocks
-    vi.mock('../services/supabase.js', () => ({
+    vi.mock('../lib/supabase.js', () => ({
       default: {
         auth: {
           getUser: vi.fn()

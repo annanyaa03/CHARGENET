@@ -1,4 +1,5 @@
-import supabase from '../services/supabase.js'
+import supabase from '../lib/supabase.js'
+import logger from '../lib/logger.js'
 
 // Routes that skip auth entirely
 const PUBLIC_GET_PREFIXES = [
@@ -30,6 +31,11 @@ export async function requireAuth(req, res, next) {
   const token = req.headers.authorization?.split('Bearer ')[1]
 
   if (!token) {
+    logger.warn({
+      method: req.method,
+      url: req.path,
+      ip: req.ip
+    }, 'Unauthorized request — no token')
     return res.status(401).json({ 
       success: false,
       error: { 
@@ -45,6 +51,11 @@ export async function requireAuth(req, res, next) {
     const { data: { user }, error } = await supabase.auth.getUser(token)
 
     if (error || !user) {
+      logger.warn({
+        method: req.method,
+        url: req.path,
+        ip: req.ip
+      }, 'Unauthorized request — invalid token')
       return res.status(401).json({ 
         success: false,
         error: {
@@ -58,9 +69,21 @@ export async function requireAuth(req, res, next) {
     // Attach user to request
     req.user = user
     req.token = token
+
+    logger.debug({
+      userId: user.id,
+      method: req.method,
+      url: req.path
+    }, 'Request authenticated')
+
     next()
   } catch (err) {
-    console.error('[AuthMiddleware] Verification error:', err)
+    logger.error({
+      err,
+      method: req.method,
+      url: req.path,
+      ip: req.ip
+    }, 'Auth verification error')
     return res.status(401).json({ 
       success: false,
       error: {
