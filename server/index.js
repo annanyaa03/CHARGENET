@@ -5,7 +5,7 @@ import cors from 'cors'
 // Middleware imports
 import { helmetConfig, corsOptions } from './middleware/security.js'
 import authMiddleware from './middleware/auth.js'
-import { apiLimiter } from './middleware/rateLimit.js'
+import { apiLimiter, authLimiter } from './middleware/rateLimit.js'
 import errorHandler, { 
   notFoundHandler 
 } from './middleware/errorHandler.js'
@@ -42,8 +42,9 @@ app.use(express.urlencoded({
   limit: '10mb' 
 }))
 
-// 5. Rate limiting (global)
+// 5. Rate limiting (global and auth)
 app.use('/api/', apiLimiter)
+app.use('/api/auth/', authLimiter)
 
 // 6. JWT Auth
 app.use(authMiddleware)

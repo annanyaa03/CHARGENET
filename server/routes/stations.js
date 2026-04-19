@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import { stationController } from '../controllers/station.controller.js'
-import { chargerController } from '../controllers/charger.controller.js'
-import { reviewController } from '../controllers/review.controller.js'
+import { stationController } from '../controllers/stationsController.js'
+import { chargerController } from '../controllers/chargersController.js'
+import { reviewController } from '../controllers/reviewsController.js'
 import asyncHandler from '../middleware/asyncHandler.js'
 import validateBody, { validateQuery } from '../middleware/validate.js'
 import { 

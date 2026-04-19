@@ -1,4 +1,4 @@
-import { chargerService } from '../services/charger.service.js'
+import { chargerService } from '../services/supabase.js'
 
 export const chargerController = {
 

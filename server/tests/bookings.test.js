@@ -10,7 +10,7 @@ import {
   authHeaders
 } from './helpers/mockData.js'
 
-import supabase from '../lib/supabase.js'
+import supabase from '../services/supabase.js'
 
 const createTestApp = async () => {
   const app = express()

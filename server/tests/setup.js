@@ -8,7 +8,9 @@ process.env.NODE_ENV = 'test'
 
 // Mock Supabase client globally
 // This prevents real DB calls in tests
-vi.mock('../lib/supabase.js', () => {
+// Mock Supabase client globally
+// This prevents real DB calls in tests
+vi.mock('@supabase/supabase-js', () => {
   const mockSupabase = {
     from: vi.fn(() => mockSupabase),
     select: vi.fn(() => mockSupabase),
@@ -29,7 +31,7 @@ vi.mock('../lib/supabase.js', () => {
       getUser: vi.fn()
     }
   }
-  return { default: mockSupabase }
+  return { createClient: () => mockSupabase }
 })
 
 console.log('Test setup complete')

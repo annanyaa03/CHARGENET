@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { chargerController } from '../controllers/charger.controller.js'
+import { chargerController } from '../controllers/chargersController.js'
 import asyncHandler from '../middleware/asyncHandler.js'
 
 const router = Router()

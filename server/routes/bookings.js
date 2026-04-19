@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { bookingController } from '../controllers/booking.controller.js'
+import { bookingController } from '../controllers/bookingsController.js'
 import asyncHandler from '../middleware/asyncHandler.js'
 import validateBody from '../middleware/validate.js'
 import { createBookingSchema } from '../schemas/booking.schema.js'

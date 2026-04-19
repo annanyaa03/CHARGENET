@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { reviewController } from '../controllers/review.controller.js'
+import { reviewController } from '../controllers/reviewsController.js'
 import asyncHandler from '../middleware/asyncHandler.js'
 import validateBody from '../middleware/validate.js'
 import { createReviewSchema } from '../schemas/review.schema.js'

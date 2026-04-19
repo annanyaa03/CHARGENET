@@ -1,4 +1,4 @@
-import { bookingService } from '../services/booking.service.js'
+import { bookingService } from '../services/supabase.js'
 
 export const bookingController = {
 

@@ -1,4 +1,4 @@
-import supabase from '../lib/supabase.js'
+import supabase from '../services/supabase.js'
 
 // Routes that do NOT need authentication
 const PUBLIC_ROUTES = [

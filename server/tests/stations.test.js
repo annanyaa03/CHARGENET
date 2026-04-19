@@ -12,7 +12,7 @@ import {
 } from './helpers/mockData.js'
 
 // Import mocked supabase
-import supabase from '../lib/supabase.js'
+import supabase from '../services/supabase.js'
 
 // Import real error handler
 import errorHandler from '../middleware/errorHandler.js'
