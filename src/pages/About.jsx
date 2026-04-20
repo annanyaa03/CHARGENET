@@ -21,7 +21,7 @@ const About = () => {
       <section style={styles.hero}>
         <div style={styles.sectionLabel}>WHO WE ARE</div>
         <h1 style={styles.mainTitle}>Powering the Future of Electric Mobility</h1>
-        <p style={styles.heroSubTitle}>We are building Kenya's most reliable EV charging network.</p>
+        <p style={styles.heroSubTitle}>We are building India's most reliable EV charging network.</p>
       </section>
 
       {/* Mission Section */}
@@ -34,7 +34,7 @@ const About = () => {
             </div>
             <div style={styles.flexRight}>
               <p style={styles.bodyText}>
-                Our mission is to make electric vehicle charging accessible, affordable, and available across every corner of Kenya. We believe that the transition to sustainable energy should be seamless and worry-free for every driver.
+                Our mission is to make electric vehicle charging accessible, affordable, and available across every corner of India. We believe that the transition to sustainable energy should be seamless and worry-free for every driver.
               </p>
               <p style={styles.bodyText}>
                 By deploying state-of-the-art charging infrastructure and intelligent software tools, we are empowering a new generation of EV owners and station operators to lead the charge toward a greener future.
@@ -112,7 +112,7 @@ const About = () => {
           <div style={styles.sectionLabel}>THE TEAM</div>
           <h2 style={styles.sectionTitle}>The Team</h2>
           <p style={styles.bodyText}>
-            The team is made up of engineers, designers, and sustainability advocates working to accelerate EV adoption in Kenya.
+            The team is made up of engineers, designers, and sustainability advocates working to accelerate EV adoption in India.
           </p>
           <div style={styles.teamRow}>
             {[
@@ -133,7 +133,7 @@ const About = () => {
       {/* Contact Strip */}
       <section style={styles.contactStrip}>
         <h2 style={styles.contactTitle}>Get in Touch</h2>
-        <div style={styles.email}>hello@evcharge.co.ke</div>
+        <div style={styles.email}>hello@chargenet.in</div>
         <button style={styles.contactBtn}>Contact Us</button>
       </section>
 

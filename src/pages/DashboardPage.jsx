@@ -40,7 +40,7 @@ const DashboardPage = () => {
     {
       id: 1,
       name: "Westlands EV Hub",
-      location: "Westlands, Nairobi",
+      location: "Westlands, Mumbai",
       status: "Active",
       chargers: 8,
       available: 3,
@@ -50,7 +50,7 @@ const DashboardPage = () => {
     {
       id: 2,
       name: "CBD Charging Point",
-      location: "CBD, Nairobi",
+      location: "CBD, Mumbai",
       status: "Active",
       chargers: 6,
       available: 1,
@@ -60,7 +60,7 @@ const DashboardPage = () => {
     {
       id: 3,
       name: "Karen EV Station",
-      location: "Karen, Nairobi",
+      location: "Karen, Mumbai",
       status: "Maintenance",
       chargers: 4,
       available: 0,
@@ -70,7 +70,7 @@ const DashboardPage = () => {
     {
       id: 4,
       name: "Kilimani Fast Charge",
-      location: "Kilimani, Nairobi",
+      location: "Kilimani, Mumbai",
       status: "Active",
       chargers: 10,
       available: 6,
@@ -80,7 +80,7 @@ const DashboardPage = () => {
     {
       id: 5,
       name: "Thika Road Hub",
-      location: "Thika Rd, Nairobi",
+      location: "Thika Rd, Mumbai",
       status: "Offline",
       chargers: 5,
       available: 0,

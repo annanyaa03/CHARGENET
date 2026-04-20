@@ -28,7 +28,7 @@ const UserDashboard = () => {
     },
     {
       id: 4,
-      title: "Amount Spent (KSh)",
+      title: "Amount Spent (₹)",
       value: "15,400",
       change: "+5%",
     },
@@ -41,7 +41,7 @@ const UserDashboard = () => {
       date: "20 Apr 2026",
       duration: "45 min",
       energy: "22 kWh",
-      cost: "KSh 440",
+      cost: "₹ 440",
     },
     {
       id: 102,
@@ -49,7 +49,7 @@ const UserDashboard = () => {
       date: "18 Apr 2026",
       duration: "30 min",
       energy: "15 kWh",
-      cost: "KSh 300",
+      cost: "₹ 300",
     },
     {
       id: 103,
@@ -57,7 +57,7 @@ const UserDashboard = () => {
       date: "15 Apr 2026",
       duration: "1h 10m",
       energy: "35 kWh",
-      cost: "KSh 700",
+      cost: "₹ 700",
     },
   ];
 
@@ -69,7 +69,7 @@ const UserDashboard = () => {
       date: "10 Apr 2026",
       duration: "60 min",
       energy: "30 kWh",
-      cost: "KSh 600",
+      cost: "₹ 600",
       status: "Completed",
     },
     {
@@ -78,7 +78,7 @@ const UserDashboard = () => {
       date: "05 Apr 2026",
       duration: "15 min",
       energy: "4 kWh",
-      cost: "KSh 80",
+      cost: "₹ 80",
       status: "Failed",
     },
   ];
@@ -87,14 +87,14 @@ const UserDashboard = () => {
     {
       id: 1,
       name: "Westlands EV Hub",
-      location: "Westlands, Nairobi",
+      location: "Westlands, Mumbai",
       status: "Active",
       distance: "2.5 km",
     },
     {
       id: 4,
       name: "Kilimani Fast Charge",
-      location: "Kilimani, Nairobi",
+      location: "Kilimani, Mumbai",
       status: "Active",
       distance: "4.8 km",
     },
@@ -169,7 +169,7 @@ const UserDashboard = () => {
             <div style={styles.card}>
               <h3 style={styles.cardTitle}>FAVOURITE STATION</h3>
               <p style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 4px 0' }}>Westlands EV Hub</p>
-              <p style={{ fontSize: '13px', color: '#666', margin: '0 0 20px 0' }}>Westlands, Nairobi</p>
+              <p style={{ fontSize: '13px', color: '#666', margin: '0 0 20px 0' }}>Westlands, Mumbai</p>
               <button 
                 onClick={() => navigate('/station/1')}
                 style={styles.actionBtn}
@@ -213,7 +213,7 @@ const UserDashboard = () => {
                 <tr key={s.id} style={styles.tr}>
                   <td style={styles.td}>{s.date}</td>
                   <td style={styles.td}>{s.station}</td>
-                  <td style={styles.td}>{s.location || "Nairobi"}</td>
+                  <td style={styles.td}>{s.location || "Mumbai"}</td>
                   <td style={styles.td}>{s.duration}</td>
                   <td style={styles.td}>{s.energy}</td>
                   <td style={styles.td}>{s.cost}</td>
