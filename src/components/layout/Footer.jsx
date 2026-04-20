@@ -63,7 +63,7 @@ export function Footer() {
             <h4 className="text-white font-semibold mb-6">Company</h4>
             <ul className="space-y-4">
               {[
-                { name: 'About Us', path: '/learn' },
+                { name: 'About Us', path: '/about' },
                 { name: 'Coverage Map', path: '/map' },
                 { name: 'Careers', path: '#' },
                 { name: 'Partner With Us', path: '/solutions/business' },

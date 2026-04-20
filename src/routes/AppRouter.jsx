@@ -22,6 +22,7 @@ const Register = lazy(() => import('../pages/Register'))
 const Pricing = lazy(() => import('../pages/Pricing'))
 const DashboardPage = lazy(() => import('../pages/DashboardPage'))
 const UserDashboard = lazy(() => import('../pages/UserDashboard'))
+const About = lazy(() => import('../pages/About'))
 
 // Solutions
 const SolutionsIndividuals = lazy(() => import('../pages/Solutions/Individuals'))
@@ -72,6 +73,7 @@ export function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/about" element={<About />} />
           <Route path="/resources/charging-guide" element={<ChargingGuide />} />
           <Route path="/resources/help" element={<HelpCenter />} />
           <Route path="/resources/blog" element={<Blog />} />
