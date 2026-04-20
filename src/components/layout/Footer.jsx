@@ -1,4 +1,10 @@
-
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Zap, Mail, MapPin, Phone } from 'lucide-react';
+const Facebook = Zap;
+const Twitter = Zap;
+const Instagram = Zap;
+const Linkedin = Zap;
 
 export function Footer() {
   return (
