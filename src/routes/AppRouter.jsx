@@ -71,7 +71,6 @@ export function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/resources/charging-guide" element={<ChargingGuide />} />
           <Route path="/resources/help" element={<HelpCenter />} />
           <Route path="/resources/blog" element={<Blog />} />
@@ -101,6 +100,11 @@ export function AppRouter() {
           } />
 
           {/* Owner Portal */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute allowedRoles={['owner', 'admin']}>
+              <DashboardPage />
+            </ProtectedRoute>
+          } />
           <Route path="/owner/dashboard" element={
             <ProtectedRoute allowedRoles={['owner', 'admin']}>
               <OwnerDashboard />
