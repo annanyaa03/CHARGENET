@@ -106,29 +106,6 @@ const About = () => {
         </div>
       </section>
 
-      {/* Team Section */}
-      <section style={styles.whiteSection}>
-        <div style={styles.container}>
-          <div style={styles.sectionLabel}>THE TEAM</div>
-          <h2 style={styles.sectionTitle}>The Team</h2>
-          <p style={styles.bodyText}>
-            The team is made up of engineers, designers, and sustainability advocates working to accelerate EV adoption in India.
-          </p>
-          <div style={styles.teamRow}>
-            {[
-              "Brian O. — Founder & CEO",
-              "Amina K. — Head of Operations",
-              "James M. — Lead Engineer",
-              "Lucia N. — Product Designer"
-            ].map((member, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={styles.teamMember}>{member}</span>
-                {idx < 3 && <div style={styles.divider} />}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Contact Strip */}
       <section style={styles.contactStrip}>
@@ -275,23 +252,6 @@ const styles = {
     fontSize: "15px",
     color: "#444",
     lineHeight: "1.6",
-  },
-  teamRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: "12px",
-    marginTop: "30px",
-  },
-  teamMember: {
-    fontSize: "15px",
-    color: "#1a1a1a",
-  },
-  divider: {
-    width: "1px",
-    height: "20px",
-    background: "#e0e0e0",
-    margin: "0 12px",
   },
   contactStrip: {
     padding: "50px 40px",
