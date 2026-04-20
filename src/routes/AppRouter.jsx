@@ -21,6 +21,7 @@ const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
 const Pricing = lazy(() => import('../pages/Pricing'))
 const DashboardPage = lazy(() => import('../pages/DashboardPage'))
+const UserDashboard = lazy(() => import('../pages/UserDashboard'))
 
 // Solutions
 const SolutionsIndividuals = lazy(() => import('../pages/Solutions/Individuals'))
@@ -99,6 +100,11 @@ export function AppRouter() {
             </ProtectedRoute>
           } />
 
+          <Route path="/user-dashboard" element={
+            <ProtectedRoute allowedRoles={['driver', 'owner', 'admin']}>
+              <UserDashboard />
+            </ProtectedRoute>
+          } />
           {/* Owner Portal */}
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['owner', 'admin']}>

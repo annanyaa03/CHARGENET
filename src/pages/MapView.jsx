@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { Navbar } from '../components/layout/Navbar'
 import { getStations, deduplicateStations } from '../services/stationService'
+import { useAuthStore } from '../store/authStore'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const defaultCenter = [20.5937, 78.9629] // Center of India
@@ -185,6 +186,7 @@ function ChargerPill({ type }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function MapView() {
   const navigate  = useNavigate()
+  const { role }  = useAuthStore()
   const location  = useLocation()
   const initQuery = new URLSearchParams(location.search).get('q') || ''
 
@@ -614,13 +616,18 @@ export default function MapView() {
                   })
                 })()
             }
-            <div className="px-5 py-6 border-t border-gray-50 bg-gray-50/30">
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="w-full py-3 text-[11px] font-bold text-gray-400 hover:text-gray-900 border border-dashed border-gray-200 hover:border-gray-400 transition-all uppercase tracking-widest"
+            <div className="px-5 py-8 flex justify-center border-t border-gray-50 bg-white">
+              <span 
+                onClick={() => navigate(role === 'owner' ? '/dashboard' : '/user-dashboard')}
+                style={{ 
+                  color: '#aaa', 
+                  fontSize: '13px', 
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
               >
                 View all in dashboard
-              </button>
+              </span>
             </div>
           </div>
         </div>
