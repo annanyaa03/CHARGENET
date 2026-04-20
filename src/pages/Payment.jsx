@@ -1,3 +1,12 @@
+import React, { useState, useEffect } from 'react'
+import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { CheckCircle, Calendar, QrCode, Wallet, CreditCard, Smartphone, ArrowLeft } from 'lucide-react'
+import { PageWrapper, PageContainer } from '../components/layout/PageWrapper'
+import { Button } from '../components/common/Button'
+import { formatINR } from '../utils/formatCurrency'
+import { createPaymentOrder, verifyPayment } from '../services/paymentService'
+import { useAuthStore } from '../store/authStore'
+import toast from 'react-hot-toast'
 
 const PAYMENT_METHODS = [
   { id: 'upi', label: 'UPI', icon: Smartphone, desc: 'Pay via any UPI app' },
