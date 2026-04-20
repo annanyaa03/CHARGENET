@@ -42,10 +42,16 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-6">Product</h4>
             <ul className="space-y-4">
-              {['Find Chargers', 'Pricing', 'Plan Trip', 'Mobile App', 'Live Status'].map((item) => (
-                <li key={item}>
-                  <Link to="#" className="text-gray-400 hover:text-[#1D9E75] transition-colors text-[15px] hover:no-underline">
-                    {item}
+              {[
+                { name: 'Find Chargers', path: '/map' },
+                { name: 'Pricing', path: '/pricing' },
+                { name: 'Plan Trip', path: '/map' },
+                { name: 'Mobile App', path: '/learn' },
+                { name: 'Live Status', path: '/map' }
+              ].map((item) => (
+                <li key={item.name}>
+                  <Link to={item.path} className="text-gray-400 hover:text-[#1D9E75] transition-colors text-[15px] hover:no-underline">
+                    {item.name}
                   </Link>
                 </li>
               ))}
@@ -56,10 +62,16 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-6">Company</h4>
             <ul className="space-y-4">
-              {['About Us', 'Coverage Map', 'Careers', 'Partner With Us', 'Blog'].map((item) => (
-                <li key={item}>
-                  <Link to="#" className="text-gray-400 hover:text-[#1D9E75] transition-colors text-[15px] hover:no-underline">
-                    {item}
+              {[
+                { name: 'About Us', path: '/learn' },
+                { name: 'Coverage Map', path: '/map' },
+                { name: 'Careers', path: '#' },
+                { name: 'Partner With Us', path: '/solutions/business' },
+                { name: 'Blog', path: '/resources/blog' }
+              ].map((item) => (
+                <li key={item.name}>
+                  <Link to={item.path} className="text-gray-400 hover:text-[#1D9E75] transition-colors text-[15px] hover:no-underline">
+                    {item.name}
                   </Link>
                 </li>
               ))}
