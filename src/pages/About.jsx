@@ -107,12 +107,6 @@ const About = () => {
       </section>
 
 
-      {/* Contact Strip */}
-      <section style={styles.contactStrip}>
-        <h2 style={styles.contactTitle}>Get in Touch</h2>
-        <div style={styles.email}>hello@chargenet.in</div>
-        <button style={styles.contactBtn}>Contact Us</button>
-      </section>
 
       {/* Footer Strip */}
       <footer style={styles.footerStrip}>
@@ -252,31 +246,6 @@ const styles = {
     fontSize: "15px",
     color: "#444",
     lineHeight: "1.6",
-  },
-  contactStrip: {
-    padding: "50px 40px",
-    background: "#1a1a1a",
-    textAlign: "center",
-  },
-  contactTitle: {
-    color: "#ffffff",
-    fontSize: "22px",
-    fontWeight: "700",
-    marginBottom: "16px",
-  },
-  email: {
-    color: "#00C853",
-    fontSize: "15px",
-    marginBottom: "24px",
-  },
-  contactBtn: {
-    background: "#ffffff",
-    color: "#1a1a1a",
-    border: "1px solid #ffffff",
-    padding: "12px 30px",
-    fontSize: "14px",
-    fontWeight: "600",
-    cursor: "pointer",
   },
   footerStrip: {
     padding: "20px 40px",
