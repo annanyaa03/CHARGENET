@@ -56,9 +56,11 @@ function AmenityCard({ item }) {
         </div>
       </div>
       <div className="text-right">
-        <p className="text-xs text-gray-500">{item.distance}</p>
+        <p className="text-xs text-gray-500">
+          {item.distance ?? (item.distance_km != null ? `${item.distance_km} km` : '—')}
+        </p>
         <p className="text-xs text-gray-300">
-          {Math.round((parseFloat(item.distance) / 5) * 60)} min walk
+          {Math.round(((item.distance_km ?? parseFloat(item.distance)) / 5) * 60)} min walk
         </p>
       </div>
     </div>
@@ -167,16 +169,19 @@ const StationDetail = () => {
     }
   }, [API_URL])
 
-  const fetchNearbyPlacesData = useCallback(async (city) => {
-    try {
-      const getNearbyPlaces = (stationCity) => [
-        { id: '1', name: `${stationCity} Cafe`, type: 'cafe', distance: '0.2 km' },
-        { id: '2', name: `${stationCity} Diner`, type: 'restaurant', distance: '0.4 km' },
-        { id: '3', name: 'Central Park', type: 'park', distance: '0.6 km' },
-        { id: '4', name: 'General Store', type: 'store', distance: '0.5 km' },
-      ]
-      setNearbyPlaces(getNearbyPlaces(city))
-    } catch (error) { console.error(error) }
+  const fetchNearbyPlacesData = useCallback(async (stationId) => {
+    const { data, error } = await supabase
+      .from('nearby_places')
+      .select('*')
+      .eq('station_id', stationId)
+      .order('distance_km', { ascending: true })
+
+    if (error) {
+      console.error('Nearby places error:', error)
+      return
+    }
+
+    setNearbyPlaces(data || [])
   }, [])
 
   const loadData = useCallback(async () => {
@@ -197,7 +202,7 @@ const StationDetail = () => {
         document.title = `${stationData.name} — ChargeNet`
         fetchChargers(stationData.id)
         fetchReviews(stationData.id)
-        fetchNearbyPlacesData(stationData.city)
+        fetchNearbyPlacesData(stationData.id)
       }
     } catch (err) {
       console.error('Failed to load station:', err)
