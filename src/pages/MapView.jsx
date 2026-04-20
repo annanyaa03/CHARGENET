@@ -614,6 +614,14 @@ export default function MapView() {
                   })
                 })()
             }
+            <div className="px-5 py-6 border-t border-gray-50 bg-gray-50/30">
+              <button 
+                onClick={() => navigate('/dashboard')}
+                className="w-full py-3 text-[11px] font-bold text-gray-400 hover:text-gray-900 border border-dashed border-gray-200 hover:border-gray-400 transition-all uppercase tracking-widest"
+              >
+                View all in dashboard
+              </button>
+            </div>
           </div>
         </div>
 
