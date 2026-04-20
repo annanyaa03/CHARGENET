@@ -1,21 +1,3 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../../store/authStore';
-import {
-  Zap,
-  MapPin,
-  Plug,
-  CalendarCheck,
-  Map as MapIcon,
-  BookOpen,
-  Lightbulb,
-  Newspaper,
-  Bell,
-  ChevronDown,
-} from 'lucide-react';
-
-import { getStations } from '../../services/stationService';
 
 const navData = {
   solutions: [
