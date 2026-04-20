@@ -1,4 +1,11 @@
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { PageWrapper } from '../components/layout/PageWrapper'
 
+export default function Pricing() {
+  const navigate = useNavigate()
+  const [billing, setBilling] = useState('monthly')
+  const [openFaq, setOpenFaq] = useState(null)
 
   useEffect(() => {
     document.title = 'Pricing — ChargeNet'
