@@ -1,20 +1,3 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
-
-const BookSlot = () => {
-  const { stationId } = useParams()
-  const navigate = useNavigate()
-
-  const [station,         setStation]         = useState(null)
-  const [chargers,        setChargers]        = useState([])
-  const [selectedCharger, setSelectedCharger] = useState(null)
-  const [selectedDate,    setSelectedDate]    = useState(new Date().toISOString().split('T')[0])
-  const [selectedTime,    setSelectedTime]    = useState('09:00')
-  const [duration,        setDuration]        = useState(60)
-  const [loading,         setLoading]         = useState(true)
-  const [booking,         setBooking]         = useState(false)
-  const [error,           setError]           = useState('')
 
   useEffect(() => {
     if (!stationId) { navigate('/map'); return }
