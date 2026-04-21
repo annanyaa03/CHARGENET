@@ -8,39 +8,6 @@ import { guides } from '../mock/guides'
 
 const LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced', 'Owner']
 
-function GuideCard({ guide }) {
-  const navigate = useNavigate()
-  return (
-    <div className="bg-surface border border-border rounded-xl p-5 flex flex-col h-full hover:border-accent transition-colors cursor-pointer group"
-         onClick={() => navigate(`/learn/${guide.id}`)}
-         style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-      <div className="flex items-center justify-between mb-3">
-        <LevelBadge level={guide.level} />
-        <div className="flex items-center gap-1 text-xs text-muted">
-          <Clock size={12} />
-          <span>{guide.stepCount} steps</span>
-        </div>
-      </div>
-      <h3 className="text-base font-semibold text-primary mb-2 group-hover:text-accent transition-colors line-clamp-2">
-        {guide.title}
-      </h3>
-      <p className="text-sm text-muted line-clamp-3 mb-4 flex-1">
-        {guide.description}
-      </p>
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {guide.tags.slice(0, 3).map(tag => (
-          <span key={tag} className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-background border border-border rounded-full text-muted">
-            <Tag size={10} /> {tag}
-          </span>
-        ))}
-      </div>
-      <Button variant="outline" size="sm" fullWidth className="group-hover:bg-accent group-hover:text-white group-hover:border-accent transition-all">
-        Read Guide <ChevronRight size={14} />
-      </Button>
-    </div>
-  )
-}
-
 export default function LearnHub() {
   const navigate = useNavigate()
   const [activeLevel, setActiveLevel] = useState('All')
@@ -85,11 +52,67 @@ export default function LearnHub() {
           ))}
         </div>
 
-        {/* Content */}
+        {/* Guide List */}
         {filteredGuides.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <div className="flex flex-col mb-12" style={{ borderTop: '1px solid var(--color-border)' }}>
             {filteredGuides.map(guide => (
-              <GuideCard key={guide.id} guide={guide} />
+              <div
+                key={guide.id}
+                onClick={() => navigate(`/learn/${guide.id}`)}
+                className="group cursor-pointer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '24px',
+                  padding: '20px 0',
+                  borderBottom: '1px solid var(--color-border)',
+                }}
+              >
+                {/* Left: meta + title + desc */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                    <LevelBadge level={guide.level} />
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-muted)' }}>
+                      <Clock size={12} /> {guide.stepCount} steps
+                    </span>
+                    {guide.tags.slice(0, 3).map(tag => (
+                      <span key={tag} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '3px',
+                        fontSize: '10px', fontWeight: 500,
+                        padding: '2px 8px',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: '999px',
+                        color: 'var(--color-muted)',
+                      }}>
+                        <Tag size={9} /> {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <h3 className="group-hover:text-accent transition-colors" style={{
+                    fontSize: '15px', fontWeight: 600, margin: '0 0 4px 0',
+                    color: 'var(--color-primary)', lineHeight: 1.4,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {guide.title}
+                  </h3>
+                  <p style={{
+                    fontSize: '13px', color: 'var(--color-muted)', margin: 0,
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical',
+                  }}>
+                    {guide.description}
+                  </p>
+                </div>
+
+                {/* Right: Read Guide arrow */}
+                <div
+                  className="group-hover:text-accent transition-colors flex-shrink-0"
+                  style={{ color: 'var(--color-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}
+                >
+                  Read Guide <ChevronRight size={16} />
+                </div>
+              </div>
             ))}
           </div>
         ) : (
