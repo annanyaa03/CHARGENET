@@ -186,7 +186,7 @@ function ChargerPill({ type }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function MapView() {
   const navigate  = useNavigate()
-  const { role }  = useAuthStore()
+  const { role, isAuthenticated }  = useAuthStore()
   const location  = useLocation()
   const initQuery = new URLSearchParams(location.search).get('q') || ''
 
@@ -618,7 +618,13 @@ export default function MapView() {
             }
             <div className="px-5 py-8 flex justify-center border-t border-gray-50 bg-white">
               <span 
-                onClick={() => navigate(role === 'owner' ? '/dashboard' : '/user-dashboard')}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    navigate('/login', { state: { from: location } });
+                  } else {
+                    navigate(role === 'owner' ? '/dashboard' : '/user-dashboard');
+                  }
+                }}
                 style={{ 
                   color: '#aaa', 
                   fontSize: '13px', 
