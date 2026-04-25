@@ -10,14 +10,18 @@ export const bookingController = {
   },
 
   create: async (req, res) => {
+    const io = req.app.get('io')
     const booking = await bookingService
-      .create(req.body, req.user.id)
+      .create(req.body, req.user.id, io)
     successResponse(res, { booking }, 201)
   },
 
+
   cancel: async (req, res) => {
+    const io = req.app.get('io')
     const booking = await bookingService
-      .cancel(req.params.id, req.user.id)
+      .cancel(req.params.id, req.user.id, io)
     successResponse(res, { booking })
   }
+
 }

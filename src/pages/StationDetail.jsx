@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { io } from 'socket.io-client'
+
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Coffee, Utensils, TreePine, Building2, Store, ShoppingBag,
@@ -214,16 +216,67 @@ const StationDetail = () => {
 
   useEffect(() => { loadData() }, [loadData])
 
+  const socketRef = useRef(null)
+
   useEffect(() => {
     if (!station?.id) return
-    
-    // Poll every 30 seconds for charger updates instead of realtime WebSocket
-    const interval = setInterval(() => {
-      fetchChargers(station.id)
-    }, 30000)
-    
-    return () => clearInterval(interval)
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+    // Connect to socket
+    socketRef.current = io(API_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true
+    })
+
+    // Join station room
+    socketRef.current.emit('join-station', station.id)
+
+    // Listen for charger updates
+    socketRef.current.on('charger-status-changed', (data) => {
+      if (data.stationId === station.id) {
+        console.log('[Socket] Charger updated:', data)
+        fetchChargers(station.id)
+      }
+    })
+
+    // Listen for booking updates
+    socketRef.current.on('new-booking', (data) => {
+      if (data.stationId === station.id) {
+        console.log('[Socket] New booking:', data)
+        fetchChargers(station.id)
+      }
+    })
+
+    // Listen for booking cancellation
+    socketRef.current.on('booking-cancelled', (data) => {
+      if (data.stationId === station.id) {
+        console.log('[Socket] Booking cancelled:', data)
+        fetchChargers(station.id)
+      }
+    })
+
+    // Listen for availability changes
+    socketRef.current.on('availability-changed', (data) => {
+      if (data.stationId === station.id) {
+        console.log('[Socket] Availability changed:', data)
+        setStation(prev => prev ? {
+          ...prev,
+          available_slots: data.availableSlots,
+          total_slots: data.totalSlots
+        } : prev)
+      }
+    })
+
+    // Cleanup on unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.emit('leave-station', station.id)
+        socketRef.current.disconnect()
+      }
+    }
   }, [station?.id, fetchChargers])
+
 
   /* ── Loading ── */
   if (loading) return (

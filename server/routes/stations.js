@@ -11,6 +11,13 @@ import {
   updateStationSchema,
   stationQuerySchema
 } from '../schemas/station.schema.js'
+import { 
+  uploadStationImage,
+  uploadProfilePhoto
+} from '../middleware/upload.js'
+import { 
+  storageService 
+} from '../services/storage.service.js'
 
 const router = Router()
 
@@ -84,6 +91,92 @@ router.get('/:id/bookings',
     })
   })
 )
+
+// POST /api/v1/stations/:id/images
+router.post('/:id/images',
+  uploadStationImage.array('images', 3),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params
+    
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'NO_FILES',
+          message: 'No images provided'
+        }
+      })
+    }
+
+    const uploadedUrls = await Promise.all(
+      req.files.map(file => 
+        storageService.uploadStationImage(
+          file, id
+        )
+      )
+    )
+
+    // Update station images in database
+    const { data: station } = await supabase
+      .from('stations')
+      .select('images')
+      .eq('id', id)
+      .single()
+
+    const existingImages = station?.images || []
+    const allImages = [
+      ...existingImages,
+      ...uploadedUrls
+    ]
+
+    await supabase
+      .from('stations')
+      .update({ images: allImages })
+      .eq('id', id)
+
+    res.status(201).json({
+      success: true,
+      data: {
+        urls: uploadedUrls,
+        total: allImages.length
+      },
+      timestamp: new Date().toISOString()
+    })
+  })
+)
+
+// POST /api/v1/stations/profile-photo
+router.post('/profile-photo',
+  uploadProfilePhoto.single('photo'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'NO_FILE',
+          message: 'No photo provided'
+        }
+      })
+    }
+
+    const photoUrl = await storageService.uploadProfilePhoto(
+      req.file, req.user.id
+    )
+
+    // Update user profile
+    await supabase
+      .from('profiles')
+      .update({ avatar_url: photoUrl })
+      .eq('id', req.user.id)
+
+    res.json({
+      success: true,
+      data: { photoUrl },
+      timestamp: new Date().toISOString()
+    })
+  })
+)
+
 
 export default router
 

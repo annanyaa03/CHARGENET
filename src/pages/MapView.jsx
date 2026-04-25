@@ -237,70 +237,101 @@ export default function MapView() {
 
   // ── Fetch stations ─────────────────────────────────────────────────────────
   const fetchStations = useCallback(async (latArg, lngArg, zoomArg) => {
-    const cached = localStorage.getItem('chargenet_stations')
-    if (cached) {
-      try {
-        const { data, timestamp } = JSON.parse(cached)
-        if (Date.now() - timestamp < 5 * 60 * 1000) { 
-          setStations(deduplicateStations(data))
-          setLoading(false)
-          return 
-        }
-        setStations(deduplicateStations(data))
-      } catch { /* ignore */ }
-    }
+    // FIX 5 - Remove cache that might be empty
+    localStorage.removeItem('chargenet_stations')
+    localStorage.removeItem('stations_cache')
     
     if (stations.length === 0) setLoading(true)
     
     try {
-      const lat    = latArg  ?? mapCenter[0]
-      const lng    = lngArg  ?? mapCenter[1]
-      const zoom   = zoomArg ?? mapZoom
-      const base   = Math.pow(2, 14 - zoom) * 2
-      const radius = zoom < 8 ? Math.max(100, base) : Math.max(5, base)
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
       
-      const res    = await getStations({ 
-        lat, 
-        lng, 
-        radius: zoom >= 6 ? Math.min(1000, radius) : null,
-        limit: 100
-      })
+      // FIX 4 - Always request all stations with limit=200
+      const url = `${API_URL}/api/v1/stations?limit=200`
+      console.log('[MapView] Fetching:', url)
       
-      const data   = res.data || []
-      const uniqueStations = deduplicateStations(data)
+      const response = await fetch(url)
+      const result = await response.json()
       
-      setStations(uniqueStations)
+      console.log('API result:', result)
+      
+      // FIX 2 - Extract stations from response
+      const stationsData = result.data?.stations || result.stations || result.data || []
+      console.log('Stations count:', stationsData.length)
+      
+      // FIX 2 - Deduplicate by ID
+      const unique = stationsData.filter(
+        (s, index, self) =>
+          index === self.findIndex(
+            t => t.id === s.id
+          )
+      )
+      
+      console.log('Unique stations:', unique.length)
+      
+      setStations(unique)
+      // Note: setFiltered is not needed here as it's a useMemo
+      
       localStorage.setItem('chargenet_stations', JSON.stringify({ 
-        data: uniqueStations, 
+        data: unique, 
         timestamp: Date.now() 
       }))
     } catch (err) { 
-      console.error('[MapView] Fetch error:', err) 
+      console.error('[MapView] Load stations error:', err)
+      setStations([])
     } finally { 
       setLoading(false) 
     }
-  }, [mapCenter, mapZoom, stations.length])
+  }, [stations.length])
+
 
   // ── Geolocation on mount ───────────────────────────────────────────────────
   useEffect(() => {
     document.title = 'Find Stations — ChargeNet'
+    
+    // FIX 5 - Clear cache on mount
+    localStorage.removeItem('chargenet_stations')
+    localStorage.removeItem('stations_cache')
+
     const fallback = () => {
       setUserLoc({ lat: defaultCenter[0], lng: defaultCenter[1] })
       fetchStations(defaultCenter[0], defaultCenter[1], defaultZoom)
     }
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        ({ coords }) => { setUserLoc({ lat: coords.latitude, lng: coords.longitude }); fetchStations(defaultCenter[0], defaultCenter[1], defaultZoom) },
+        ({ coords }) => { 
+          setUserLoc({ lat: coords.latitude, lng: coords.longitude })
+          fetchStations(defaultCenter[0], defaultCenter[1], defaultZoom) 
+        },
         fallback
       )
     } else fallback()
   }, []) // eslint-disable-line
+
 
   // ── Re-fetch on map move ───────────────────────────────────────────────────
   useEffect(() => {
     const t = setTimeout(() => fetchStations(), 1400)
     return () => clearTimeout(t)
   }, [mapCenter, mapZoom]) // eslint-disable-line
+
+  // FIX 6 - Fix tab counts and log stations
+  useEffect(() => {
+    if (stations.length === 0) return
+    
+    console.log('Total stations loaded:', stations.length)
+    
+    const active = stations.filter(s => 
+      (s.available_slots || 0) > 0
+    ).length
+    
+    const busy = stations.filter(s => 
+      (s.available_slots || 0) === 0
+    ).length
+    
+    console.log('Active:', active, 'Busy:', busy)
+  }, [stations])
+
 
   // ── Filtered + sorted list ─────────────────────────────────────────────────
   const filtered = useMemo(() => {

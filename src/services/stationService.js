@@ -53,20 +53,60 @@ export const deduplicateStations = (stations) => {
   })
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+export const fetchAllStations = async (filters = {}) => {
+  try {
+    const params = new URLSearchParams()
+    if (filters.city) params.set('city', filters.city)
+    if (filters.search) params.set('search', filters.search)
+    if (filters.limit) params.set('limit', filters.limit || 200)
+
+    // Always get all stations
+    params.set('limit', '200')
+
+    const url = `${API_URL}/api/v1/stations?${params.toString()}`
+
+    console.log('[Frontend] Fetching:', url)
+
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`)
+    }
+
+    const result = await response.json()
+
+    console.log('[Frontend] Success:', result.success)
+    console.log('[Frontend] Stations:', result.data?.stations?.length)
+
+    // API returns { success, data: { stations: [] }, meta }
+    const stationsRaw = result.data?.stations || result.stations || result.data || []
+    const stations = deduplicateStations(stationsRaw.map(mapStation))
+
+    console.log('[Frontend] Returning:', stations.length, 'stations')
+
+    return stations
+  } catch (err) {
+    console.error('[Frontend] Fetch error:', err)
+    return []
+  }
+}
+
 export const getStations = async (filters = {}) => {
   console.log('[Service] Fetching stations from Express API with filters:', filters)
   
   try {
     const query = new URLSearchParams()
     if (filters.page) query.append('page', filters.page)
-    if (filters.limit) query.append('limit', filters.limit)
+    query.append('limit', filters.limit || '200') // Default to 200
     if (filters.city) query.append('city', filters.city)
     if (filters.search) query.append('search', filters.search)
     
     const response = await apiRequest(`/api/v1/stations?${query.toString()}`)
     
     // The server returns nested data in { success, data: { stations: [...] }, meta }
-    const stationsRaw = response.data?.stations || response.stations || []
+    const stationsRaw = response.data?.stations || response.stations || response.data || []
     const stations = deduplicateStations(stationsRaw.map(mapStation))
     
     return { 
@@ -80,6 +120,7 @@ export const getStations = async (filters = {}) => {
     return { success: false, count: 0, data: [], error: err.message }
   }
 }
+
 
 export const getStationById = async (idOrSlug) => {
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug)

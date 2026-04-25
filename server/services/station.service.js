@@ -4,10 +4,10 @@ import logger from '../lib/logger.js'
 export const stationService = {
 
   getAll: async ({ 
-    city, status, limit = 50, 
+    city, status, limit = 200, 
     page = 1, search 
   } = {}) => {
-    const limitNum = Math.min(parseInt(limit) || 50, 100)
+    const limitNum = Math.min(parseInt(limit) || 200, 500)
     const pageNum = Math.max(parseInt(page) || 1, 1)
     const from = (pageNum - 1) * limitNum
     const to = from + limitNum - 1

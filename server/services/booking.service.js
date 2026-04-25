@@ -1,5 +1,6 @@
 import supabase from '../lib/supabase.js'
 import logger from '../lib/logger.js'
+import { socketEvents } from '../lib/socketEvents.js'
 
 export const bookingService = {
 
@@ -48,7 +49,7 @@ export const bookingService = {
     return data
   },
 
-  create: async (bookingData, userId) => {
+  create: async (bookingData, userId, io) => {
     // Check charger is available
     const { data: charger } = await supabase
       .from('chargers')
@@ -97,6 +98,29 @@ export const bookingService = {
       .update({ status: 'occupied' })
       .eq('id', bookingData.charger_id)
 
+    // Emit socket events
+    if (data && io) {
+      socketEvents.bookingCreated(io, bookingData.station_id, data)
+      
+      // Update availability
+      const { count: availableCount } = await supabase
+        .from('chargers')
+        .select('id', { count: 'exact', head: true })
+        .eq('station_id', bookingData.station_id)
+        .eq('status', 'available')
+
+      const { data: station } = await supabase
+        .from('stations')
+        .select('total_slots')
+        .eq('id', bookingData.station_id)
+        .single()
+      
+      socketEvents.availabilityChanged(io, bookingData.station_id, {
+        availableSlots: availableCount || 0,
+        totalSlots: station?.total_slots || 0
+      })
+    }
+
     logger.info({
       userId,
       stationId: bookingData.station_id,
@@ -107,11 +131,12 @@ export const bookingService = {
     return data
   },
 
-  cancel: async (id, userId) => {
+
+  cancel: async (id, userId, io) => {
     // Get booking first
     const { data: booking } = await supabase
       .from('bookings')
-      .select('user_id, charger_id, status')
+      .select('user_id, charger_id, station_id, status')
       .eq('id', id)
       .single()
 
@@ -151,7 +176,31 @@ export const bookingService = {
       .update({ status: 'available' })
       .eq('id', booking.charger_id)
 
+    // Emit socket events
+    if (data && io) {
+      socketEvents.bookingCancelled(io, booking.station_id, data)
+      
+      // Update availability
+      const { count: availableCount } = await supabase
+        .from('chargers')
+        .select('id', { count: 'exact', head: true })
+        .eq('station_id', booking.station_id)
+        .eq('status', 'available')
+
+      const { data: station } = await supabase
+        .from('stations')
+        .select('total_slots')
+        .eq('id', booking.station_id)
+        .single()
+      
+      socketEvents.availabilityChanged(io, booking.station_id, {
+        availableSlots: availableCount || 0,
+        totalSlots: station?.total_slots || 0
+      })
+    }
+
     logger.info({ bookingId: id, userId }, 'Booking cancelled')
     return data
   }
+
 }
