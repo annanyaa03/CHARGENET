@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
+import ScrollToTop from './components/ScrollToTop'
 
 // Page imports
 import Home from './pages/Home'
@@ -11,6 +12,7 @@ import Pricing from './pages/Pricing'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import Dashboard from './pages/Dashboard'
+import About from './pages/About'
 
 // Solution pages
 import Individuals from './pages/Solutions/Individuals'
@@ -21,10 +23,14 @@ import Fleet from './pages/Solutions/Fleet'
 import ChargingGuide from './pages/Resources/ChargingGuide'
 import HelpCenter from './pages/Resources/HelpCenter'
 import Blog from './pages/Resources/Blog'
+import LearnHub from './pages/LearnHub'
+import GuideDetail from './pages/GuideDetail'
 
 const AppRouter = () => {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       {/* Public routes */}
       <Route path="/" element={<Home />} />
       <Route path="/map" element={<MapView />} />
@@ -35,6 +41,7 @@ const AppRouter = () => {
       <Route path="/login" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/register" element={<SignUp />} />
+      <Route path="/about" element={<About />} />
 
       {/* Solution pages */}
       <Route path="/solutions/individuals" element={<Individuals />} />
@@ -45,6 +52,8 @@ const AppRouter = () => {
       <Route path="/resources/charging-guide" element={<ChargingGuide />} />
       <Route path="/resources/help" element={<HelpCenter />} />
       <Route path="/resources/blog" element={<Blog />} />
+      <Route path="/learn" element={<LearnHub />} />
+      <Route path="/learn/:id" element={<GuideDetail />} />
 
       {/* Protected routes */}
       <Route path="/dashboard" 
@@ -79,6 +88,7 @@ const AppRouter = () => {
         } 
       />
     </Routes>
+    </>
   )
 }
 

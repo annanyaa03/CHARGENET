@@ -13,6 +13,7 @@ import {
   Newspaper,
   Bell,
   ChevronDown,
+  Info
 } from 'lucide-react';
 
 import { getStations } from '../../services/stationService';
@@ -24,9 +25,10 @@ const navData = {
     { label: 'Fleet Solutions', subtitle: 'Scale your EV fleet',            to: '/solutions/fleet' },
   ],
   resources: [
-    { label: 'Charging Guide', subtitle: 'Everything you need to know',  to: '/resources/charging-guide' },
-    { label: 'Help Center',    subtitle: 'Support and documentation',    to: '/resources/help' },
-    { label: 'Latest Blog',    subtitle: 'Industry news and updates',    to: '/resources/blog' },
+    { label: 'Charging Guide', subtitle: 'Everything you need to know',  to: '/resources/charging-guide', icon: BookOpen },
+    { label: 'Help Center',    subtitle: 'Support and documentation',    to: '/resources/help',           icon: Lightbulb },
+    { label: 'Latest Blog',    subtitle: 'Industry news and updates',    to: '/resources/blog',           icon: Newspaper },
+    { label: 'About Us',       subtitle: 'Our story and mission',       to: '/about',                    icon: Info },
   ]
 };
 
