@@ -97,27 +97,59 @@ export const getStations = async (filters = {}) => {
   console.log('[Service] Fetching stations from Express API with filters:', filters)
   
   try {
-    const query = new URLSearchParams()
-    if (filters.page) query.append('page', filters.page)
-    query.append('limit', filters.limit || '200') // Default to 200
-    if (filters.city) query.append('city', filters.city)
-    if (filters.search) query.append('search', filters.search)
+    // Try Express API first
+    const params = new URLSearchParams({
+      limit: filters.limit || '200',
+      ...filters
+    })
     
-    const response = await apiRequest(`/api/v1/stations?${query.toString()}`)
+    const response = await fetch(
+      `${API_URL}/api/v1/stations?${params.toString()}`,
+      { 
+        signal: AbortSignal.timeout(5000)
+      }
+    )
     
-    // The server returns nested data in { success, data: { stations: [...] }, meta }
-    const stationsRaw = response.data?.stations || response.stations || response.data || []
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+    
+    const result = await response.json()
+    const stationsRaw = result.data?.stations || result.stations || result.data || []
     const stations = deduplicateStations(stationsRaw.map(mapStation))
     
     return { 
       success: true, 
       count: stations.length, 
       data: stations,
-      meta: response.meta
+      meta: result.meta
     }
   } catch (err) {
-    console.error('[Service] Fetch failed:', err)
-    return { success: false, count: 0, data: [], error: err.message }
+    console.warn('[Stations] Express API failed, trying Supabase directly:', err.message)
+    
+    // Fallback to direct Supabase
+    try {
+      const { data, error } = await supabase
+        .from('stations')
+        .select('*')
+        .eq('status', 'active')
+        .limit(200)
+      
+      if (error) throw error
+      
+      const stations = deduplicateStations(data.map(mapStation))
+      console.log('[Stations] Fallback successful:', stations.length)
+      
+      return { 
+        success: true, 
+        count: stations.length, 
+        data: stations,
+        error: null
+      }
+    } catch (fallbackErr) {
+      console.error('[Stations] Both methods failed:', fallbackErr)
+      return { success: false, count: 0, data: [], error: fallbackErr.message }
+    }
   }
 }
 

@@ -1,208 +1,475 @@
-import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import dotenv from 'dotenv'
+import { createClient } from '@supabase/supabase-js'
 
-// Lib & logger
-import logger from './lib/logger.js'
-
-// Middleware imports
-import { helmetConfig, corsOptions } from './middleware/security.js'
-import requireAuth from './middleware/auth.js'
-import { apiLimiter } from './middleware/rateLimit.js'
-import errorHandler, { 
-  notFoundHandler 
-} from './middleware/errorHandler.js'
-import { requestLogger } from './middleware/logger.js'
-
-import { createServer } from 'http'
-import { Server } from 'socket.io'
-import winstonLogger from './lib/winston.js'
-import supabase from './lib/supabase.js'
-
-// Route imports
-import stationRoutes from './routes/stations.js'
-import chargerRoutes from './routes/chargers.js'
-import bookingRoutes from './routes/bookings.js'
-import reviewRoutes from './routes/reviews.js'
-
+dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// ================================
-// MIDDLEWARE (order matters)
-// ================================
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
 
-// 1. Request logging (pino-http)
-app.use(requestLogger)
-
-// 2. Security headers
-app.use(helmetConfig)
-
-// 3. CORS
-app.use(cors(corsOptions))
-
-// 4. Body parsing
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ 
-  extended: true, 
-  limit: '10mb' 
-}))
-
-// 5. Rate limiting
-app.use('/api/', apiLimiter)
-app.use('/api/v1/', apiLimiter)
-
-// 6. JWT Auth (Supabase JWT verification)
-app.use(requireAuth)
-
-// ================================
-// HEALTH CHECK (public, no auth)
-// ================================
-const healthHandler = (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'ok',
-      version: '1.0.0',
-      uptime: Math.floor(process.uptime()),
-      environment: process.env.NODE_ENV,
-      timestamp: new Date().toISOString()
-    }
-  })
-}
-
-app.get('/api/v1/health', healthHandler)
-app.get('/api/health', healthHandler)
-
-// ================================
-// ROUTES
-// ================================
-// v1 routes
-app.use('/api/v1/stations', stationRoutes)
-app.use('/api/v1/chargers', chargerRoutes)
-app.use('/api/v1/bookings', bookingRoutes)
-app.use('/api/v1/reviews', reviewRoutes)
-
-// Backwards compatibility
-app.use('/api/stations', stationRoutes)
-app.use('/api/chargers', chargerRoutes)
-app.use('/api/bookings', bookingRoutes)
-app.use('/api/reviews', reviewRoutes)
-
-// ================================
-// SOCKET.IO REAL-TIME
-// ================================
-
-// Create HTTP server from Express app
-const httpServer = createServer(app)
-
-// Initialize Socket.io
-const io = new Server(httpServer, {
-  cors: {
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:5175',
-      'http://localhost:5176',
-      'http://localhost:5177',
-      process.env.FRONTEND_URL
-    ].filter(Boolean),
-    methods: ['GET', 'POST'],
-    credentials: true
-  },
-  transports: ['websocket', 'polling']
+// CORS - allow all localhost
+app.use((req, res, next) => {
+  res.header(
+    'Access-Control-Allow-Origin',
+    req.headers.origin || '*'
+  )
+  res.header(
+    'Access-Control-Allow-Methods',
+    'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+  )
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type,Authorization'
+  )
+  res.header(
+    'Access-Control-Allow-Credentials',
+    'true'
+  )
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200)
+  }
+  next()
 })
 
-// Store io instance for use in routes
-app.set('io', io)
+app.use(express.json())
 
-// Socket.io connection handler
-io.on('connection', (socket) => {
-  winstonLogger.info({
-    socketId: socket.id,
-    ip: socket.handshake.address
-  }, 'Client connected via WebSocket')
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    data: { status: 'ok' } 
+  })
+})
 
-  // Join station room for live updates
-  socket.on('join-station', (stationId) => {
-    socket.join(`station-${stationId}`)
-    winstonLogger.debug({
-      socketId: socket.id,
-      stationId
-    }, 'Client joined station room')
+app.get('/api/v1/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    data: { status: 'ok' } 
+  })
+})
+
+// GET all stations
+app.get('/api/stations', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 200
     
-    socket.emit('joined', { 
-      stationId,
-      message: 'Subscribed to live updates'
+    const { data, error, count } = await supabase
+      .from('stations')
+      .select('*', { count: 'exact' })
+      .eq('status', 'active')
+      .limit(limit)
+    
+    if (error) throw error
+    
+    res.json({
+      success: true,
+      data: { stations: data || [] },
+      meta: { total: count }
     })
-  })
+  } catch (err) {
+    console.error('Stations error:', err)
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
 
-  // Leave station room
-  socket.on('leave-station', (stationId) => {
-    socket.leave(`station-${stationId}`)
-    winstonLogger.debug({
-      socketId: socket.id,
-      stationId
-    }, 'Client left station room')
-  })
-
-  // Handle charger status update from admin
-  socket.on('update-charger-status', 
-    async ({ chargerId, status, stationId }) => {
-    try {
-      const { data, error } = await supabase
-        .from('chargers')
-        .update({ status })
-        .eq('id', chargerId)
-        .select()
-        .single()
-      
-      if (!error && data) {
-        // Broadcast to all clients in the station room
-        io.to(`station-${stationId}`).emit('charger-status-changed', {
-          stationId,
-          charger: data,
-          timestamp: new Date().toISOString()
-        })
-        
-        winstonLogger.info({
-          chargerId,
-          status,
-          stationId
-        }, 'Charger status updated via socket')
+// GET all stations v1
+app.get('/api/v1/stations', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 200
+    
+    const { data, error, count } = await supabase
+      .from('stations')
+      .select('*', { count: 'exact' })
+      .eq('status', 'active')
+      .limit(limit)
+    
+    if (error) throw error
+    
+    console.log('Stations found:', data?.length)
+    
+    res.json({
+      success: true,
+      data: { stations: data || [] },
+      meta: { 
+        total: count,
+        limit 
       }
-    } catch (err) {
-      socket.emit('error', { 
-        message: 'Failed to update charger' 
+    })
+  } catch (err) {
+    console.error('Stations error:', err)
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// GET station by slug
+app.get('/api/v1/stations/slug/:slug', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('stations')
+      .select('*')
+      .eq('slug', req.params.slug)
+      .single()
+    
+    if (error || !data) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Station not found' }
       })
     }
-  })
+    
+    res.json({
+      success: true,
+      data: { station: data }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
 
-  // Handle disconnection
-  socket.on('disconnect', (reason) => {
-    winstonLogger.info({
-      socketId: socket.id,
-      reason
-    }, 'Client disconnected')
+// GET station by ID
+app.get('/api/v1/stations/:id', async (req, res) => {
+  try {
+    const isUUID = /^[0-9a-f-]{36}$/i.test(req.params.id)
+    
+    let query = supabase
+      .from('stations')
+      .select('*')
+    
+    if (isUUID) {
+      query = query.eq('id', req.params.id)
+    } else {
+      query = query.eq('slug', req.params.id)
+    }
+    
+    const { data, error } = await query.single()
+    
+    if (error || !data) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Station not found' }
+      })
+    }
+    
+    res.json({
+      success: true,
+      data: { station: data }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// GET chargers for station
+app.get('/api/v1/stations/:id/chargers', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('chargers')
+      .select('*')
+      .eq('station_id', req.params.id)
+    
+    if (error) throw error
+    
+    res.json({
+      success: true,
+      data: { chargers: data || [] }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// GET reviews for station
+app.get('/api/v1/stations/:id/reviews', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('station_id', req.params.id)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    
+    res.json({
+      success: true,
+      data: { reviews: data || [] }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// GET nearby places for station
+app.get('/api/v1/stations/:id/nearby', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('nearby_places')
+      .select('*')
+      .eq('station_id', req.params.id)
+      .order('distance_km', { ascending: true })
+    
+    if (error) throw error
+    
+    res.json({
+      success: true,
+      data: { places: data || [] }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// GET bookings (authenticated)
+app.get('/api/v1/bookings', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '')
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Unauthorized' }
+      })
+    }
+    
+    const { data: { user } } = await supabase.auth.getUser(token)
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Invalid token' }
+      })
+    }
+    
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        stations(name, address, city),
+        chargers(type, power_kw)
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    
+    res.json({
+      success: true,
+      data: { bookings: data || [] }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// POST create booking
+app.post('/api/v1/bookings', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '')
+    
+    let userId = null
+    
+    if (token) {
+      const { data: { user } } = await supabase.auth.getUser(token)
+      userId = user?.id
+    }
+    
+    const {
+      station_id, charger_id,
+      booking_date, booking_time,
+      duration_minutes, estimated_cost
+    } = req.body
+    
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert({
+        station_id,
+        charger_id,
+        user_id: userId,
+        booking_date,
+        booking_time,
+        duration_minutes: duration_minutes || 60,
+        estimated_cost: estimated_cost || 0,
+        status: 'confirmed'
+      })
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    res.status(201).json({
+      success: true,
+      data: { booking: data }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// PATCH cancel booking
+app.patch('/api/v1/bookings/:id/cancel', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '')
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Unauthorized' }
+      })
+    }
+    
+    const { data: { user } } = await supabase.auth.getUser(token)
+    
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', req.params.id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    res.json({
+      success: true,
+      data: { booking: data }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// POST create review
+app.post('/api/v1/reviews', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '')
+    
+    let userId = null
+    let userEmail = null
+    
+    if (token) {
+      const { data: { user } } = await supabase.auth.getUser(token)
+      userId = user?.id
+      userEmail = user?.email
+    }
+    
+    const { station_id, rating, comment, user_name } = req.body
+    
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert({
+        station_id,
+        user_id: userId,
+        user_name: user_name || userEmail?.split('@')[0] || 'Anonymous',
+        rating,
+        comment
+      })
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    res.status(201).json({
+      success: true,
+      data: { review: data }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// GET chargers for station (also /api/)
+app.get('/api/stations/:id/chargers', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('chargers')
+      .select('*')
+      .eq('station_id', req.params.id)
+    
+    if (error) throw error
+    
+    res.json({
+      success: true,
+      data: { chargers: data || [] }
+    })
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: { message: err.message }
+    })
+  }
+})
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: { 
+      code: 'NOT_FOUND',
+      message: `Route ${req.method} ${req.path} not found` 
+    }
   })
 })
 
-// Error handlers
-app.use(notFoundHandler)
-app.use(errorHandler)
-
-// ================================
-// START SERVER
-// ================================
-// Replace app.listen with httpServer.listen
-const server = httpServer.listen(PORT, () => {
-  winstonLogger.info({
-    port: PORT,
-    environment: process.env.NODE_ENV || 'development',
-    websocket: 'enabled'
-  }, 'ChargeNet API started with WebSocket')
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err)
+  res.status(500).json({
+    success: false,
+    error: { 
+      message: process.env.NODE_ENV === 'production' 
+        ? 'Internal server error'
+        : err.message
+    }
+  })
 })
+
+app.listen(PORT, () => {
+  console.log('═══════════════════════════')
+  console.log('ChargeNet API running!')
+  console.log('Port:', PORT)
+  console.log('Supabase:', process.env.SUPABASE_URL ? 'Connected' : 'MISSING!')
+  console.log('═══════════════════════════')
+})
+
+// Keep alive
+setInterval(() => {}, 1000)
 
 export default app
-

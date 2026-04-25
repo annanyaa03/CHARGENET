@@ -1,9 +1,16 @@
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
+import { mkdirSync, existsSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const logsDir = join(__dirname, '../../logs')
+
+// Create logs directory if it does not exist
+if (!existsSync(logsDir)) {
+  mkdirSync(logsDir, { recursive: true })
+}
 
 const { 
   combine, timestamp, json, 

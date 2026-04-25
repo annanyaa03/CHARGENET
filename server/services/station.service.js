@@ -3,55 +3,58 @@ import logger from '../lib/logger.js'
 
 export const stationService = {
 
-  getAll: async ({ 
-    city, status, limit = 200, 
-    page = 1, search 
-  } = {}) => {
-    const limitNum = Math.min(parseInt(limit) || 200, 500)
-    const pageNum = Math.max(parseInt(page) || 1, 1)
-    const from = (pageNum - 1) * limitNum
-    const to = from + limitNum - 1
+  getAll: async (filters = {}) => {
+    try {
+      console.log('[Station Service] getAll called')
+      console.log('[Station Service] Supabase URL:', 
+        process.env.SUPABASE_URL?.substring(0, 30))
+      
+      const limitNum = Math.min(
+        parseInt(filters.limit) || 200, 500
+      )
+      const pageNum = Math.max(
+        parseInt(filters.page) || 1, 1
+      )
+      const from = (pageNum - 1) * limitNum
+      const to = from + limitNum - 1
 
-    logger.debug({ city, limit: limitNum, page: pageNum, search }, 'Fetching stations')
+      let query = supabase
+        .from('stations')
+        .select('*', { count: 'exact' })
+        .eq('status', 'active')
+        .range(from, to)
 
-    let query = supabase
-      .from('stations')
-      .select(`
-        id,
-        name,
-        address,
-        city,
-        state,
-        lat,
-        lng,
-        status,
-        slug,
-        rating,
-        review_count,
-        total_slots,
-        available_slots,
-        description,
-        open_hours,
-        created_at
-      `, { count: 'exact' })
-      .eq('status', 'active')
-      .range(from, to)
+      if (filters.city) {
+        query = query.eq('city', filters.city)
+      }
+      if (filters.search) {
+        query = query.ilike(
+          'name', '%' + filters.search + '%'
+        )
+      }
 
-    if (city) query = query.eq('city', city)
-    if (search) query = query.ilike('name', `%${search}%`)
+      const { data, error, count } = await query
+      
+      console.log('[Station Service] Count:', count)
+      console.log('[Station Service] Error:', error)
+      console.log('[Station Service] Data length:', 
+        data?.length)
 
-    const { data, error, count } = await query
-    if (error) {
-      logger.error({ err: error, city, limit: limitNum, page: pageNum }, 'Failed to fetch stations')
-      throw error
-    }
+      if (error) {
+        console.error('[Station Service] DB Error:', 
+          error)
+        throw error
+      }
 
-    logger.debug({ count, returned: data?.length }, 'Stations fetched successfully')
-    return { 
-      data: data || [], 
-      total: count || 0,
-      page: pageNum,
-      limit: limitNum
+      return { 
+        data: data || [], 
+        total: count || 0,
+        page: pageNum,
+        limit: limitNum
+      }
+    } catch (err) {
+      console.error('[Station Service] CRASH:', err)
+      throw err
     }
   },
 

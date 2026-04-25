@@ -30,7 +30,9 @@ const validateQuery = (schema) => {
     try {
       const validated = await schema
         .parseAsync(req.query)
-      req.query = validated
+      // Replace query properties with validated/cleaned data
+      Object.keys(req.query).forEach(key => delete req.query[key])
+      Object.assign(req.query, validated)
       next()
     } catch (err) {
       next(err)
@@ -46,7 +48,10 @@ const validateParams = (schema) => {
     try {
       const validated = await schema
         .parseAsync(req.params)
-      req.params = validated
+      
+      // Replace params properties with validated/cleaned data
+      Object.keys(req.params).forEach(key => delete req.params[key])
+      Object.assign(req.params, validated)
       next()
     } catch (err) {
       next(err)
