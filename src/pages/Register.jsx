@@ -23,7 +23,19 @@ const Register = () => {
     setError('')
   }
   
-  // ... passwordStrength ...
+  const passwordStrength = (pwd) => {
+    if (!pwd) return { score: 0, label: '', color: '' }
+    let score = 0
+    if (pwd.length >= 8) score++
+    if (/[A-Z]/.test(pwd)) score++
+    if (/[0-9]/.test(pwd)) score++
+    if (/[^A-Za-z0-9]/.test(pwd)) score++
+    const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
+    const colors = ['', 'bg-red-300', 'bg-yellow-300', 'bg-gray-400', 'bg-gray-900']
+    return { score, label: labels[score], color: colors[score] }
+  }
+
+  const strength = passwordStrength(form.password)
 
   const handleSubmit = async (e) => {
     e.preventDefault()

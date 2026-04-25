@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Navbar } from '../../components/layout/Navbar'
+import { Footer } from '../../components/layout/Footer'
+
 
 const ChargingGuide = () => {
   const [activeSection, setActiveSection] = useState(0)
@@ -89,8 +91,10 @@ const ChargingGuide = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar solid={true} />
+      <div className="flex-1">
+
 
       {/* HERO */}
       <section className="border-b border-gray-100">
@@ -215,6 +219,8 @@ const ChargingGuide = () => {
           </div>
         </div>
       </section>
+      </div>
+      <Footer />
     </div>
   )
 }

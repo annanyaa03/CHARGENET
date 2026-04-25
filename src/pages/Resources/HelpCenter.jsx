@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Navbar } from '../../components/layout/Navbar'
+import { Footer } from '../../components/layout/Footer'
 
 const HelpCenter = () => {
   const [search, setSearch] = useState('')
@@ -97,8 +98,9 @@ const HelpCenter = () => {
   })
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar solid={true} />
+      <div className="flex-1">
 
       {/* HERO - Search centered */}
       <section className="border-b border-gray-100 bg-gray-50 pt-24 pb-16">
@@ -277,6 +279,8 @@ const HelpCenter = () => {
           </div>
         </div>
       </section>
+      </div>
+      <Footer />
     </div>
   )
 }

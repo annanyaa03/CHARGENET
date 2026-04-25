@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Navbar } from '../../components/layout/Navbar'
+import { Footer } from '../../components/layout/Footer'
 
 const Blog = () => {
   const [activeTag, setActiveTag] = useState('All')
@@ -84,8 +85,9 @@ const Blog = () => {
     : posts.filter(p => p.tag === activeTag)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar solid={true} />
+      <div className="flex-1">
 
       {/* HERO */}
       <section className="border-b border-gray-100 pt-32 pb-14">
@@ -207,6 +209,8 @@ const Blog = () => {
           </div>
         </div>
       </section>
+      </div>
+      <Footer />
     </div>
   )
 }

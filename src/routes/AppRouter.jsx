@@ -72,6 +72,7 @@ export function AppRouter() {
           <Route path="/learn/:guideId" element={<GuideDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/signup" element={<Register />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/about" element={<About />} />
           <Route path="/resources/charging-guide" element={<ChargingGuide />} />
