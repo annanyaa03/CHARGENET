@@ -73,6 +73,12 @@ export const AuthProvider = ({ children }) => {
     return session?.access_token || null
   }
 
+  const refreshUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+    return user
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -82,6 +88,7 @@ export const AuthProvider = ({ children }) => {
       signUp,
       signOut,
       getToken,
+      refreshUser,
       isAuthenticated: !!user
     }}>
       {!loading && children}

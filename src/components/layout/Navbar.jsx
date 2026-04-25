@@ -443,7 +443,7 @@ export function Navbar({ solid = false }) {
                   <Link to="/dashboard"
                     className={`text-sm transition-colors ${
                       location.pathname === '/dashboard'
-                        ? isScrolled ? 'text-emerald-600 font-medium' : 'text-white font-medium'
+                        ? isScrolled ? 'text-gray-900 font-medium' : 'text-white font-medium'
                         : isScrolled ? 'text-gray-500 hover:text-gray-900' : 'text-white/70 hover:text-white'
                     }`}>
                     Dashboard
@@ -458,8 +458,16 @@ export function Navbar({ solid = false }) {
                       }`}>
                       
                       {/* Avatar circle */}
-                      <div className="w-7 h-7 bg-gray-900 text-white flex items-center justify-center text-xs font-medium">
-                        {(user?.user_metadata?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
+                      <div className="w-7 h-7 bg-gray-900 text-white flex items-center justify-center text-xs font-medium overflow-hidden rounded-full">
+                        {user?.user_metadata?.avatar_url ? (
+                          <img 
+                            src={user.user_metadata.avatar_url} 
+                            alt="Profile" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          (user?.user_metadata?.full_name || user?.email || 'U').charAt(0).toUpperCase()
+                        )}
                       </div>
                       
                       {/* Name - hidden on mobile */}
