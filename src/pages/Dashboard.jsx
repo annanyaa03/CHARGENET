@@ -1,29 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import { Navbar } from '../components/layout/Navbar'
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
+  const { user, signOut } = useAuth()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('bookings')
 
   useEffect(() => {
-    const init = async () => {
+    const fetchBookings = async () => {
+      if (!user) return;
+      
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!session?.user) {
-          navigate('/signin')
-          return
-        }
-        
-        setUser(session.user)
-        
-        // Fetch bookings with joined data
-        // Note: Using 'slots' instead of 'chargers' based on schema
         const { data: bookingsData, error } = await supabase
             .from('bookings')
             .select(`
@@ -37,17 +29,16 @@ const Dashboard = () => {
               stations ( name, city, address, slug ),
               slots ( connector_type, power_kw )
             `)
-            .eq('user_id', session.user.id)
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(20)
         
         if (error) {
           console.error('Dashboard bookings error:', error)
-          // Fallback to simple fetch if join fails
           const { data: simpleData } = await supabase
             .from('bookings')
             .select('*')
-            .eq('user_id', session.user.id)
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false })
           setBookings(simpleData || [])
         } else {
@@ -59,11 +50,16 @@ const Dashboard = () => {
         setLoading(false)
       }
     }
-    init()
-  }, [navigate])
+    
+    if (user) {
+      fetchBookings()
+    } else {
+      setLoading(false)
+    }
+  }, [user])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     navigate('/')
   }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../../store/authStore';
+import { useAuth } from '../../context/AuthContext';
 import {
   Zap,
   MapPin,
@@ -61,11 +61,29 @@ export function Navbar({ solid = false }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isScrolledState, setIsScrolledState] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, signOut, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isScrolled = solid || isScrolledState;
   const navRef = useRef(null);
+
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   // --- Notifications State ---
   const [showNotifications, setShowNotifications] = useState(false);
@@ -417,22 +435,130 @@ export function Navbar({ solid = false }) {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link
-                to="/login"
-                className={`px-5 py-2.5 font-semibold rounded-none transition-all ${
-                  isScrolled 
-                    ? 'text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200' 
-                    : 'text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/20'
-                }`}
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/register"
-                className="px-5 py-2.5 font-bold text-black bg-white hover:bg-gray-100 rounded-none transition-all shadow-lg shadow-white/10"
-              >
-                Get Started
-              </Link>
+              {isAuthenticated ? (
+                // ✅ SIGNED IN STATE
+                <div className="flex items-center gap-3">
+                  
+                  {/* Dashboard link */}
+                  <Link to="/dashboard"
+                    className={`text-sm transition-colors ${
+                      location.pathname === '/dashboard'
+                        ? isScrolled ? 'text-emerald-600 font-medium' : 'text-white font-medium'
+                        : isScrolled ? 'text-gray-500 hover:text-gray-900' : 'text-white/70 hover:text-white'
+                    }`}>
+                    Dashboard
+                  </Link>
+
+                  {/* User menu */}
+                  <div className="relative" ref={userMenuRef}>
+                    <button
+                      onClick={() => setShowUserMenu(!showUserMenu)}
+                      className={`flex items-center gap-2 text-sm transition-colors ${
+                        isScrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/70 hover:text-white'
+                      }`}>
+                      
+                      {/* Avatar circle */}
+                      <div className="w-7 h-7 bg-gray-900 text-white flex items-center justify-center text-xs font-medium">
+                        {(user?.user_metadata?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
+                      </div>
+                      
+                      {/* Name - hidden on mobile */}
+                      <span className="hidden md:block text-xs">
+                        {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
+                      </span>
+
+                      {/* Chevron */}
+                      <svg className={`w-3.5 h-3.5 transition-transform ${showUserMenu ? 'rotate-180' : ''} ${
+                        isScrolled ? 'text-gray-400' : 'text-white/40'
+                      }`}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </button>
+
+                    {/* Dropdown */}
+                    {showUserMenu && (
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 shadow-sm z-50">
+                        {/* User info */}
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <p className="text-xs font-medium text-gray-900">
+                            {user?.user_metadata?.full_name || 'User'}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {user?.email}
+                          </p>
+                        </div>
+
+                        {/* Menu items */}
+                        <div className="py-1">
+                          <Link
+                            to="/dashboard"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                            Dashboard
+                          </Link>
+                          
+                          <Link
+                            to="/booking"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            My bookings
+                          </Link>
+
+                          <Link
+                            to="/pricing"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                            Upgrade plan
+                          </Link>
+                        </div>
+
+                        {/* Sign out */}
+                        <div className="border-t border-gray-100 py-1">
+                          <button
+                            onClick={() => {
+                              setShowUserMenu(false)
+                              handleSignOut()
+                            }}
+                            className="flex items-center gap-2 px-4 py-2.5 text-xs text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors w-full text-left">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            Sign out
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                // ✅ SIGNED OUT STATE
+                <div className="flex items-center gap-3">
+                  <Link to="/signin"
+                    className={`px-5 py-2.5 font-semibold rounded-none transition-all ${
+                      isScrolled 
+                        ? 'text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200' 
+                        : 'text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/20'
+                    }`}
+                  >
+                    Sign In
+                  </Link>
+                  <Link to="/signup"
+                    className="px-5 py-2.5 font-bold text-black bg-white hover:bg-gray-100 rounded-none transition-all shadow-lg shadow-white/10"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Mobile menu button */}
