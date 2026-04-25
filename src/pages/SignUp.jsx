@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const Register = () => {
+const SignUp = () => {
   const { signUp } = useAuth()
   const [form, setForm] = useState({
     fullName: '',
@@ -332,4 +332,4 @@ const Register = () => {
   )
 }
 
-export default Register
+export default SignUp

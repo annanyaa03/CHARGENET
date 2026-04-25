@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 
-const Login = () => {
-  const { signIn } = useAuth()
+const SignIn = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,22 +16,47 @@ const Login = () => {
     e.preventDefault()
     setError('')
     
+    console.log('[SignIn] Submit clicked')
+    console.log('[SignIn] Email:', email)
+    console.log('[SignIn] Password length:', password.length)
+    
     if (!email || !password) {
       setError('Please fill in all fields')
       return
     }
     
     setLoading(true)
+    
     try {
-      await signIn(email, password)
+      console.log('[SignIn] Attempting sign in...')
       
-      const from = location.state?.from?.pathname || '/dashboard'
-      navigate(from, { replace: true })
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password
+      })
+      
+      console.log('[SignIn] Auth data:', data)
+      console.log('[SignIn] Auth error:', authError)
+      
+      if (authError) {
+        console.error('[SignIn] Error:', authError.message)
+        throw authError
+      }
+      
+      if (data?.user) {
+        console.log('[SignIn] Success! User:', data.user.email)
+        
+        const from = location.state?.from?.pathname || '/dashboard'
+        
+        console.log('[SignIn] Redirecting to:', from)
+        navigate(from, { replace: true })
+      }
     } catch (err) {
+      console.error('[SignIn] Catch error:', err)
       setError(
         err.message === 'Invalid login credentials'
           ? 'Incorrect email or password'
-          : err.message || 'Something went wrong'
+          : err.message || 'Sign in failed. Please try again.'
       )
     } finally {
       setLoading(false)
@@ -230,4 +254,4 @@ const Login = () => {
   )
 }
 
-export default Login
+export default SignIn
