@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { io } from 'socket.io-client'
 import { supabase } from '../lib/supabase'
+import { bookingsAPI } from '../services/api'
 
 const BookSlot = () => {
   const { stationId } = useParams()
@@ -19,6 +21,38 @@ const BookSlot = () => {
   useEffect(() => {
     if (!stationId) { navigate('/map'); return }
     fetchData()
+
+    // Socket.io integration
+    const socket = io('http://localhost:3001', {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    })
+
+    socket.on('connect', () => {
+      console.log('Connected to socket')
+      socket.emit('join-station', stationId)
+    })
+
+    socket.on('charger-status-changed', (data) => {
+      // Update chargers if the changed charger is in our list
+      setChargers(prev => prev.map(c => 
+        c.id === data.charger.id ? { ...c, status: data.charger.status } : c
+      ))
+    })
+
+    socket.on('connect_error', (err) => {
+      console.warn('Socket connection error, falling back to polling:', err)
+    })
+
+    // Polling fallback for charger status
+    const interval = setInterval(() => {
+      fetchData()
+    }, 30000)
+
+    return () => {
+      socket.disconnect()
+      clearInterval(interval)
+    }
   }, [stationId])
 
   const fetchData = async () => {
@@ -54,26 +88,40 @@ const BookSlot = () => {
 
   const handleBooking = async () => {
     if (!selectedCharger) return
+    
+    // Final client-side validation
+    const bookingDateTime = new Date(`${selectedDate}T${selectedTime}`)
+    if (bookingDateTime <= new Date()) {
+      setError('Booking time must be in the future.')
+      return
+    }
+
     setBooking(true)
     setError('')
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .insert({
-          station_id:       stationId,
-          charger_id:       selectedCharger.id,
-          user_id:          user?.id || null,
-          booking_date:     selectedDate,
-          booking_time:     selectedTime,
-          duration_minutes: duration,
-          status:           'confirmed',
-          estimated_cost:   estimatedCost,
-        })
-      if (bookingError) throw bookingError
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      if (!token) {
+        setError('You must be logged in to book a slot.')
+        return
+      }
+
+      await bookingsAPI.create({
+        station_id: stationId,
+        charger_id: selectedCharger.id,
+        booking_date: selectedDate,
+        booking_time: selectedTime,
+        duration_minutes: duration
+      }, token)
+
       navigate('/dashboard', { state: { bookingSuccess: true, stationName: station?.name } })
     } catch (err) {
-      setError('Booking failed. Please try again.')
+      console.error('Booking error:', err)
+      const msg = err.message || (typeof err === 'string' ? err : 'Booking failed. Please try again.')
+      setError(msg)
+      // Refresh chargers to get updated availability
+      fetchData()
     } finally {
       setBooking(false)
     }
@@ -180,10 +228,12 @@ const BookSlot = () => {
                     return (
                       <div
                         key={charger.id}
-                        onClick={() => isAvailable && setSelectedCharger(charger)}
+                        onClick={() => !booking && isAvailable && setSelectedCharger(charger)}
                         className={`p-4 border transition-all ${
                           !isAvailable
                             ? 'border-gray-100 opacity-40 cursor-not-allowed'
+                            : booking
+                            ? 'border-gray-100 opacity-50 cursor-not-allowed'
                             : isSelected
                             ? 'border-gray-900 cursor-pointer'
                             : 'border-gray-100 hover:border-gray-300 cursor-pointer'
@@ -228,18 +278,20 @@ const BookSlot = () => {
                   <label className="text-xs text-gray-400 mb-2 block">Date</label>
                   <input
                     type="date"
+                    disabled={booking}
                     value={selectedDate}
                     min={new Date().toISOString().split('T')[0]}
                     onChange={e => setSelectedDate(e.target.value)}
-                    className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-gray-400 transition-colors bg-white"
+                    className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-gray-400 transition-colors bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-2 block">Time</label>
                   <select
+                    disabled={booking}
                     value={selectedTime}
                     onChange={e => setSelectedTime(e.target.value)}
-                    className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-gray-400 transition-colors bg-white"
+                    className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-gray-400 transition-colors bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
                   >
                     {TIMES.map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -260,12 +312,13 @@ const BookSlot = () => {
                 {DURATIONS.map(m => (
                   <button
                     key={m}
+                    disabled={booking}
                     onClick={() => setDuration(m)}
                     className={`px-4 py-2 text-xs transition-all ${
                       duration === m
                         ? 'bg-gray-900 text-white'
                         : 'border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-                    }`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {fmtDuration(m)}
                   </button>
@@ -317,7 +370,12 @@ const BookSlot = () => {
                 <div className="px-6 py-5">
                   <button
                     onClick={handleBooking}
-                    disabled={!selectedCharger || booking || selectedCharger?.status !== 'available'}
+                    disabled={
+                      !selectedCharger || 
+                      selectedCharger?.status !== 'available' ||
+                      !selectedDate || !selectedTime || !duration ||
+                      booking
+                    }
                     className="w-full bg-gray-900 text-white py-3 text-xs tracking-wide hover:bg-black transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {booking ? (

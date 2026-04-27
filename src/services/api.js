@@ -167,7 +167,7 @@ export const bookingsAPI = {
   // GET /api/bookings
   getMyBookings: async (token) => {
     try {
-      const res = await fetch(`${API_BASE}/bookings`, {
+      const res = await fetch(`${API_BASE}/api/v1/bookings`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -181,7 +181,7 @@ export const bookingsAPI = {
   // POST /api/bookings
   create: async (data, token) => {
     try {
-      const res = await fetch(`${API_BASE}/bookings`, {
+      const res = await fetch(`${API_BASE}/api/v1/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +198,7 @@ export const bookingsAPI = {
   // PATCH /api/bookings/:id/cancel
   cancel: async (id, token) => {
     try {
-      const res = await fetch(`${API_BASE}/bookings/${id}/cancel`, {
+      const res = await fetch(`${API_BASE}/api/v1/bookings/${id}/cancel`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`

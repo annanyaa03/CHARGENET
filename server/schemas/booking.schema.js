@@ -45,6 +45,23 @@ export const createBookingSchema = z.object({
     .min(0, 'Cost cannot be negative')
     .optional()
 }).refine(data => {
+  // If date is today, time must be in the future
+  const bookingDate = new Date(data.booking_date)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  if (bookingDate.getTime() === today.getTime()) {
+    const [hours, minutes] = data.booking_time.split(':').map(Number)
+    const now = new Date()
+    const bookingDateTime = new Date()
+    bookingDateTime.setHours(hours, minutes, 0, 0)
+    return bookingDateTime > now
+  }
+  return true
+}, {
+  message: 'Booking time must be in the future',
+  path: ['booking_time']
+}).refine(data => {
   // If start_time and end_time provided,
   // end must be after start
   if (data.start_time && data.end_time) {

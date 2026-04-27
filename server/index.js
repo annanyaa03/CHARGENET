@@ -2,6 +2,11 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
+import { createServer } from 'http'
+import { Server } from 'socket.io'
+import bookingRoutes from './routes/bookings.js'
+import errorHandler from './middleware/errorHandler.js'
+
 
 dotenv.config()
 
@@ -53,6 +58,9 @@ app.get('/api/v1/health', (req, res) => {
     data: { status: 'ok' } 
   })
 })
+
+// Routes
+app.use('/api/v1/bookings', bookingRoutes)
 
 // GET all stations
 app.get('/api/stations', async (req, res) => {
@@ -245,133 +253,7 @@ app.get('/api/v1/stations/:id/nearby', async (req, res) => {
   }
 })
 
-// GET bookings (authenticated)
-app.get('/api/v1/bookings', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.replace('Bearer ', '')
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: { message: 'Unauthorized' }
-      })
-    }
-    
-    const { data: { user } } = await supabase.auth.getUser(token)
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: { message: 'Invalid token' }
-      })
-    }
-    
-    const { data, error } = await supabase
-      .from('bookings')
-      .select(`
-        *,
-        stations(name, address, city),
-        chargers(type, power_kw)
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    
-    res.json({
-      success: true,
-      data: { bookings: data || [] }
-    })
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: { message: err.message }
-    })
-  }
-})
 
-// POST create booking
-app.post('/api/v1/bookings', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.replace('Bearer ', '')
-    
-    let userId = null
-    
-    if (token) {
-      const { data: { user } } = await supabase.auth.getUser(token)
-      userId = user?.id
-    }
-    
-    const {
-      station_id, charger_id,
-      booking_date, booking_time,
-      duration_minutes, estimated_cost
-    } = req.body
-    
-    const { data, error } = await supabase
-      .from('bookings')
-      .insert({
-        station_id,
-        charger_id,
-        user_id: userId,
-        booking_date,
-        booking_time,
-        duration_minutes: duration_minutes || 60,
-        estimated_cost: estimated_cost || 0,
-        status: 'confirmed'
-      })
-      .select()
-      .single()
-    
-    if (error) throw error
-    
-    res.status(201).json({
-      success: true,
-      data: { booking: data }
-    })
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: { message: err.message }
-    })
-  }
-})
-
-// PATCH cancel booking
-app.patch('/api/v1/bookings/:id/cancel', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.replace('Bearer ', '')
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: { message: 'Unauthorized' }
-      })
-    }
-    
-    const { data: { user } } = await supabase.auth.getUser(token)
-    
-    const { data, error } = await supabase
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', req.params.id)
-      .eq('user_id', user.id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    
-    res.json({
-      success: true,
-      data: { booking: data }
-    })
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: { message: err.message }
-    })
-  }
-})
 
 // POST create review
 app.post('/api/v1/reviews', async (req, res) => {
@@ -449,23 +331,39 @@ app.use((req, res) => {
 })
 
 // Error handler
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err)
-  res.status(500).json({
-    success: false,
-    error: { 
-      message: process.env.NODE_ENV === 'production' 
-        ? 'Internal server error'
-        : err.message
-    }
+app.use(errorHandler)
+
+const httpServer = createServer(app)
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+})
+
+app.set('io', io)
+
+io.on('connection', (socket) => {
+  console.log('Socket connected:', socket.id)
+
+  socket.on('join-station', (stationId) => {
+    socket.join(`station-${stationId}`)
+    console.log(`Socket ${socket.id} joined room: station-${stationId}`)
+  })
+
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected:', socket.id)
   })
 })
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log('═══════════════════════════')
   console.log('ChargeNet API running!')
   console.log('Port:', PORT)
   console.log('Supabase:', process.env.SUPABASE_URL ? 'Connected' : 'MISSING!')
+  console.log('Socket.io: Initialized')
   console.log('═══════════════════════════')
 })
 
