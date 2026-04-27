@@ -16,9 +16,11 @@
     "test:coverage": "cd server && vitest run --coverage"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "@tanstack/react-query": "^5.28.4",
-    "dayjs": "^1.11.10",
+    "@supabase/supabase-js": "^2.103.0",
+    "@tanstack/react-query": "^5.96.2",
+    "axios": "^1.14.0",
+    "dayjs": "^1.11.20",
+    "framer-motion": "^12.38.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.363.0",
     "react": "^18.2.0",
