@@ -1,0 +1,27 @@
+# Vercel Ignore
+.git
+.github
+node_modules
+__pycache__
+*.pyc
+logs
+sql
+src
+CHARGENET/backend/*
+export_onnx.py
+index.html
+build_error.txt
+lint_output.txt
+.env
+.env.example
+package.json
+package-lock.json
+tailwind.config.js
+vite.config.js
+vitest.config.js
+postcss.config.js
+eslint.config.js
+scripts
+public
+dist
+model.onnx

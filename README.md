@@ -36,6 +36,32 @@ The backend is built with a production-grade Express.js architecture: modular MV
 
 ---
 
+## 🎭 CHARGENET AI Character Generator
+
+A high-performance AI Character Generator integrated into the ChargeNet ecosystem.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fannanyaa03%2FCHARGENET&env=SUPABASE_URL,SUPABASE_KEY)
+
+### Features
+- **Stable Diffusion v1.5**: State-of-the-art character generation.
+- **CPU Optimized**: 20s inference on Vercel CPU using optimized diffusers pipeline.
+- **Supabase Integration**: Automatically saves generated images to Supabase Storage.
+- **Premium Gradio UI**: Responsive design with sharing capabilities.
+
+### Environment Variables
+To enable cloud storage, add the following to your Vercel deployment or `.env`:
+- `SUPABASE_URL`: Your Supabase project URL.
+- `SUPABASE_KEY`: Your Supabase service role or anon key.
+
+### Quick Deploy
+```bash
+vercel --prod
+```
+
+---
+
+---
+
 ## Table of Contents
 
 - [Features](#features)
