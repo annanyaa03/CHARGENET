@@ -1,4 +1,5 @@
 import gradio as gr
+from fastapi import FastAPI
 import torch
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 from PIL import Image
@@ -138,6 +139,9 @@ share_html = """
 </div>
 """
 
+# Initialize FastAPI
+app = FastAPI()
+
 # Build UI
 with gr.Blocks(theme=theme, title="CHARGENET - AI Character Generator") as demo:
     gr.Markdown(
@@ -182,6 +186,9 @@ with gr.Blocks(theme=theme, title="CHARGENET - AI Character Generator") as demo:
         inputs=[prompt, seed, steps],
         outputs=[output_img, status_text]
     )
+
+# Mount Gradio to FastAPI
+app = gr.mount_gradio_app(app, demo, path="/")
 
 if __name__ == "__main__":
     demo.launch()
